@@ -58,7 +58,7 @@ public class MerkleRootCalculatorTest {
     calc.calculateMerkleRootHash(new ArrayList<>());
   }
   
-  private List<Transaction> fakeTransactions(int size, boolean modifyLittleStuff) {
+  public static List<Transaction> fakeTransactions(int size, boolean modifyLittleStuff) {
     Transaction tra1 = new Transaction();
     tra1.setInputs(ImmutableList.of(fakeInput(86l), fakeInput(14l)));
     tra1.setOutputs(ImmutableList.of(fakeInput(27l), fakeInput(73l)));
@@ -114,7 +114,7 @@ public class MerkleRootCalculatorTest {
     return transactions.subList(0, size);
   }
   
-  private TransactionInput fakeInput(long amount) {
+  public static TransactionInput fakeInput(long amount) {
     TransactionInput input = new TransactionInput();
     input.setAmount(new BigDecimal(amount));
     input.setPublicKey("keykey");

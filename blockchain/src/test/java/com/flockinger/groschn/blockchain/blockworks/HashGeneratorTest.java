@@ -33,7 +33,7 @@ public class HashGeneratorTest {
 
     String generatedHash = hasher.generateHash(hashable);
     String expectedHash =
-        "65fc00253d4893d28e8be00cfa6c9d36521bd77152a3f8441b97b6fbc029256d28d9fdb1a10d16bb262b2cefd6a1a3f16f5929c055aeecda5a45c02f722ed5f4";
+        "ead4bf68adc722df1dfadd5bf833b26579150e23bf865a1cc72ed39c394a3b26e22158877a7fa79f54a4614c65d3a502e71537f697f5987145f0d137a3e21e49";
 
     assertNotNull("verify returned hash is not null", generatedHash);
     assertEquals("verify correct generated hash", expectedHash, generatedHash);

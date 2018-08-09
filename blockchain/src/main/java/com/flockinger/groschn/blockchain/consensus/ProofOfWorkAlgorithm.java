@@ -18,6 +18,7 @@ import com.flockinger.groschn.blockchain.consensus.model.PowConsent;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.model.Transaction;
 import com.flockinger.groschn.blockchain.repository.BlockchainRepository;
+import com.flockinger.groschn.blockchain.repository.model.StoredBlock;
 import com.flockinger.groschn.blockchain.util.MerkleRootCalculator;
 
 @Component(value = "POW")
@@ -31,14 +32,17 @@ public class ProofOfWorkAlgorithm implements ConsensusAlgorithm {
   private HashGenerator hashGenerator;
   @Autowired
   private MerkleRootCalculator merkleCalculator;
+  
+  private final Long STARTING_NONCE = 1l;
 
   @Override
-  public Agreement reachConsensus(List<Transaction> transactions) {
+  public Block reachConsensus(List<Transaction> transactions) {
     Block lastBlock = findLastBlock();
     
     Block freshBlock = new Block();
-    freshBlock.setPosition(lastBlock.getPosition() + 1);
+    freshBlock.setPosition(getLastPosition() + 1);
     freshBlock.setTransactions(transactions);
+    freshBlock.setLastHash(lastBlock.getHash());
     freshBlock.setTimestamp(new Date().getTime());
     freshBlock.setVersion(BlockMaker.CURRENT_BLOCK_VERSION);
     freshBlock.setTransactionMerkleRoot(merkleCalculator.calculateMerkleRootHash(transactions));
@@ -48,12 +52,15 @@ public class ProofOfWorkAlgorithm implements ConsensusAlgorithm {
     freshBlock.setConsent(consent);
     
     StopWatch miningTimer = StopWatch.createStarted();
-    mineBlock(freshBlock);
+    forgeBlock(freshBlock);
     miningTimer.stop();
     consent.setMilliSecondsSpentMining(miningTimer.getTime(TimeUnit.MILLISECONDS));
     
-    
-    return null;
+    return freshBlock;
+  }
+  
+  private long getLastPosition() {
+    return blockDao.findFirstByOrderByPositionDesc().get().getPosition();
   }
   
   private int determineNewDifficulty(Block lastBlock) {
@@ -67,15 +74,15 @@ public class ProofOfWorkAlgorithm implements ConsensusAlgorithm {
     return difficulty;
   }
   
-  private void mineBlock(Block freshBlock) {
+  private void forgeBlock(Block freshBlock) {
     PowConsent consent = PowConsent.class.cast(freshBlock.getConsent());
     String blockHash = "";
     consent.setTimestamp(new Date().getTime());
-    Long nonceCount=1l;
+    Long nonceCount=STARTING_NONCE;
     while(!didWorkSucceed(blockHash, consent)) {
       if(nonceCount == Long.MAX_VALUE) {
         consent.setTimestamp(new Date().getTime());
-        nonceCount = 1l;
+        nonceCount = STARTING_NONCE;
       } else {
         nonceCount++;
       }
@@ -99,7 +106,7 @@ public class ProofOfWorkAlgorithm implements ConsensusAlgorithm {
   
   private Block findLastBlock() {
     return blockDao
-        .findFirst10ByConsentTypeOrderByPositionDesc(ConsensusType.PROOF_OF_WORK)
+        .findTop3ByConsentTypeOrderByPositionDesc(ConsensusType.PROOF_OF_WORK)
         .stream().map(dbBlock -> mapper.map(dbBlock, Block.class))
         .findFirst().get();
   }

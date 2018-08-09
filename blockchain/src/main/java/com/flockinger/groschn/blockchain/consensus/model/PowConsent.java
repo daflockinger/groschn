@@ -3,18 +3,23 @@ package com.flockinger.groschn.blockchain.consensus.model;
 public class PowConsent implements Consent {
   private Long nonce;
   private Long timestamp;
-  private String hash;
   private Integer difficulty;
   private Long milliSecondsSpentMining;
+  private ConsensusType type = ConsensusType.PROOF_OF_WORK;
 
   /**
    * Average time it should take to mine one block.
    */
   public final static Long MINING_RATE_MILLISECONDS = 30l * 1000l;
   
+  /**
+   * Default difficulty value for the very beginning.
+   */
+  public final static Integer DEFAULT_DIFFICULTY = 4;
+  
   @Override
   public ConsensusType getType() {
-    return ConsensusType.PROOF_OF_WORK;
+    return type;
   }
 
   public Long getMilliSecondsSpentMining() {
@@ -47,13 +52,5 @@ public class PowConsent implements Consent {
 
   public void setTimestamp(Long timestamp) {
     this.timestamp = timestamp;
-  }
-
-  public String getHash() {
-    return hash;
-  }
-
-  public void setHash(String hash) {
-    this.hash = hash;
   }
 }
