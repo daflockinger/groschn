@@ -1,9 +1,11 @@
 package com.flockinger.groschn.blockchain.repository.model;
 
+import java.util.List;
 import javax.validation.constraints.NotNull;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
+import com.flockinger.groschn.blockchain.consensus.model.Consent;
 
 @Document(collection="blockchain")
 public class StoredBlock {
@@ -28,9 +30,25 @@ public class StoredBlock {
   
   private Integer version;
   
-  //TODO 
-  // added fixed version of Consents and Transactions
-  // add all the indexes I need for every query (but not too much)
+  private List<StoredTransaction> transactions;
+  
+  private Consent consent;
+
+  public Consent getConsent() {
+    return consent;
+  }
+
+  public void setConsent(Consent consent) {
+    this.consent = consent;
+  }
+
+  public List<StoredTransaction> getTransactions() {
+    return transactions;
+  }
+
+  public void setTransactions(List<StoredTransaction> transactions) {
+    this.transactions = transactions;
+  }
 
   public String getId() {
     return id;

@@ -2,7 +2,7 @@ package com.flockinger.groschn.blockchain.model;
 
 import java.util.List;
 
-public abstract class Transaction implements Hashable {
+public class Transaction implements Hashable {
 
 	private String id;
 	

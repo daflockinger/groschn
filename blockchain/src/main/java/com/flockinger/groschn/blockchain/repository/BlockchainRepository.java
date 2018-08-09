@@ -1,7 +1,9 @@
 package com.flockinger.groschn.blockchain.repository;
 
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.mongodb.repository.MongoRepository;
+import com.flockinger.groschn.blockchain.consensus.model.ConsensusType;
 import com.flockinger.groschn.blockchain.repository.model.StoredBlock;
 
 public interface BlockchainRepository extends MongoRepository<StoredBlock, String>{
@@ -9,5 +11,5 @@ public interface BlockchainRepository extends MongoRepository<StoredBlock, Strin
   Optional<StoredBlock> findByPosition(Long position);
   Optional<StoredBlock> findByHash(String hash);
   
-  //TODO add queries to fetch by transaction sender/receiver
+  List<StoredBlock> findFirst10ByConsentTypeOrderByPositionDesc(ConsensusType type);
 }

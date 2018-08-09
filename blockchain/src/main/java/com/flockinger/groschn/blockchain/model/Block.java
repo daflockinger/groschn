@@ -2,6 +2,8 @@ package com.flockinger.groschn.blockchain.model;
 
 import java.util.List;
 
+import com.flockinger.groschn.blockchain.consensus.model.Consent;
+
 public class Block implements Hashable {
 
 	private Long position;

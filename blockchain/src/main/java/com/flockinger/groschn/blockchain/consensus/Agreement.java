@@ -1,7 +1,7 @@
 package com.flockinger.groschn.blockchain.consensus;
 
+import com.flockinger.groschn.blockchain.consensus.model.Consent;
 import com.flockinger.groschn.blockchain.model.Block;
-import com.flockinger.groschn.blockchain.model.Consent;
 
 public class Agreement {
   
