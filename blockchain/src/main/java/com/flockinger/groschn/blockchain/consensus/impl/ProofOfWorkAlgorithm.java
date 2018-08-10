@@ -35,9 +35,12 @@ public class ProofOfWorkAlgorithm implements ConsensusAlgorithm {
   private MerkleRootCalculator merkleCalculator;
   
   private final Long STARTING_NONCE = 1l;
+  
+  private boolean processingConsent = false;
 
   @Override
   public Block reachConsensus(List<Transaction> transactions) {
+    processingConsent = true;
     Block lastBlock = findLastBlock();
     
     Block freshBlock = new Block();
@@ -56,7 +59,7 @@ public class ProofOfWorkAlgorithm implements ConsensusAlgorithm {
     forgeBlock(freshBlock);
     miningTimer.stop();
     consent.setMilliSecondsSpentMining(miningTimer.getTime(TimeUnit.MILLISECONDS));
-    
+    processingConsent = false;
     return freshBlock;
   }
   
@@ -80,7 +83,7 @@ public class ProofOfWorkAlgorithm implements ConsensusAlgorithm {
     String blockHash = "";
     consent.setTimestamp(new Date().getTime());
     Long nonceCount=STARTING_NONCE;
-    while(!didWorkSucceed(blockHash, consent)) {
+    while(!didWorkSucceed(blockHash, consent) && processingConsent) {
       if(nonceCount == Long.MAX_VALUE) {
         consent.setTimestamp(new Date().getTime());
         nonceCount = STARTING_NONCE;
@@ -110,5 +113,15 @@ public class ProofOfWorkAlgorithm implements ConsensusAlgorithm {
         .findTop3ByConsentTypeOrderByPositionDesc(ConsensusType.PROOF_OF_WORK)
         .stream().map(dbBlock -> mapper.map(dbBlock, Block.class))
         .findFirst().get();
+  }
+
+  @Override
+  public void stopFindingConsensus() {
+    processingConsent = false;
+  }
+
+  @Override
+  public boolean isProcessing() {
+    return processingConsent;
   }
 }

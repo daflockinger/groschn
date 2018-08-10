@@ -1,10 +1,10 @@
 package com.flockinger.groschn.blockchain.transaction;
 
 import java.util.List;
+import java.util.Optional;
 import com.flockinger.groschn.blockchain.model.Transaction;
 import com.flockinger.groschn.blockchain.model.TransactionPointCut;
 import com.flockinger.groschn.blockchain.repository.model.TransactionStatus;
-import com.google.common.base.Optional;
 
 public interface TransactionManager {
 
