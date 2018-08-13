@@ -16,6 +16,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import com.flockinger.groschn.blockchain.blockworks.impl.MultiHashGenerator;
 import com.flockinger.groschn.blockchain.config.CryptoConfig;
 import com.flockinger.groschn.blockchain.config.GeneralConfig;
+import com.flockinger.groschn.blockchain.consensus.impl.ProofOfWorkAlgorithm;
 import com.flockinger.groschn.blockchain.consensus.model.ConsensusType;
 import com.flockinger.groschn.blockchain.consensus.model.PowConsent;
 import com.flockinger.groschn.blockchain.consensus.model.ProofOfMajorityConsent;

@@ -32,6 +32,13 @@
 			<groupId>org.springframework.data</groupId>
 			<artifactId>spring-data-mongodb</artifactId>
 		</dependency>
+
+		<dependency>
+			<groupId>com.flockinger.groschn</groupId>
+			<artifactId>messaging</artifactId>
+			<version>0.0.1</version>
+		</dependency>
+
 		<dependency>
 			<groupId>org.modelmapper</groupId>
 			<artifactId>modelmapper</artifactId>

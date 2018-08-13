@@ -1,4 +1,4 @@
-package com.flockinger.groschn.blockchain.consensus;
+package com.flockinger.groschn.blockchain.consensus.impl;
 
 import static com.flockinger.groschn.blockchain.consensus.model.PowConsent.MINING_RATE_MILLISECONDS;
 
@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import com.flockinger.groschn.blockchain.blockworks.BlockMaker;
 import com.flockinger.groschn.blockchain.blockworks.HashGenerator;
+import com.flockinger.groschn.blockchain.consensus.ConsensusAlgorithm;
 import com.flockinger.groschn.blockchain.consensus.model.ConsensusType;
 import com.flockinger.groschn.blockchain.consensus.model.PowConsent;
 import com.flockinger.groschn.blockchain.model.Block;

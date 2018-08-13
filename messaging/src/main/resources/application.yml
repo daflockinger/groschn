@@ -13,3 +13,4 @@ atomix:
   partition-group:
     number-partitions: ${ATOMIX_PARTITION_GROUP_SIZE:23}
     name: ${ATOMIX_PARTITION_GROUP_NAME:data}
+
