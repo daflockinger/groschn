@@ -1,46 +1,51 @@
 package com.flockinger.groschn.blockchain.model;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 
-public class TransactionOutput {
-	
-	private BigDecimal amount;
-	
-	private String publicKey;
-	
-	private Long timestamp;
-	
-	private Long sequenceNumber;
-	
-	public BigDecimal getAmount() {
-		return amount;
-	}
+public class TransactionOutput implements Serializable {
+  /**
+  * 
+  */
+  private static final long serialVersionUID = 4422348192122659030L;
 
-	public void setAmount(BigDecimal amount) {
-		this.amount = amount;
-	}
+  private BigDecimal amount;
 
-	public String getPublicKey() {
-		return publicKey;
-	}
+  private String publicKey;
 
-	public void setPublicKey(String publicKey) {
-		this.publicKey = publicKey;
-	}
+  private Long timestamp;
 
-	public Long getTimestamp() {
-		return timestamp;
-	}
+  private Long sequenceNumber;
 
-	public void setTimestamp(Long timestamp) {
-		this.timestamp = timestamp;
-	}
+  public BigDecimal getAmount() {
+    return amount;
+  }
 
-	public Long getSequenceNumber() {
-		return sequenceNumber;
-	}
+  public void setAmount(BigDecimal amount) {
+    this.amount = amount;
+  }
 
-	public void setSequenceNumber(Long sequenceNumber) {
-		this.sequenceNumber = sequenceNumber;
-	}
+  public String getPublicKey() {
+    return publicKey;
+  }
+
+  public void setPublicKey(String publicKey) {
+    this.publicKey = publicKey;
+  }
+
+  public Long getTimestamp() {
+    return timestamp;
+  }
+
+  public void setTimestamp(Long timestamp) {
+    this.timestamp = timestamp;
+  }
+
+  public Long getSequenceNumber() {
+    return sequenceNumber;
+  }
+
+  public void setSequenceNumber(Long sequenceNumber) {
+    this.sequenceNumber = sequenceNumber;
+  }
 }

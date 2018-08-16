@@ -7,3 +7,25 @@ spring:
       host: ${MONGO_HOST:localhost}
       port: ${MONGO_PORT:27017}
       database: ${MONGO_DB_NAME:groschn}
+
+      
+blockchain:
+  punch-timer:
+    initial-delay: 20000
+    punch-rate: 15000
+    process-timeout-seconds: 45
+    
+    
+# message protocol configuration
+atomix:
+  host-node-address: ${ATOMIX_NODE_ADDR:localhost:1234}
+  discovery:
+    heartbeat-milliseconds: ${ATOMIX_HEARTBEAT_INTERVAL:1000}
+    failure-timeout-milliseconds: ${ATOMIX_MULTICAST_FAILURE_TIMEOUT:20000}
+    bootstrap-nodes:
+      - {name: 'master1', address: 'localhost:1001'}
+      - {name: 'master2', address: 'localhost:1002'}
+      - {name: 'master3', address: 'localhost:1003'}
+  partition-group:
+    number-partitions: ${ATOMIX_PARTITION_GROUP_SIZE:23}
+    name: ${ATOMIX_PARTITION_GROUP_NAME:data}

@@ -3,46 +3,50 @@ package com.flockinger.groschn.blockchain.model;
 import java.util.List;
 
 public class Transaction implements Hashable {
+  /**
+  * 
+  */
+  private static final long serialVersionUID = -3848087917482658536L;
 
-	private String id;
-	
-	/**
-	 * Timestamp when the transaction is done
-	 */
-	private Long lockTime;
+  private String id;
 
-	private List<TransactionInput> inputs;
-	private List<TransactionOutput> outputs;
+  /**
+   * Timestamp when the transaction is done
+   */
+  private Long lockTime;
 
-	public String getId() {
-		return id;
-	}
+  private List<TransactionInput> inputs;
+  private List<TransactionOutput> outputs;
 
-	public void setId(String id) {
-		this.id = id;
-	}
+  public String getId() {
+    return id;
+  }
 
-	public List<TransactionInput> getInputs() {
-		return inputs;
-	}
+  public void setId(String id) {
+    this.id = id;
+  }
 
-	public void setInputs(List<TransactionInput> inputs) {
-		this.inputs = inputs;
-	}
+  public List<TransactionInput> getInputs() {
+    return inputs;
+  }
 
-	public List<TransactionOutput> getOutputs() {
-		return outputs;
-	}
+  public void setInputs(List<TransactionInput> inputs) {
+    this.inputs = inputs;
+  }
 
-	public void setOutputs(List<TransactionOutput> outputs) {
-		this.outputs = outputs;
-	}
+  public List<TransactionOutput> getOutputs() {
+    return outputs;
+  }
 
-	public Long getLockTime() {
-		return lockTime;
-	}
+  public void setOutputs(List<TransactionOutput> outputs) {
+    this.outputs = outputs;
+  }
 
-	public void setLockTime(Long lockTime) {
-		this.lockTime = lockTime;
-	}
+  public Long getLockTime() {
+    return lockTime;
+  }
+
+  public void setLockTime(Long lockTime) {
+    this.lockTime = lockTime;
+  }
 }
