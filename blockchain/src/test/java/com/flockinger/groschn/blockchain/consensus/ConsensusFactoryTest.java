@@ -23,8 +23,8 @@ import org.springframework.test.context.junit4.SpringRunner;
 import com.flockinger.groschn.blockchain.config.CryptoConfig;
 import com.flockinger.groschn.blockchain.config.GeneralConfig;
 import com.flockinger.groschn.blockchain.consensus.impl.ConsensusFactory;
+import com.flockinger.groschn.blockchain.consensus.impl.ProofOfMajorityAlgorithm;
 import com.flockinger.groschn.blockchain.consensus.model.ConsensusType;
-import com.flockinger.groschn.blockchain.consensus.model.ProofOfMajorityConsent;
 import com.flockinger.groschn.blockchain.exception.ReachingConsentFailedException;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.repository.BlockProcessRepository;
@@ -63,7 +63,7 @@ public class ConsensusFactoryTest {
   public void testReachConsensus_withNotEnoughBlocksForPoM_shouldTryPoWConsensus() {
     
     when(statsMock.currentActiveVoterCount()).thenReturn(101l);
-    when(daoMock.count()).thenReturn(ProofOfMajorityConsent.MIN_BLOCK_COUNT_BEFORE_ACTIVATE_POM - 1);
+    when(daoMock.count()).thenReturn(ProofOfMajorityAlgorithm.MIN_BLOCK_COUNT_BEFORE_ACTIVATE_POM - 1);
     
     factory.reachConsensus(new ArrayList<>());
     
@@ -82,7 +82,7 @@ public class ConsensusFactoryTest {
   public void testReachConsensus_withNotEnoughVoters_shouldTryPoWConsensus() {
     
     when(statsMock.currentActiveVoterCount()).thenReturn(99l);
-    when(daoMock.count()).thenReturn(ProofOfMajorityConsent.MIN_BLOCK_COUNT_BEFORE_ACTIVATE_POM + 1);
+    when(daoMock.count()).thenReturn(ProofOfMajorityAlgorithm.MIN_BLOCK_COUNT_BEFORE_ACTIVATE_POM + 1);
     
     factory.reachConsensus(new ArrayList<>());
     
@@ -93,7 +93,7 @@ public class ConsensusFactoryTest {
   @Test
   public void testReachConsensus_withConditionsMetForProofOfMajority_shouldTryPoMConsensus() {
     when(statsMock.currentActiveVoterCount()).thenReturn(101l);
-    when(daoMock.count()).thenReturn(ProofOfMajorityConsent.MIN_BLOCK_COUNT_BEFORE_ACTIVATE_POM + 1);
+    when(daoMock.count()).thenReturn(ProofOfMajorityAlgorithm.MIN_BLOCK_COUNT_BEFORE_ACTIVATE_POM + 1);
     when(proOfMajorityMock.reachConsensus(any())).thenReturn(new Block());
     
     factory.reachConsensus(new ArrayList<>());
@@ -112,7 +112,7 @@ public class ConsensusFactoryTest {
   @Test
   public void testReachConsensus_withConditionsMetForProofOfMajorityButItFails_shouldTryPoMConsensusAndFallbackToPoW() {
     when(statsMock.currentActiveVoterCount()).thenReturn(101l);
-    when(daoMock.count()).thenReturn(ProofOfMajorityConsent.MIN_BLOCK_COUNT_BEFORE_ACTIVATE_POM + 1);
+    when(daoMock.count()).thenReturn(ProofOfMajorityAlgorithm.MIN_BLOCK_COUNT_BEFORE_ACTIVATE_POM + 1);
     when(proOfMajorityMock.reachConsensus(any())).thenThrow(ReachingConsentFailedException.class);
     
     factory.reachConsensus(new ArrayList<>());
@@ -148,7 +148,7 @@ public class ConsensusFactoryTest {
   @Test
   public void testLastProcessDate_whenStuffWasProcessedBefore_shouldReturnCorrect() {
     when(statsMock.currentActiveVoterCount()).thenReturn(99l);
-    when(daoMock.count()).thenReturn(ProofOfMajorityConsent.MIN_BLOCK_COUNT_BEFORE_ACTIVATE_POM + 1);
+    when(daoMock.count()).thenReturn(ProofOfMajorityAlgorithm.MIN_BLOCK_COUNT_BEFORE_ACTIVATE_POM + 1);
     
     factory.reachConsensus(new ArrayList<>());
     

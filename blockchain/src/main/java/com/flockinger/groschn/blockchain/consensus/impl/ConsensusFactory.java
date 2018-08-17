@@ -18,7 +18,7 @@ import com.flockinger.groschn.blockchain.repository.BlockchainRepository;
 import com.flockinger.groschn.blockchain.repository.model.BlockProcess;
 import com.flockinger.groschn.blockchain.repository.model.ProcessStatus;
 import com.flockinger.groschn.messaging.members.ElectionStatistics;
-import static com.flockinger.groschn.blockchain.consensus.model.ProofOfMajorityConsent.*;
+import static com.flockinger.groschn.blockchain.consensus.impl.ProofOfMajorityAlgorithm.*;
 
 @Component("ConsensusDecider")
 public class ConsensusFactory implements ConsensusAlgorithm {

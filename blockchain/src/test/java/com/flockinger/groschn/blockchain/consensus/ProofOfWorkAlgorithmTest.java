@@ -20,8 +20,7 @@ import com.flockinger.groschn.blockchain.config.CryptoConfig;
 import com.flockinger.groschn.blockchain.config.GeneralConfig;
 import com.flockinger.groschn.blockchain.consensus.impl.ProofOfWorkAlgorithm;
 import com.flockinger.groschn.blockchain.consensus.model.ConsensusType;
-import com.flockinger.groschn.blockchain.consensus.model.PowConsent;
-import com.flockinger.groschn.blockchain.consensus.model.ProofOfMajorityConsent;
+import com.flockinger.groschn.blockchain.consensus.model.Consent;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.repository.BlockchainRepository;
 import com.flockinger.groschn.blockchain.repository.model.StoredBlock;
@@ -59,8 +58,8 @@ public class ProofOfWorkAlgorithmTest {
     assertNotNull("verify block transactions are not null", forgedBlock.getTransactions());
     assertEquals("verify block transactions count", 9, forgedBlock.getTransactions().size());
     assertNotNull("verify block has a consent", forgedBlock.getConsent());
-    assertTrue("verify consent is a proof of work consent", forgedBlock.getConsent() instanceof PowConsent);
-    PowConsent consent = (PowConsent)forgedBlock.getConsent();
+    assertTrue("verify consent is a proof of work consent", forgedBlock.getConsent() instanceof Consent);
+    Consent consent = (Consent)forgedBlock.getConsent();
     assertEquals("verify consent difficulty increased", 3, consent.getDifficulty().intValue());
     assertNotNull("verify consent has time spent value", consent.getMilliSecondsSpentMining());
     assertNotNull("verify consent has nonce", consent.getNonce());
@@ -86,8 +85,8 @@ public class ProofOfWorkAlgorithmTest {
     assertNotNull("verify block transactions are not null", forgedBlock.getTransactions());
     assertEquals("verify block transactions count", 9, forgedBlock.getTransactions().size());
     assertNotNull("verify block has a consent", forgedBlock.getConsent());
-    assertTrue("verify consent is a proof of work consent", forgedBlock.getConsent() instanceof PowConsent);
-    PowConsent consent = (PowConsent)forgedBlock.getConsent();
+    assertTrue("verify consent is a proof of work consent", forgedBlock.getConsent() instanceof Consent);
+    Consent consent = (Consent)forgedBlock.getConsent();
     assertEquals("verify consent difficulty decreased", 1, consent.getDifficulty().intValue());
     assertNotNull("verify consent has time spent value", consent.getMilliSecondsSpentMining());
     assertNotNull("verify consent has nonce", consent.getNonce());
@@ -113,8 +112,8 @@ public class ProofOfWorkAlgorithmTest {
     assertNotNull("verify block transactions are not null", forgedBlock.getTransactions());
     assertEquals("verify block transactions count", 9, forgedBlock.getTransactions().size());
     assertNotNull("verify block has a consent", forgedBlock.getConsent());
-    assertTrue("verify consent is a proof of work consent", forgedBlock.getConsent() instanceof PowConsent);
-    PowConsent consent = (PowConsent)forgedBlock.getConsent();
+    assertTrue("verify consent is a proof of work consent", forgedBlock.getConsent() instanceof Consent);
+    Consent consent = (Consent)forgedBlock.getConsent();
     assertEquals("verify consent difficulty stayed the same", 2, consent.getDifficulty().intValue());
     assertNotNull("verify consent has time spent value", consent.getMilliSecondsSpentMining());
     assertNotNull("verify consent has nonce", consent.getNonce());
@@ -143,8 +142,8 @@ public class ProofOfWorkAlgorithmTest {
     assertNotNull("verify block transactions are not null", forgedBlock.getTransactions());
     assertEquals("verify block transactions count", 9, forgedBlock.getTransactions().size());
     assertNotNull("verify block has a consent", forgedBlock.getConsent());
-    assertTrue("verify consent is a proof of work consent", forgedBlock.getConsent() instanceof PowConsent);
-    PowConsent consent = (PowConsent)forgedBlock.getConsent();
+    assertTrue("verify consent is a proof of work consent", forgedBlock.getConsent() instanceof Consent);
+    Consent consent = (Consent)forgedBlock.getConsent();
     assertEquals("verify consent difficulty stayed the same", 2, consent.getDifficulty().intValue());
     assertNotNull("verify consent has time spent value", consent.getMilliSecondsSpentMining());
     assertNotNull("verify consent has nonce", consent.getNonce());
@@ -215,25 +214,29 @@ public class ProofOfWorkAlgorithmTest {
   private List<StoredBlock> fakeBlocksWithCustomDifficulty(long timeSpentMining, int difficulty) {
     StoredBlock block1 = new StoredBlock();
     block1.setPosition(100l);
-    block1.setConsent(new ProofOfMajorityConsent());
+    Consent pom1 = new Consent();
+    pom1.setType(ConsensusType.PROOF_OF_MAJORITY);
+    block1.setConsent(pom1);
     
     StoredBlock block2 = new StoredBlock();
     block2.setPosition(98l);
-    block2.setConsent(new ProofOfMajorityConsent());
+    Consent pom2 = new Consent();
+    pom2.setType(ConsensusType.PROOF_OF_MAJORITY);
+    block2.setConsent(pom1);
     
     StoredBlock block3 = new StoredBlock();
     block3.setPosition(97l);
     block3.setHash("0000cff71b99932db819f909cd56bc01c24b5ceefea2405a4d118fa18a208598c321a6e74b6ec75343318d18a253d866caa66a7a83cb7f241d295e3451115938");
-    PowConsent powConsent = new PowConsent();
-    powConsent.setDifficulty(difficulty);
-    powConsent.setMilliSecondsSpentMining(timeSpentMining);
-    powConsent.setNonce(123l);
-    powConsent.setTimestamp(2342343545l);
-    block3.setConsent(powConsent);
+    Consent Consent = new Consent();
+    Consent.setDifficulty(difficulty);
+    Consent.setMilliSecondsSpentMining(timeSpentMining);
+    Consent.setNonce(123l);
+    Consent.setTimestamp(2342343545l);
+    block3.setConsent(Consent);
     
     StoredBlock block4 = new StoredBlock();
     block4.setPosition(96l);
-    block4.setConsent(new PowConsent());
+    block4.setConsent(new Consent());
     
     return ImmutableList.of(block1, block2, block3, block4);
   }

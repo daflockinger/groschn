@@ -5,6 +5,10 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.core.JsonFactory.Feature;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.flockinger.groschn.blockchain.model.Hashable;
 import net.jpountz.lz4.LZ4Compressor;
@@ -16,23 +20,40 @@ public class CompressionUtils {
   private final LZ4Factory compressorFactory = LZ4Factory.fastestJavaInstance();
   private final LZ4Compressor compressor = compressorFactory.fastCompressor();
   private final LZ4FastDecompressor decompressor = compressorFactory.fastDecompressor();
-  private final ObjectMapper mapper = new ObjectMapper();
+  private final ObjectMapper mapper;
   private static final Logger LOGGER = LoggerFactory.getLogger(CompressionUtils.class);
 
-  public <T extends Hashable> CompressedEntity compress(T entity) {
-    byte[] originalEntity = entity.toByteArray();
-    byte[] compressedEntity = compressor.compress(originalEntity);
-    return CompressedEntity.build().
-        originalSize(originalEntity.length)
-        .entity(compressedEntity);
+  public CompressionUtils() {
+    mapper = new ObjectMapper();
+    mapper.setDefaultPropertyInclusion(Include.NON_NULL);
+    mapper.configure(DeserializationFeature.FAIL_ON_MISSING_CREATOR_PROPERTIES, false);
+    //mapper.configure(com.fasterxml.jackson.core.JsonGenerator.Feature., state)
   }
 
-  public <T extends Hashable> Optional<T> decompress(byte[] compressedEntity, int uncompressedSize, Class<T> type) {
+
+  public <T extends Hashable> CompressedEntity compress(T entity) {
+    byte[] originalEntity = toByteArray(entity);
+    byte[] compressedEntity = compressor.compress(originalEntity);
+    return CompressedEntity.build().originalSize(originalEntity.length).entity(compressedEntity);
+  }
+
+  private byte[] toByteArray(Object hashable) {
+    byte[] hashableBytes = new byte[0];
+    try {
+      hashableBytes = mapper.writeValueAsBytes(hashable);
+    } catch (JsonProcessingException e) {
+      LOGGER.error("Can't convert object to byteArray Json!", e);
+    }
+    return hashableBytes;
+  }
+
+  public <T extends Hashable> Optional<T> decompress(byte[] compressedEntity, int uncompressedSize,
+      Class<T> type) {
     byte[] uncompressedEntityBytes = decompressor.decompress(compressedEntity, uncompressedSize);
     try {
       return Optional.ofNullable(mapper.readValue(uncompressedEntityBytes, type));
     } catch (IOException e) {
-      LOGGER.error("Can't convert Json-byteArray to original Object back!", e);
+      LOGGER.error("Can't convert byteArray Json to original Object back!", e);
     }
     return Optional.empty();
   }

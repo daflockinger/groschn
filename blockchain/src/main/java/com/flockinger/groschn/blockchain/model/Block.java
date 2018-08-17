@@ -2,8 +2,9 @@ package com.flockinger.groschn.blockchain.model;
 
 import java.util.ArrayList;
 import java.util.List;
+import com.flockinger.groschn.blockchain.consensus.impl.ProofOfWorkAlgorithm;
+import com.flockinger.groschn.blockchain.consensus.model.ConsensusType;
 import com.flockinger.groschn.blockchain.consensus.model.Consent;
-import com.flockinger.groschn.blockchain.consensus.model.PowConsent;
 
 public class Block implements Hashable {
   /**
@@ -37,9 +38,10 @@ public class Block implements Hashable {
     genesisBlock.setTransactions(new ArrayList<>());
     genesisBlock.setPosition(1l);
     genesisBlock.setVersion(1);
-    PowConsent powConsent = new PowConsent();
-    powConsent.setDifficulty(PowConsent.DEFAULT_DIFFICULTY);
-    powConsent.setMilliSecondsSpentMining(PowConsent.MINING_RATE_MILLISECONDS);
+    Consent powConsent = new Consent();
+    powConsent.setType(ConsensusType.PROOF_OF_WORK);
+    powConsent.setDifficulty(ProofOfWorkAlgorithm.DEFAULT_DIFFICULTY);
+    powConsent.setMilliSecondsSpentMining(ProofOfWorkAlgorithm.MINING_RATE_MILLISECONDS);
     powConsent.setTimestamp(1533821027289l);
     powConsent.setNonce(7727l);
     genesisBlock.setConsent(powConsent);

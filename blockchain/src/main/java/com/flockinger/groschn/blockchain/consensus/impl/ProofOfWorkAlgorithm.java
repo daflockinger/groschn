@@ -1,8 +1,5 @@
 package com.flockinger.groschn.blockchain.consensus.impl;
 
-import static com.flockinger.groschn.blockchain.consensus.model.PowConsent.MINING_RATE_MILLISECONDS;
-
-
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -15,16 +12,25 @@ import com.flockinger.groschn.blockchain.blockworks.BlockMaker;
 import com.flockinger.groschn.blockchain.blockworks.HashGenerator;
 import com.flockinger.groschn.blockchain.consensus.ConsensusAlgorithm;
 import com.flockinger.groschn.blockchain.consensus.model.ConsensusType;
-import com.flockinger.groschn.blockchain.consensus.model.PowConsent;
+import com.flockinger.groschn.blockchain.consensus.model.Consent;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.model.Transaction;
 import com.flockinger.groschn.blockchain.repository.BlockchainRepository;
-import com.flockinger.groschn.blockchain.repository.model.StoredBlock;
 import com.flockinger.groschn.blockchain.util.MerkleRootCalculator;
 
 @Component(value = "POW")
 public class ProofOfWorkAlgorithm implements ConsensusAlgorithm {
 
+  /**
+   * Average time it should take to mine one block.
+   */
+  public final static Long MINING_RATE_MILLISECONDS = 30l * 1000l;
+  
+  /**
+   * Default difficulty value for the very beginning.
+   */
+  public final static Integer DEFAULT_DIFFICULTY = 4;
+  
   @Autowired
   private BlockchainRepository blockDao;
   @Autowired
@@ -51,7 +57,8 @@ public class ProofOfWorkAlgorithm implements ConsensusAlgorithm {
     freshBlock.setVersion(BlockMaker.CURRENT_BLOCK_VERSION);
     freshBlock.setTransactionMerkleRoot(merkleCalculator.calculateMerkleRootHash(transactions));
     
-    PowConsent consent = new PowConsent();
+    Consent consent = new Consent();
+    consent.setType(ConsensusType.PROOF_OF_WORK);
     consent.setDifficulty(determineNewDifficulty(lastBlock));
     freshBlock.setConsent(consent);
     
@@ -68,7 +75,7 @@ public class ProofOfWorkAlgorithm implements ConsensusAlgorithm {
   }
   
   private int determineNewDifficulty(Block lastBlock) {
-    PowConsent consent = PowConsent.class.cast(lastBlock.getConsent());
+    Consent consent = Consent.class.cast(lastBlock.getConsent());
     int difficulty = consent.getDifficulty();
     if(consent.getMilliSecondsSpentMining() > MINING_RATE_MILLISECONDS) {
       difficulty--;
@@ -79,7 +86,7 @@ public class ProofOfWorkAlgorithm implements ConsensusAlgorithm {
   }
   
   private void forgeBlock(Block freshBlock) {
-    PowConsent consent = PowConsent.class.cast(freshBlock.getConsent());
+    Consent consent = Consent.class.cast(freshBlock.getConsent());
     String blockHash = "";
     consent.setTimestamp(new Date().getTime());
     Long nonceCount=STARTING_NONCE;
@@ -104,7 +111,7 @@ public class ProofOfWorkAlgorithm implements ConsensusAlgorithm {
    * @param consent
    * @return
    */
-  private boolean didWorkSucceed(String blockHash, PowConsent consent) {
+  private boolean didWorkSucceed(String blockHash, Consent consent) {
     return StringUtils.startsWith(blockHash, StringUtils.repeat("0", consent.getDifficulty()));
   }
   
