@@ -1,6 +1,13 @@
 package com.flockinger.groschn.blockchain.util;
 
-public class CompressedEntity {
+import java.io.Serializable;
+
+public class CompressedEntity implements Serializable {
+  /**
+   * 
+   */
+  private static final long serialVersionUID = 8539218059879786960L;
+  
   private int originalSize;
   private byte[] entity;
   

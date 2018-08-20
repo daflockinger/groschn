@@ -8,16 +8,11 @@ import org.awaitility.Awaitility;
 import org.awaitility.Duration;
 import org.junit.After;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.powermock.reflect.Whitebox;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringRunner;
+import com.flockinger.groschn.blockchain.BaseDbTest;
 import com.flockinger.groschn.blockchain.blockworks.impl.MultiHashGenerator;
-import com.flockinger.groschn.blockchain.config.CryptoConfig;
-import com.flockinger.groschn.blockchain.config.GeneralConfig;
 import com.flockinger.groschn.blockchain.consensus.impl.ProofOfWorkAlgorithm;
 import com.flockinger.groschn.blockchain.consensus.model.ConsensusType;
 import com.flockinger.groschn.blockchain.consensus.model.Consent;
@@ -28,12 +23,10 @@ import com.flockinger.groschn.blockchain.util.MerkleRootCalculator;
 import com.flockinger.groschn.blockchain.util.MerkleRootCalculatorTest;
 import com.google.common.collect.ImmutableList;
 
-@RunWith(SpringRunner.class)
-@DataMongoTest
+
 @ContextConfiguration(classes = { BlockchainRepository.class, ProofOfWorkAlgorithm.class, 
     MultiHashGenerator.class, MerkleRootCalculator.class})
-@Import({GeneralConfig.class, CryptoConfig.class})
-public class ProofOfWorkAlgorithmTest {
+public class ProofOfWorkAlgorithmTest extends BaseDbTest {
   
   @Autowired
   private BlockchainRepository dao;
@@ -171,35 +164,7 @@ public class ProofOfWorkAlgorithmTest {
     return !powAlgo.isProcessing();
   }
   
-  /*
-   TODO add more tests and so
-   @Test
-  public void test_with_should() {
-    
-  }
-  FIXME
-  NOTES: 
-   POW workflow: 
-   - always mine with latest transactions for new blocks
-   - when mined post the new block to all nodes
-   
-   POM workflow:
-   - wheneger a new block is added start new elections
-   - check if youre the node who won the election
-     - if yes then create a block and send it for requesting signatures from the other voters
-     - if no then do nothing
-     - the voters get a request to check and sign the created block
-       - if its fine then sign it and sent it back
-     - whenever the winner gets enough signatures from his block requested back, 
-       then he should package them into the block and send it out to all nodes
-     - if the election fails, fall back to POW
-     
-     or to start equaly:
-     - start mining on startup, check every 30 seconds if the process 
-       is still ongoing, if it lasts too long, just cancel it and restart
-       if it's not running, then start a new one.
-   
-   * */
+  
   
   
   @After
@@ -227,16 +192,19 @@ public class ProofOfWorkAlgorithmTest {
     StoredBlock block3 = new StoredBlock();
     block3.setPosition(97l);
     block3.setHash("0000cff71b99932db819f909cd56bc01c24b5ceefea2405a4d118fa18a208598c321a6e74b6ec75343318d18a253d866caa66a7a83cb7f241d295e3451115938");
-    Consent Consent = new Consent();
-    Consent.setDifficulty(difficulty);
-    Consent.setMilliSecondsSpentMining(timeSpentMining);
-    Consent.setNonce(123l);
-    Consent.setTimestamp(2342343545l);
-    block3.setConsent(Consent);
+    Consent consent = new Consent();
+    consent.setDifficulty(difficulty);
+    consent.setMilliSecondsSpentMining(timeSpentMining);
+    consent.setNonce(123l);
+    consent.setTimestamp(2342343545l);
+    consent.setType(ConsensusType.PROOF_OF_WORK);
+    block3.setConsent(consent);
     
     StoredBlock block4 = new StoredBlock();
     block4.setPosition(96l);
-    block4.setConsent(new Consent());
+    Consent consent2 = new Consent();
+    consent2.setType(ConsensusType.PROOF_OF_WORK);
+    block4.setConsent(consent2);
     
     return ImmutableList.of(block1, block2, block3, block4);
   }

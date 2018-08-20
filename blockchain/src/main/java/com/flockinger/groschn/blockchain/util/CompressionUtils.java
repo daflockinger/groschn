@@ -27,7 +27,6 @@ public class CompressionUtils {
     mapper = new ObjectMapper();
     mapper.setDefaultPropertyInclusion(Include.NON_NULL);
     mapper.configure(DeserializationFeature.FAIL_ON_MISSING_CREATOR_PROPERTIES, false);
-    //mapper.configure(com.fasterxml.jackson.core.JsonGenerator.Feature., state)
   }
 
 

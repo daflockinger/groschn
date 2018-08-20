@@ -28,6 +28,8 @@ public class StoredBlock {
   @NotNull
   private Long timestamp;
   
+  private String transactionMerkleRoot;
+  
   private Integer version;
   
   private List<StoredTransaction> transactions;
@@ -96,5 +98,13 @@ public class StoredBlock {
 
   public void setVersion(Integer version) {
     this.version = version;
+  }
+
+  public String getTransactionMerkleRoot() {
+    return transactionMerkleRoot;
+  }
+
+  public void setTransactionMerkleRoot(String transactionMerkleRoot) {
+    this.transactionMerkleRoot = transactionMerkleRoot;
   }
 }
