@@ -13,11 +13,13 @@ import org.springframework.test.context.junit4.SpringRunner;
 import com.flockinger.groschn.blockchain.blockworks.impl.BlockMakerImpl;
 import com.flockinger.groschn.blockchain.consensus.impl.ConsensusFactory;
 import com.flockinger.groschn.blockchain.model.Block;
+import com.flockinger.groschn.blockchain.model.Transaction;
 import com.flockinger.groschn.blockchain.transaction.TransactionManager;
 import com.flockinger.groschn.blockchain.util.CompressedEntity;
 import com.flockinger.groschn.blockchain.util.CompressionUtils;
 import com.flockinger.groschn.messaging.model.Message;
 import com.flockinger.groschn.messaging.outbound.Broadcaster;
+import com.google.common.collect.ImmutableList;
 
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes = {BlockMakerImpl.class})
@@ -40,7 +42,7 @@ public class BlockMakerTest {
   @Test
   public void testProduceBlock_with_should() {
     when(consensusFactory.reachConsensus(anyList())).thenReturn(new Block());
-    when(transactionManager.fetchTransactionsFromPool(anyLong())).thenReturn(new ArrayList<>());
+    when(transactionManager.fetchTransactionsFromPool(anyLong())).thenReturn(ImmutableList.of(new Transaction()));
     when(compressor.compress(any())).thenReturn(CompressedEntity.build());
     
     maker.produceBlock();
@@ -48,9 +50,6 @@ public class BlockMakerTest {
     verify(transactionManager).fetchTransactionsFromPool(anyLong());
     verify(consensusFactory).reachConsensus(anyList());
     verify(compressor).compress(any());
-    
-    ArgumentCaptor<Message<CompressedEntity>> messageCaptor = ArgumentCaptor.forClass(Message.class);
-    verify(broadcaster).broadcast(messageCaptor.capture());
-    
+    verify(broadcaster).broadcast(any());
   }
 }
