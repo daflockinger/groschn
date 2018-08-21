@@ -12,6 +12,16 @@ public class StoredTransaction {
   private List<StoredTransactionInput> inputs;
   private List<StoredTransactionOutput> outputs;
   
+  private String transactionHash;
+
+  public String getTransactionHash() {
+    return transactionHash;
+  }
+
+  public void setTransactionHash(String transactionHash) {
+    this.transactionHash = transactionHash;
+  }
+  
   public String getTransactionId() {
     return transactionId;
   }

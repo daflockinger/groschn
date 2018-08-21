@@ -17,6 +17,16 @@ public class Transaction implements Hashable {
 
   private List<TransactionInput> inputs;
   private List<TransactionOutput> outputs;
+  
+  private String transactionHash;
+
+  public String getTransactionHash() {
+    return transactionHash;
+  }
+
+  public void setTransactionHash(String transactionHash) {
+    this.transactionHash = transactionHash;
+  }
 
   public String getId() {
     return id;

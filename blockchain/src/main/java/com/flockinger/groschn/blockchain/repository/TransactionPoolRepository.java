@@ -6,5 +6,5 @@ import com.flockinger.groschn.blockchain.repository.model.StoredPoolTransaction;
 import com.flockinger.groschn.blockchain.repository.model.TransactionStatus;
 
 public interface TransactionPoolRepository extends MongoRepository<StoredPoolTransaction, String>{
-  List<StoredPoolTransaction> findByStatus(TransactionStatus status);
+  Iterable<StoredPoolTransaction> findByStatusOrderByCreatedAtDesc(TransactionStatus status);
 }

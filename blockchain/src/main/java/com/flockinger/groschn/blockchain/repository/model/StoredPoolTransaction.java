@@ -15,11 +15,20 @@ public class StoredPoolTransaction {
   
   private Date lockTime;
   
+  private Date createdAt;
+  
   private TransactionStatus status;
 
   private List<StoredTransactionInput> inputs;
   private List<StoredTransactionOutput> outputs;
   
+  
+  public Date getCreatedAt() {
+    return createdAt;
+  }
+  public void setCreatedAt(Date createdAt) {
+    this.createdAt = createdAt;
+  }
   public String getId() {
     return id;
   }

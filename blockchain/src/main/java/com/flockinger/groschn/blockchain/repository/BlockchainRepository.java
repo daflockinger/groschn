@@ -14,4 +14,6 @@ public interface BlockchainRepository extends MongoRepository<StoredBlock, Strin
   List<StoredBlock> findTop3ByConsentTypeOrderByPositionDesc(ConsensusType type);
   
   Optional<StoredBlock> findFirstByOrderByPositionDesc();
+  
+  Optional<StoredBlock> findByTransactionsTransactionHash(String transactionHash);
 }
