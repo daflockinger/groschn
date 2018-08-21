@@ -61,4 +61,8 @@ public class BlockMakerImpl implements BlockMaker {
     message.setPayload(block);
     broadcaster.broadcast(message);
   }
+  
+  private void addRewardTransaction(List<Transaction> transactions) {
+    //TODO implement
+  }
 }

@@ -106,7 +106,7 @@ public class EcdsaSecpSigner implements Signer {
 
   public String sign(byte[] transactionHash, KeyPair keypair) {
     String signature;
-    Signature signer = getSignature();
+    var signer = getSignature();
     try {
       signer.initSign(keypair.getPrivate());
       signer.update(transactionHash);
@@ -118,8 +118,8 @@ public class EcdsaSecpSigner implements Signer {
   }
 
   public boolean isSignatureValid(byte[] transactionHash, String publicKey, String signature) {
-    Boolean isSignValid = false;
-    Signature verifier = getSignature();
+    var isSignValid = false;
+    var verifier = getSignature();
     try {
       verifier.initVerify(getPublicKeyFromHexDecodedText(publicKey));
       verifier.update(transactionHash);
@@ -135,9 +135,9 @@ public class EcdsaSecpSigner implements Signer {
   private PublicKey getPublicKeyFromHexDecodedText(String publicKeyHexDecoded) {
     PublicKey key = null;
     try {
-      ECPublicKeyParameters pubKeyParams = (ECPublicKeyParameters) PublicKeyFactory
+      var pubKeyParams = (ECPublicKeyParameters) PublicKeyFactory
           .createKey(getBytesFromHexEncodedString(publicKeyHexDecoded));
-      ECParameterSpec parameterSpec = new ECParameterSpec(pubKeyParams.getParameters().getCurve(),
+      var parameterSpec = new ECParameterSpec(pubKeyParams.getParameters().getCurve(),
           pubKeyParams.getParameters().getG(), pubKeyParams.getParameters().getN());
       key = keyFactory.generatePublic(new ECPublicKeySpec(pubKeyParams.getQ(), parameterSpec));
     } catch (InvalidKeySpecException e) {
@@ -150,7 +150,7 @@ public class EcdsaSecpSigner implements Signer {
   }
 
   private byte[] getBytesFromHexEncodedString(String hexEncodedText) {
-    byte[] decodedTextBytes = new byte[0];
+    var decodedTextBytes = new byte[0];
     try {
       decodedTextBytes = Hex.decodeHex(hexEncodedText.toCharArray());
     } catch (DecoderException e) {
