@@ -73,6 +73,9 @@ public class BlockMakerImpl implements BlockMaker {
     broadcaster.broadcast(message);
   }
 
+  // FIXME verify that on transaction outputs the pubKey is unique
+  // So no pubkey can have more than 1 output not even the miner, check that!!!
+  // e.g. the miner also mined his own transaction
   private Transaction createRewardTransaction(List<Transaction> transactions) {
     BigDecimal totalChange = transactions.stream().map(this::countTransactionSave)
         .reduce(BigDecimal::add).orElse(BigDecimal.ZERO);

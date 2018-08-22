@@ -4,12 +4,16 @@ import java.util.List;
 import javax.validation.constraints.NotNull;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import com.flockinger.groschn.blockchain.consensus.model.Consent;
 
 @Document(collection="blockchain")
-@CompoundIndex(name="idx_transaction_hash", def= "{'transactions.transactionHash': 1}")
+@CompoundIndexes({
+  @CompoundIndex(name="idx_transaction_hash", def= "{'transactions.transactionHash': 1}", background=true),
+  @CompoundIndex(name="idx_tx_output_addr_pos_sorted", def= "{'transactions.outputs.publicKey': 1, 'position': -1}", background=true),
+})
 public class StoredBlock {
 
   @Id

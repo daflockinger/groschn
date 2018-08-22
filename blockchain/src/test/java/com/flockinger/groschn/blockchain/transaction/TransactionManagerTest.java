@@ -20,7 +20,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ContextConfiguration;
 import com.flockinger.groschn.blockchain.BaseDbTest;
+import com.flockinger.groschn.blockchain.blockworks.HashGenerator;
+import com.flockinger.groschn.blockchain.dto.TransactionDto;
+import com.flockinger.groschn.blockchain.dto.TransactionStatementDto;
+import com.flockinger.groschn.blockchain.exception.CantConfigureSigningAlgorithmException;
+import com.flockinger.groschn.blockchain.exception.HashingException;
+import com.flockinger.groschn.blockchain.exception.validation.transaction.TransactionInputMissingOutputBalanceException;
 import com.flockinger.groschn.blockchain.model.Transaction;
+import com.flockinger.groschn.blockchain.model.TransactionInput;
 import com.flockinger.groschn.blockchain.model.TransactionOutput;
 import com.flockinger.groschn.blockchain.model.TransactionPointCut;
 import com.flockinger.groschn.blockchain.repository.BlockchainRepository;
@@ -36,6 +43,7 @@ import com.flockinger.groschn.blockchain.transaction.impl.TransactionManagerImpl
 import com.flockinger.groschn.blockchain.transaction.impl.TransactionPoolListener;
 import com.flockinger.groschn.blockchain.util.CompressionUtils;
 import com.flockinger.groschn.blockchain.util.sign.Signer;
+import com.flockinger.groschn.blockchain.wallet.WalletService;
 import com.flockinger.groschn.messaging.distribution.DistributedCollectionBuilder;
 import com.google.common.collect.ImmutableList;
 
@@ -52,6 +60,10 @@ public class TransactionManagerTest extends BaseDbTest {
   private TransactionPoolListener transactionListener;
   @MockBean(name="ECDSA_Signer")
   private Signer signer;
+  @MockBean
+  private WalletService walletMock;
+  @MockBean
+  private HashGenerator hasher;
   
   @Autowired
   private BlockchainRepository blockDao;
@@ -182,6 +194,124 @@ public class TransactionManagerTest extends BaseDbTest {
     assertTrue("verify returned transactions are empty", transactions.isEmpty());
   }
   
+  
+  @Test
+  public void testCreateSignedTransaction_withValidRequest_shouldCreateSignedTransactionCorrectly() {
+    // mock
+    when(hasher.generateHash(any())).thenReturn("some hash");
+    when(signer.sign(any(), any())).thenReturn("x0x0x0");
+    StoredTransactionOutput requestOutput = new StoredTransactionOutput();
+    requestOutput.setAmount(new BigDecimal("2000.2"));
+    requestOutput.setPublicKey("masterkey");
+    requestOutput.setSequenceNumber(2l);
+    requestOutput.setTimestamp(2000l);
+    blockDao.saveAll(fakeBlocks(requestOutput, "bestHashEver"));
+    // given
+    TransactionDto request = new TransactionDto();
+    TransactionStatementDto requestInput  = new TransactionStatementDto();
+    requestInput.setAmount(999d);
+    requestInput.setPublicKey("masterkey");
+    requestInput.setSequenceNumber(1l);
+    requestInput.setTimestamp(3000l);
+    request.setInputs(ImmutableList.of(requestInput));
+    request.setOutputs(ImmutableList.of(createStatement(1),createStatement(2),createStatement(3)));
+    // execute
+    Transaction signedTransaction = manager.createSignedTransaction(request);
+    // assert
+    assertNotNull("verify signed transaction is not null", signedTransaction);
+    assertNotNull("verify signed transaction has an ID", signedTransaction.getId());
+    assertEquals("verify correct transaction hash", "some hash",
+        signedTransaction.getTransactionHash());
+    assertEquals("verify transaction has one input", 1, signedTransaction.getInputs().size());
+    TransactionInput input = signedTransaction.getInputs().get(0);
+    assertTrue("verify correct transaction input amount", input.getAmount()
+        .compareTo(new BigDecimal(requestInput.getAmount())) == 0);
+    assertEquals("verify correct transaction input pub key", requestInput.getPublicKey(), 
+        input.getPublicKey());
+    assertEquals("verify correct transaction input seq number", requestInput.getSequenceNumber(), 
+        input.getSequenceNumber());
+    assertNotNull("verify transaction input has timestamp", input.getTimestamp());
+    assertEquals("verify correct transaction input signature", "x0x0x0", input.getSignature());
+    assertEquals("verify transaction has correct number of outputs", 3, signedTransaction.getOutputs().size());
+    TransactionOutput output = signedTransaction.getOutputs().get(0);
+    assertNotNull("verify transaction output has amount", output.getAmount());
+    assertNotNull("verify transaction output has pub key", output.getPublicKey());
+    assertNotNull("verify transaction output has seq number", output.getSequenceNumber());
+    assertNotNull("verify transaction output has timestamp", output.getTimestamp());
+  }
+  
+  private TransactionStatementDto createStatement(long sequenceNum) {
+    TransactionStatementDto statement = new TransactionStatementDto();
+    statement.setAmount(RandomUtils.nextDouble(1, 99));
+    statement.setPublicKey(UUID.randomUUID().toString());
+    statement.setSequenceNumber(sequenceNum);
+    statement.setTimestamp(new Date().getTime());
+    return statement;
+  }
+  
+  @Test(expected=TransactionInputMissingOutputBalanceException.class)
+  public void testCreateSignedTransaction_withNoOutputBalanceFound_shouldThrowException() {   
+    TransactionDto request = new TransactionDto();
+    TransactionStatementDto input  = new TransactionStatementDto();
+    input.setAmount(999d);
+    input.setPublicKey("stolenKey");
+    input.setSequenceNumber(1l);
+    input.setTimestamp(3000l);
+    request.setInputs(ImmutableList.of(input));
+    request.setOutputs(ImmutableList.of(createStatement(1),createStatement(2),createStatement(3)));
+    
+    manager.createSignedTransaction(request);
+  }
+  
+  @Test(expected = CantConfigureSigningAlgorithmException.class)
+  public void testCreateSignedTransaction_withSigningFails_shouldThrowException() {
+    when(signer.sign(any(), any())).thenThrow(CantConfigureSigningAlgorithmException.class);
+    // mock
+    when(hasher.generateHash(any())).thenReturn("some hash");
+    when(signer.sign(any(), any())).thenReturn("x0x0x0");
+    StoredTransactionOutput requestOutput = new StoredTransactionOutput();
+    requestOutput.setAmount(new BigDecimal("2000.2"));
+    requestOutput.setPublicKey("masterkey");
+    requestOutput.setSequenceNumber(2l);
+    requestOutput.setTimestamp(2000l);
+    blockDao.saveAll(fakeBlocks(requestOutput, "bestHashEver"));
+    
+    TransactionDto request = new TransactionDto();
+    TransactionStatementDto input  = new TransactionStatementDto();
+    input.setAmount(999d);
+    input.setPublicKey("stolenKey");
+    input.setSequenceNumber(1l);
+    input.setTimestamp(3000l);
+    request.setInputs(ImmutableList.of(input));
+    request.setOutputs(ImmutableList.of(createStatement(1),createStatement(2),createStatement(3)));
+    
+    manager.createSignedTransaction(request);
+  }
+  
+  @Test(expected = HashingException.class)
+  public void testCreateSignedTransaction_withHashingFails_shouldThrowException() {
+    when(hasher.generateHash(any())).thenThrow(HashingException.class);
+    // mock
+    when(hasher.generateHash(any())).thenReturn("some hash");
+    when(signer.sign(any(), any())).thenReturn("x0x0x0");
+    StoredTransactionOutput requestOutput = new StoredTransactionOutput();
+    requestOutput.setAmount(new BigDecimal("2000.2"));
+    requestOutput.setPublicKey("masterkey");
+    requestOutput.setSequenceNumber(2l);
+    requestOutput.setTimestamp(2000l);
+    blockDao.saveAll(fakeBlocks(requestOutput, "bestHashEver"));
+    
+    TransactionDto request = new TransactionDto();
+    TransactionStatementDto input  = new TransactionStatementDto();
+    input.setAmount(999d);
+    input.setPublicKey("stolenKey");
+    input.setSequenceNumber(1l);
+    input.setTimestamp(3000l);
+    request.setInputs(ImmutableList.of(input));
+    request.setOutputs(ImmutableList.of(createStatement(1),createStatement(2),createStatement(3)));
+    
+    manager.createSignedTransaction(request);
+  }
   
   /*
   TODO write tests

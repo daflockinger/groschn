@@ -6,14 +6,18 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 import javax.annotation.PostConstruct;
 import org.apache.commons.lang3.StringUtils;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
+import com.flockinger.groschn.blockchain.blockworks.HashGenerator;
 import com.flockinger.groschn.blockchain.dto.TransactionDto;
+import com.flockinger.groschn.blockchain.exception.validation.transaction.TransactionInputMissingOutputBalanceException;
 import com.flockinger.groschn.blockchain.model.Transaction;
+import com.flockinger.groschn.blockchain.model.TransactionInput;
 import com.flockinger.groschn.blockchain.model.TransactionOutput;
 import com.flockinger.groschn.blockchain.model.TransactionPointCut;
 import com.flockinger.groschn.blockchain.repository.BlockchainRepository;
@@ -25,7 +29,9 @@ import com.flockinger.groschn.blockchain.repository.model.StoredTransactionOutpu
 import com.flockinger.groschn.blockchain.repository.model.TransactionStatus;
 import com.flockinger.groschn.blockchain.transaction.TransactionManager;
 import com.flockinger.groschn.blockchain.util.CompressionUtils;
+import com.flockinger.groschn.blockchain.util.HashUtils;
 import com.flockinger.groschn.blockchain.util.sign.Signer;
+import com.flockinger.groschn.blockchain.wallet.WalletService;
 import com.flockinger.groschn.messaging.distribution.DistributedCollectionBuilder;
 import com.flockinger.groschn.messaging.distribution.DistributedExternalSet;
 
@@ -47,6 +53,10 @@ public class TransactionManagerImpl implements TransactionManager {
   private Signer signer;
   @Autowired
   private CompressionUtils compressor;
+  @Autowired
+  private WalletService wallet;
+  @Autowired
+  private HashGenerator hashGenerator;
   
   private DistributedExternalSet<Transaction> externalTransactions;
   
@@ -58,13 +68,13 @@ public class TransactionManagerImpl implements TransactionManager {
 
   @Override
   public List<Transaction> fetchTransactionsFromPool(long maxByteSize) {
-    Iterator<StoredPoolTransaction> transactionIterator = 
+    var transactionIterator = 
         transactionDao.findByStatusOrderByCreatedAtDesc(TransactionStatus.RAW).iterator();
-    List<Transaction> transactions = new ArrayList<>();
-    long compressedTransactionsSize = 0;
+    var transactions = new ArrayList<Transaction>();
+    var compressedTransactionsSize = 0l;
     
     while(compressedTransactionsSize < maxByteSize && transactionIterator.hasNext()) {
-      Transaction freshTransaction = mapToRegularTransaction(transactionIterator.next());
+      var freshTransaction = mapToRegularTransaction(transactionIterator.next());
       compressedTransactionsSize += getSize(freshTransaction);
       if(compressedTransactionsSize < maxByteSize) {
         transactions.add(freshTransaction);
@@ -84,8 +94,8 @@ public class TransactionManagerImpl implements TransactionManager {
 
   @Override
   public Optional<TransactionOutput> findTransactionFromPointCut(TransactionPointCut pointCut) {
-    String transactionHash = pointCut.getTransactionHash();
-    Optional<StoredBlock> storedBlock = blockDao.findByTransactionsTransactionHash(transactionHash);
+    var transactionHash = pointCut.getTransactionHash();
+    var storedBlock = blockDao.findByTransactionsTransactionHash(transactionHash);
     Optional<TransactionOutput> foundTransaction = Optional.empty();
 
     if (storedBlock.isPresent()) {
@@ -108,7 +118,46 @@ public class TransactionManagerImpl implements TransactionManager {
 
   @Override
   public Transaction createSignedTransaction(TransactionDto transactionSigningRequest) {
-    // TODO create that stuff
-    return null;
+    var transaction = mapper.map(transactionSigningRequest, Transaction.class);
+    for(TransactionInput input: transaction.getInputs()) {
+      signTransactionInput(input, transaction.getOutputs());
+    }
+    transaction.setTransactionHash(hashGenerator.generateHash(transaction));
+    //TODO maybe find better way to generate entity ID's
+    transaction.setId(UUID.randomUUID().toString());
+    return transaction;
+  }
+  
+  private void signTransactionInput(TransactionInput input, List<TransactionOutput> outputs) {
+     input.setPreviousOutputTransaction(createPointcut(input.getPublicKey()));
+     String signature = signer.sign(HashUtils.toByteArray(outputs), wallet.getPrivateKey());
+     input.setSignature(signature);
+  }
+  
+  private TransactionPointCut createPointcut(String publicKey) {
+    var latestTransaction = findLatestWithOutputFrom(publicKey);
+    var pointcut = new TransactionPointCut();
+    pointcut.setTransactionHash(latestTransaction.getTransactionHash());
+    
+    long outputSequenceNumber = latestTransaction.getOutputs().stream().filter(output -> 
+    StringUtils.equals(publicKey,output.getPublicKey()))
+        .map(StoredTransactionOutput::getSequenceNumber).findFirst().get();
+    pointcut.setSequenceNumber(outputSequenceNumber);
+    return pointcut;
+  }
+  
+  private StoredTransaction findLatestWithOutputFrom(String publicKey) {
+    var block = blockDao.findFirstByTransactionsOutputsPublicKeyOrderByPositionDesc(publicKey);
+    Optional<StoredTransaction> lastTransaction = block.stream()
+      .map(StoredBlock::getTransactions)
+      .flatMap(Collection::stream)
+      .filter(transaction -> transaction.getOutputs().stream()
+          .anyMatch(output -> StringUtils.equals(publicKey,output.getPublicKey())))
+      .findFirst();
+    if(!lastTransaction.isPresent()) {
+      throw new TransactionInputMissingOutputBalanceException("Public key "
+          + "has no balance (output statement) on the blockchain with with address: " + publicKey);
+    }
+    return lastTransaction.get();
   }
 }

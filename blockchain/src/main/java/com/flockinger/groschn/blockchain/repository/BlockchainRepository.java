@@ -16,4 +16,6 @@ public interface BlockchainRepository extends MongoRepository<StoredBlock, Strin
   Optional<StoredBlock> findFirstByOrderByPositionDesc();
   
   Optional<StoredBlock> findByTransactionsTransactionHash(String transactionHash);
+  
+  Optional<StoredBlock> findFirstByTransactionsOutputsPublicKeyOrderByPositionDesc(String publicKey);
 }
