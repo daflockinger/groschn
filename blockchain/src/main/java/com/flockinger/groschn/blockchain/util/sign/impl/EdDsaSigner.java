@@ -1,6 +1,7 @@
 package com.flockinger.groschn.blockchain.util.sign.impl;
 
 import java.security.KeyPair;
+import java.security.PrivateKey;
 import org.springframework.stereotype.Component;
 import com.flockinger.groschn.blockchain.util.sign.Signer;
 
@@ -14,7 +15,7 @@ public class EdDsaSigner implements Signer {
   }
   
   @Override
-  public String sign(byte[] transactionHash, KeyPair keypair) {
+  public String sign(byte[] transactionHash, PrivateKey privateKey) {
     // TODO Auto-generated method stub
     return null;
   }

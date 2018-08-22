@@ -8,6 +8,7 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.security.PrivateKey;
 import java.security.Provider;
 import java.security.PublicKey;
 import java.security.SecureRandom;
@@ -104,11 +105,11 @@ public class EcdsaSecpSigner implements Signer {
     return new ECGenParameterSpec(EC_GEN_PARAMETER_SPEC);
   }
 
-  public String sign(byte[] transactionHash, KeyPair keypair) {
+  public String sign(byte[] transactionHash, PrivateKey privateKey) {
     String signature;
     var signer = getSignature();
     try {
-      signer.initSign(keypair.getPrivate());
+      signer.initSign(privateKey);
       signer.update(transactionHash);
       signature = Hex.encodeHexString(signer.sign());
     } catch (InvalidKeyException | SignatureException e) {

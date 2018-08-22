@@ -110,4 +110,13 @@ public class BlockStorageServiceTest extends BaseDbTest {
     service.saveInBlockchain(freshBlock);
   }
   
+  @Test
+  public void testgetLatestBlockPosition_shouldReturnCorrect() {
+    when(validator.validate(any())).thenReturn(TestDataFactory.fakeAssessment(true));
+    service.saveInBlockchain(TestDataFactory.getFakeBlock());
+    
+    Long lastPosition = service.getLatestBlockPosition();
+    assertNotNull("verify latest block position is not null", lastPosition);
+    assertEquals("verify latest block position is correct", 97l, lastPosition.longValue());
+  }
 }

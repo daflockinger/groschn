@@ -18,9 +18,11 @@ import com.flockinger.groschn.blockchain.exception.ReachingConsentFailedExceptio
 import com.flockinger.groschn.blockchain.exception.validation.BlockValidationException;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.model.Transaction;
+import com.flockinger.groschn.blockchain.transaction.Bookkeeper;
 import com.flockinger.groschn.blockchain.transaction.TransactionManager;
 import com.flockinger.groschn.blockchain.util.CompressedEntity;
 import com.flockinger.groschn.blockchain.util.CompressionUtils;
+import com.flockinger.groschn.blockchain.wallet.WalletService;
 import com.flockinger.groschn.messaging.outbound.Broadcaster;
 import com.google.common.collect.ImmutableList;
 
@@ -38,6 +40,11 @@ public class BlockMakerTest {
   private CompressionUtils compressor;
   @MockBean
   private Broadcaster<CompressedEntity> broadcaster;
+  
+  @MockBean
+  private Bookkeeper bookkeeper;
+  @MockBean
+  private WalletService wallet;
   
   @Autowired
   private BlockMaker maker;

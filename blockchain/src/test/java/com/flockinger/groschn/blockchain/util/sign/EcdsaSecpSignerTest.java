@@ -28,7 +28,6 @@ public class EcdsaSecpSignerTest {
   @Autowired
   @Qualifier("ECDSA_Signer")
   private Signer signer;
-
   
   private KeyPair pair;
   
@@ -54,7 +53,7 @@ public class EcdsaSecpSignerTest {
   @Test
   public void testSign_withAllSet_shouldSignCorrectly() throws Exception {
     final String someHash = "CCADD99B16CD3D200C22D6DB45D8B6630EF3D936767127347EC8A76AB992C2EA";
-    String signature = signer.sign(Hex.decodeHex(someHash), pair);
+    String signature = signer.sign(Hex.decodeHex(someHash), pair.getPrivate());
     
     Signature signaturer = Signature.getInstance(EcdsaSecpSigner.SIGNATURE_ALGORITHM, EcdsaSecpSigner.PROVIDER); 
     signaturer.initVerify(pair.getPublic());
@@ -64,17 +63,17 @@ public class EcdsaSecpSignerTest {
   
   @Test
   public void testSign_withEmptyByteArray_shouldSignCorrectly() throws DecoderException {
-    String signature = signer.sign(new byte[0], pair);
+    String signature = signer.sign(new byte[0], pair.getPrivate());
     assertNotNull("verify that even signing nothing returns something", signature);
   }
   
   @Test(expected=CantConfigureSigningAlgorithmException.class)
   public void testSign_withInvalidKeyPair_shouldThrowException() throws DecoderException {
-    String signature = signer.sign(new byte[0], new KeyPair(signer.generateKeyPair().getPublic(), new PrivateKey() {
+    String signature = signer.sign(new byte[0],  new PrivateKey() {
       public String getFormat() {return null;}
       public byte[] getEncoded() {return new byte[0];}
       public String getAlgorithm() {return null;}
-    }));
+    });
     assertNotNull("verify that even signing nothing returns something", signature);
   }
   

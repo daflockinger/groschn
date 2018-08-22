@@ -2,6 +2,7 @@ package com.flockinger.groschn.blockchain.transaction;
 
 import java.util.List;
 import java.util.Optional;
+import com.flockinger.groschn.blockchain.dto.TransactionDto;
 import com.flockinger.groschn.blockchain.model.Transaction;
 import com.flockinger.groschn.blockchain.model.TransactionOutput;
 import com.flockinger.groschn.blockchain.model.TransactionPointCut;
@@ -18,4 +19,7 @@ public interface TransactionManager {
    * @return
    */
   Optional<TransactionOutput> findTransactionFromPointCut(TransactionPointCut pointCut);
+  
+  
+  Transaction createSignedTransaction(TransactionDto transactionSigningRequest); 
 }

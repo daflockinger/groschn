@@ -1,8 +1,14 @@
 package com.flockinger.groschn.blockchain.transaction.impl;
 
 import java.math.BigDecimal;
+import java.util.Objects;
+import static org.apache.commons.collections4.ListUtils.emptyIfNull;
 import org.springframework.stereotype.Component;
+import com.flockinger.groschn.blockchain.exception.validation.transaction.CheapskateException;
+import com.flockinger.groschn.blockchain.exception.validation.transaction.NegativeTransactionBalanceException;
 import com.flockinger.groschn.blockchain.model.Transaction;
+import com.flockinger.groschn.blockchain.model.TransactionInput;
+import com.flockinger.groschn.blockchain.model.TransactionOutput;
 import com.flockinger.groschn.blockchain.transaction.Bookkeeper;
 
 @Component
@@ -45,7 +51,22 @@ public class BookkeeperImpl implements Bookkeeper {
   
   @Override
   public BigDecimal countChange(Transaction transaction) {
-    // TODO Auto-generated method stub
-    return null;
+    BigDecimal inputSum = emptyIfNull(transaction.getInputs()).stream()
+      .map(TransactionInput::getAmount)
+      .filter(Objects::nonNull)
+      .reduce(BigDecimal::add).orElse(BigDecimal.ZERO);
+    BigDecimal outputSum = emptyIfNull(transaction.getOutputs()).stream()
+      .map(TransactionOutput::getAmount)
+      .filter(Objects::nonNull)
+      .reduce(BigDecimal::add).orElse(BigDecimal.ZERO);
+    
+    BigDecimal change = inputSum.subtract(outputSum);
+    
+    if(change.compareTo(BigDecimal.ZERO) == 0) {
+      throw new CheapskateException("You should at least give a little tip, you cheap bastard!");
+    } else if(change.compareTo(BigDecimal.ZERO) < 0) {
+      throw new NegativeTransactionBalanceException("You can't spend more than what you had initially!");
+    }
+    return change;
   }
 }

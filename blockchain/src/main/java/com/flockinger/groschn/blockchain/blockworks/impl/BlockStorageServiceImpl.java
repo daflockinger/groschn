@@ -15,22 +15,22 @@ import com.flockinger.groschn.blockchain.validation.impl.BlockValidator;
 
 @Component
 public class BlockStorageServiceImpl implements BlockStorageService {
-   
+
   @Autowired
   private BlockValidator validator;
   @Autowired
   private BlockchainRepository dao;
   @Autowired
   private ModelMapper mapper;
-  
+
   @PostConstruct
   public void initBlockchain() {
-    if(dao.count() == 0) {
+    if (dao.count() == 0) {
       StoredBlock genesisBlock = mapToStoredBlock(Block.GENESIS_BLOCK());
       dao.save(genesisBlock);
     }
   }
-  
+
   @Override
   public StoredBlock saveInBlockchain(Block block) throws ValidationException {
     validateBlock(block);
@@ -38,16 +38,21 @@ public class BlockStorageServiceImpl implements BlockStorageService {
     storedBlock = dao.save(storedBlock);
     return storedBlock;
   }
-  
+
   private void validateBlock(Block block) {
     Assessment assessment = validator.validate(block);
-    if(!assessment.isValid()) {
-      throw new BlockValidationException("Block validation failed because of: " + 
-            assessment.getReasonOfFailure());
+    if (!assessment.isValid()) {
+      throw new BlockValidationException(
+          "Block validation failed because of: " + assessment.getReasonOfFailure());
     }
   }
-  
+
   private StoredBlock mapToStoredBlock(Block block) {
     return mapper.map(block, StoredBlock.class);
+  }
+
+  @Override
+  public Long getLatestBlockPosition() {
+    return dao.findFirstByOrderByPositionDesc().get().getPosition();
   }
 }

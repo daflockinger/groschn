@@ -10,7 +10,9 @@ import javax.annotation.PostConstruct;
 import org.apache.commons.lang3.StringUtils;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
+import com.flockinger.groschn.blockchain.dto.TransactionDto;
 import com.flockinger.groschn.blockchain.model.Transaction;
 import com.flockinger.groschn.blockchain.model.TransactionOutput;
 import com.flockinger.groschn.blockchain.model.TransactionPointCut;
@@ -21,8 +23,8 @@ import com.flockinger.groschn.blockchain.repository.model.StoredPoolTransaction;
 import com.flockinger.groschn.blockchain.repository.model.StoredTransaction;
 import com.flockinger.groschn.blockchain.repository.model.StoredTransactionOutput;
 import com.flockinger.groschn.blockchain.repository.model.TransactionStatus;
-import com.flockinger.groschn.blockchain.transaction.TransactionDto;
 import com.flockinger.groschn.blockchain.transaction.TransactionManager;
+import com.flockinger.groschn.blockchain.util.sign.Signer;
 import com.flockinger.groschn.messaging.distribution.DistributedCollectionBuilder;
 import com.flockinger.groschn.messaging.distribution.DistributedExternalSet;
 
@@ -39,9 +41,11 @@ public class TransactionManagerImpl implements TransactionManager {
   private DistributedCollectionBuilder distributedCollectionBuilder;
   @Autowired
   private TransactionPoolListener transactionListener;
+  @Autowired
+  @Qualifier("ECDSA_Signer")
+  private Signer signer;
   
-  
-  private DistributedExternalSet<TransactionDto> externalTransactions;
+  private DistributedExternalSet<Transaction> externalTransactions;
   
   @PostConstruct
   public void initDistributedTransactions() {
@@ -62,6 +66,8 @@ public class TransactionManagerImpl implements TransactionManager {
   }
 
   private boolean maxByteSizeNotReachedYet(List<Transaction> transactions) {
+    //FIXME implement and test
+    
     return true;
   }
 
@@ -91,5 +97,12 @@ public class TransactionManagerImpl implements TransactionManager {
 
   private TransactionOutput mapToRegularOutput(StoredTransactionOutput storedOutput) {
     return mapper.map(storedOutput, TransactionOutput.class);
+  }
+
+
+  @Override
+  public Transaction createSignedTransaction(TransactionDto transactionSigningRequest) {
+    // TODO create that stuff
+    return null;
   }
 }

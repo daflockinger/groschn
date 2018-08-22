@@ -54,7 +54,7 @@ public class TestDataFactory {
     return transactions;
   }
   
-  public static TransactionInput fakeInput(long amount) {
+  public static TransactionInput fakeInput(String amount) {
     TransactionInput input = new TransactionInput();
     input.setAmount(new BigDecimal(amount));
     input.setPublicKey("keykey");
@@ -69,13 +69,21 @@ public class TestDataFactory {
     return input;
   }
   
-  public static TransactionOutput fakeOutput(long amount) {
+  public static TransactionInput fakeInput(long amount) {
+    return fakeInput(Long.toString(amount));
+  }
+  
+  public static TransactionOutput fakeOutput(String amount) {
     TransactionOutput output = new TransactionOutput();
     output.setAmount(new BigDecimal(amount));
     output.setPublicKey("keykey");
     output.setTimestamp(1234567l);
     
     return output;
+  }
+  
+  public static TransactionOutput fakeOutput(long amount) {    
+    return fakeOutput(Long.toString(amount));
   }
   
   
