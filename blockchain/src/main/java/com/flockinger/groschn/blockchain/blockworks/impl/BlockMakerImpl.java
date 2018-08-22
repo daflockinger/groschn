@@ -64,5 +64,7 @@ public class BlockMakerImpl implements BlockMaker {
   
   private void addRewardTransaction(List<Transaction> transactions) {
     //TODO implement
+    
+    
   }
 }

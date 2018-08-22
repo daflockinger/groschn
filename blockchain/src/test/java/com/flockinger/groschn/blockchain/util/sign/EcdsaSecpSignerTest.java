@@ -51,8 +51,6 @@ public class EcdsaSecpSignerTest {
     assertTrue("check if the keypair is really valid and works", signaturer.verify(signature));
   }
   
-  
-  
   @Test
   public void testSign_withAllSet_shouldSignCorrectly() throws Exception {
     final String someHash = "CCADD99B16CD3D200C22D6DB45D8B6630EF3D936767127347EC8A76AB992C2EA";
