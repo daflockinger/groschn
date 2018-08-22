@@ -24,6 +24,7 @@ import com.flockinger.groschn.blockchain.repository.model.StoredTransaction;
 import com.flockinger.groschn.blockchain.repository.model.StoredTransactionOutput;
 import com.flockinger.groschn.blockchain.repository.model.TransactionStatus;
 import com.flockinger.groschn.blockchain.transaction.TransactionManager;
+import com.flockinger.groschn.blockchain.util.CompressionUtils;
 import com.flockinger.groschn.blockchain.util.sign.Signer;
 import com.flockinger.groschn.messaging.distribution.DistributedCollectionBuilder;
 import com.flockinger.groschn.messaging.distribution.DistributedExternalSet;
@@ -44,6 +45,8 @@ public class TransactionManagerImpl implements TransactionManager {
   @Autowired
   @Qualifier("ECDSA_Signer")
   private Signer signer;
+  @Autowired
+  private CompressionUtils compressor;
   
   private DistributedExternalSet<Transaction> externalTransactions;
   
@@ -58,17 +61,20 @@ public class TransactionManagerImpl implements TransactionManager {
     Iterator<StoredPoolTransaction> transactionIterator = 
         transactionDao.findByStatusOrderByCreatedAtDesc(TransactionStatus.RAW).iterator();
     List<Transaction> transactions = new ArrayList<>();
+    long compressedTransactionsSize = 0;
     
-    while(maxByteSizeNotReachedYet(transactions) && transactionIterator.hasNext()) {
-      transactions.add(mapToRegularTransaction(transactionIterator.next()));
+    while(compressedTransactionsSize < maxByteSize && transactionIterator.hasNext()) {
+      Transaction freshTransaction = mapToRegularTransaction(transactionIterator.next());
+      compressedTransactionsSize += getSize(freshTransaction);
+      if(compressedTransactionsSize < maxByteSize) {
+        transactions.add(freshTransaction);
+      }
     }
     return transactions;
   }
 
-  private boolean maxByteSizeNotReachedYet(List<Transaction> transactions) {
-    //FIXME implement and test
-    
-    return true;
+  private long getSize(Transaction transaction) {
+    return compressor.compress(transaction).getEntity().length;
   }
 
   private Transaction mapToRegularTransaction(StoredPoolTransaction poolTransaction) {
