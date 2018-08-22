@@ -29,6 +29,13 @@ public class Block implements Hashable {
    */
   public final static Long MAX_TRANSACTION_BYTE_SIZE = 100l * 1024l;
 
+
+  /**
+   * Maximum amount of Groschn that can ever exist (are sixty hundred and fifty million Groschn).
+   */
+  public final static Long MAX_AMOUNT_MINED_GROSCHN = 650000000l;
+
+
   public final static Block GENESIS_BLOCK() {
     Block genesisBlock = new Block();
     genesisBlock.setLastHash("Wer den Groschen nicht ehrt, ist den Schilling nicht wert!");
