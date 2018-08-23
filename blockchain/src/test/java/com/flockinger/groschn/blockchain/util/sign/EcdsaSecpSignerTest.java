@@ -4,10 +4,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import java.security.KeyPair;
-import java.security.PrivateKey;
 import java.security.Signature;
 import org.apache.commons.codec.DecoderException;
-import org.apache.commons.codec.binary.Hex;
+import org.bouncycastle.util.encoders.Hex;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -18,6 +17,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import com.flockinger.groschn.blockchain.config.CryptoConfig;
 import com.flockinger.groschn.blockchain.exception.crypto.CantConfigureSigningAlgorithmException;
+import com.flockinger.groschn.blockchain.util.Base58;
 import com.flockinger.groschn.blockchain.util.sign.impl.EcdsaSecpSigner;
 
 @RunWith(SpringRunner.class)
@@ -53,27 +53,23 @@ public class EcdsaSecpSignerTest {
   @Test
   public void testSign_withAllSet_shouldSignCorrectly() throws Exception {
     final String someHash = "CCADD99B16CD3D200C22D6DB45D8B6630EF3D936767127347EC8A76AB992C2EA";
-    String signature = signer.sign(Hex.decodeHex(someHash), pair.getPrivate());
+    String signature = signer.sign(Hex.decode(someHash), pair.getPrivate().getEncoded());
     
     Signature signaturer = Signature.getInstance(EcdsaSecpSigner.SIGNATURE_ALGORITHM, EcdsaSecpSigner.PROVIDER); 
     signaturer.initVerify(pair.getPublic());
-    signaturer.update(Hex.decodeHex(someHash));
-    assertTrue("check if signature is working correctly", signaturer.verify(Hex.decodeHex(signature)));
+    signaturer.update(Hex.decode(someHash));
+    assertTrue("check if signature is working correctly", signaturer.verify(Base58.decode(signature)));
   }
   
   @Test
   public void testSign_withEmptyByteArray_shouldSignCorrectly() throws DecoderException {
-    String signature = signer.sign(new byte[0], pair.getPrivate());
+    String signature = signer.sign(new byte[0], pair.getPrivate().getEncoded());
     assertNotNull("verify that even signing nothing returns something", signature);
   }
   
   @Test(expected=CantConfigureSigningAlgorithmException.class)
   public void testSign_withInvalidKeyPair_shouldThrowException() throws DecoderException {
-    String signature = signer.sign(new byte[0],  new PrivateKey() {
-      public String getFormat() {return null;}
-      public byte[] getEncoded() {return new byte[0];}
-      public String getAlgorithm() {return null;}
-    });
+    String signature = signer.sign(new byte[0], new byte[0]);
     assertNotNull("verify that even signing nothing returns something", signature);
   }
   
@@ -83,11 +79,11 @@ public class EcdsaSecpSignerTest {
     final String someHash = "CCADD99B16CD3D200C22D6DB45D8B6630EF3D936767127347EC8A76AB992C2EA";
     Signature signaturer = Signature.getInstance(EcdsaSecpSigner.SIGNATURE_ALGORITHM, EcdsaSecpSigner.PROVIDER); 
     signaturer.initSign(pair.getPrivate());
-    signaturer.update(Hex.decodeHex(someHash));
+    signaturer.update(Hex.decode(someHash));
     byte[] signature = signaturer.sign();
     
-    boolean isValid = signer.isSignatureValid(Hex.decodeHex(someHash), 
-        Hex.encodeHexString(pair.getPublic().getEncoded()), Hex.encodeHexString(signature));
+    boolean isValid = signer.isSignatureValid(Hex.decode(someHash), 
+        Base58.encode(pair.getPublic().getEncoded()), Base58.encode(signature));
     
     assertEquals("verify that correct signature is valid", true, isValid);
   }
@@ -97,11 +93,11 @@ public class EcdsaSecpSignerTest {
     final String someHash = "CCADD99B16CD3D200C22D6DB45D8B6630EF3D936767127347EC8A76AB992C2EA";
     Signature signaturer = Signature.getInstance(EcdsaSecpSigner.SIGNATURE_ALGORITHM, EcdsaSecpSigner.PROVIDER); 
     signaturer.initSign(signer.generateKeyPair().getPrivate());
-    signaturer.update(Hex.decodeHex(someHash));
+    signaturer.update(Hex.decode(someHash));
     byte[] signature = signaturer.sign();
     
-    boolean isValid = signer.isSignatureValid(Hex.decodeHex(someHash), 
-        Hex.encodeHexString(pair.getPublic().getEncoded()), Hex.encodeHexString(signature));
+    boolean isValid = signer.isSignatureValid(Hex.decode(someHash), 
+        Base58.encode(pair.getPublic().getEncoded()), Base58.encode(signature));
     
     assertEquals("verify that manipulated signature is NOT valid", false, isValid);
   }
@@ -112,11 +108,11 @@ public class EcdsaSecpSignerTest {
     final String someOtherHash = "CCADD99B16CD3D200C22D6DB45D8B6630EF3D936767127347EC8A76AB992C2EB";
     Signature signaturer = Signature.getInstance(EcdsaSecpSigner.SIGNATURE_ALGORITHM, EcdsaSecpSigner.PROVIDER); 
     signaturer.initSign(pair.getPrivate());
-    signaturer.update(Hex.decodeHex(someHash));
+    signaturer.update(Hex.decode(someHash));
     byte[] signature = signaturer.sign();
     
-    boolean isValid = signer.isSignatureValid(Hex.decodeHex(someOtherHash), 
-        Hex.encodeHexString(pair.getPublic().getEncoded()), Hex.encodeHexString(signature));
+    boolean isValid = signer.isSignatureValid(Hex.decode(someOtherHash), 
+        Base58.encode(pair.getPublic().getEncoded()), Base58.encode(signature));
     
     assertEquals("verify that manipulated signature is NOT valid", false, isValid);
   }
@@ -126,12 +122,12 @@ public class EcdsaSecpSignerTest {
     final String someHash = "CCADD99B16CD3D200C22D6DB45D8B6630EF3D936767127347EC8A76AB992C2EA";
     Signature signaturer = Signature.getInstance(EcdsaSecpSigner.SIGNATURE_ALGORITHM, EcdsaSecpSigner.PROVIDER); 
     signaturer.initSign(pair.getPrivate());
-    signaturer.update(Hex.decodeHex(someHash));
+    signaturer.update(Hex.decode(someHash));
     byte[] signature = signaturer.sign();
     KeyPair freshPair = signer.generateKeyPair();
     
-    boolean isValid = signer.isSignatureValid(Hex.decodeHex(someHash), 
-        Hex.encodeHexString(freshPair.getPublic().getEncoded()), Hex.encodeHexString(signature));
+    boolean isValid = signer.isSignatureValid(Hex.decode(someHash), 
+        Base58.encode(freshPair.getPublic().getEncoded()), Base58.encode(signature));
     
     assertEquals("verify that correct signature is valid", false, isValid);
   }
@@ -141,9 +137,9 @@ public class EcdsaSecpSignerTest {
     final String someHash = "CCADD99B16CD3D200C22D6DB45D8B6630EF3D936767127347EC8A76AB992C2EA";
     Signature signaturer = Signature.getInstance(EcdsaSecpSigner.SIGNATURE_ALGORITHM, EcdsaSecpSigner.PROVIDER); 
     signaturer.initSign(pair.getPrivate());
-    signaturer.update(Hex.decodeHex(someHash));    
-    boolean isValid = signer.isSignatureValid(Hex.decodeHex(someHash), 
-        Hex.encodeHexString(pair.getPublic().getEncoded()), "xoxoxo");
+    signaturer.update(Hex.decode(someHash));    
+    boolean isValid = signer.isSignatureValid(Hex.decode(someHash), 
+        Base58.encode(pair.getPublic().getEncoded()), "xoxoxo");
     
     assertEquals("verify that correct signature is valid", true, isValid);
   }
@@ -153,11 +149,11 @@ public class EcdsaSecpSignerTest {
     final String someHash = "CCADD99B16CD3D200C22D6DB45D8B6630EF3D936767127347EC8A76AB992C2EA";
     Signature signaturer = Signature.getInstance(EcdsaSecpSigner.SIGNATURE_ALGORITHM, EcdsaSecpSigner.PROVIDER); 
     signaturer.initSign(pair.getPrivate());
-    signaturer.update(Hex.decodeHex(someHash));
+    signaturer.update(Hex.decode(someHash));
     byte[] signature = signaturer.sign();
     
-    boolean isValid = signer.isSignatureValid(Hex.decodeHex(someHash), 
-        "sEcReT", Hex.encodeHexString(signature));
+    boolean isValid = signer.isSignatureValid(Hex.decode(someHash), 
+        "sEcReT", Base58.encode(signature));
     
     assertEquals("verify that correct signature is valid", true, isValid);
   }

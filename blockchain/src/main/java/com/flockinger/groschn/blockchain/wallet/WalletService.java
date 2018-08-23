@@ -1,20 +1,17 @@
 package com.flockinger.groschn.blockchain.wallet;
 
 import java.math.BigDecimal;
-import java.security.PrivateKey;
+import com.flockinger.groschn.blockchain.dto.UnlockedWalletDto;
 import com.flockinger.groschn.blockchain.dto.WalletDto;
-import com.flockinger.groschn.blockchain.dto.WalletSecretDto;
+import com.flockinger.groschn.blockchain.exception.wallet.WalletNotFoundException;
 
 public interface WalletService {
   
   String getNodePublicKey();
-  
-  PrivateKey getPrivateKey(String publicKey, String secretKey);
-
-  //TODO add calculate balance and stuff
+    
+  byte[] getPrivateKey(String publicKey, String walletEncryptionKey);
   
   BigDecimal calculateBalance(String publicKey);
   
   WalletDto createWallet();
-  WalletSecretDto fetchAndForgetWalletSecret(String publicKey);
 }

@@ -17,8 +17,7 @@ import java.security.Signature;
 import java.security.SignatureException;
 import java.security.spec.ECGenParameterSpec;
 import java.security.spec.InvalidKeySpecException;
-import org.apache.commons.codec.DecoderException;
-import org.apache.commons.codec.binary.Hex;
+import java.security.spec.PKCS8EncodedKeySpec;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -29,6 +28,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import com.flockinger.groschn.blockchain.exception.crypto.CantConfigureSigningAlgorithmException;
+import com.flockinger.groschn.blockchain.util.Base58;
 import com.flockinger.groschn.blockchain.util.sign.Signer;
 
 @Component("ECDSA_Signer")
@@ -105,14 +105,15 @@ public class EcdsaSecpSigner implements Signer {
     return new ECGenParameterSpec(EC_GEN_PARAMETER_SPEC);
   }
 
-  public String sign(byte[] transactionHash, PrivateKey privateKey) {
+  public String sign(byte[] transactionHash, byte[] privateKey) {
     String signature;
     var signer = getSignature();
     try {
-      signer.initSign(privateKey);
+      PrivateKey realPrivateKey = keyFactory.generatePrivate(new PKCS8EncodedKeySpec(privateKey));
+      signer.initSign(realPrivateKey);
       signer.update(transactionHash);
-      signature = Hex.encodeHexString(signer.sign());
-    } catch (InvalidKeyException | SignatureException e) {
+      signature = Base58.encode(signer.sign());
+    } catch (InvalidKeyException | SignatureException | InvalidKeySpecException e) {
       throw new CantConfigureSigningAlgorithmException("Signing didn't work out well!");
     }
     return signature;
@@ -122,9 +123,9 @@ public class EcdsaSecpSigner implements Signer {
     var isSignValid = false;
     var verifier = getSignature();
     try {
-      verifier.initVerify(getPublicKeyFromHexDecodedText(publicKey));
+      verifier.initVerify(getPublicKeyFromBase58DecodedText(publicKey));
       verifier.update(transactionHash);
-      isSignValid = verifier.verify(getBytesFromHexEncodedString(signature));
+      isSignValid = verifier.verify(Base58.decode(signature));
     } catch (InvalidKeyException e) {
       throw new CantConfigureSigningAlgorithmException("Public Key is invalid!");
     } catch (SignatureException e) {
@@ -133,11 +134,11 @@ public class EcdsaSecpSigner implements Signer {
     return isSignValid;
   }
 
-  private PublicKey getPublicKeyFromHexDecodedText(String publicKeyHexDecoded) {
+  private PublicKey getPublicKeyFromBase58DecodedText(String publicKeyBase58Decoded) {
     PublicKey key = null;
     try {
       var pubKeyParams = (ECPublicKeyParameters) PublicKeyFactory
-          .createKey(getBytesFromHexEncodedString(publicKeyHexDecoded));
+          .createKey(Base58.decode(publicKeyBase58Decoded));
       var parameterSpec = new ECParameterSpec(pubKeyParams.getParameters().getCurve(),
           pubKeyParams.getParameters().getG(), pubKeyParams.getParameters().getN());
       key = keyFactory.generatePublic(new ECPublicKeySpec(pubKeyParams.getQ(), parameterSpec));
@@ -150,13 +151,4 @@ public class EcdsaSecpSigner implements Signer {
     return key;
   }
 
-  private byte[] getBytesFromHexEncodedString(String hexEncodedText) {
-    var decodedTextBytes = new byte[0];
-    try {
-      decodedTextBytes = Hex.decodeHex(hexEncodedText.toCharArray());
-    } catch (DecoderException e) {
-      throw new CantConfigureSigningAlgorithmException("Can't decode text, it's maybe not hex encoded!",e);
-    }
-    return decodedTextBytes;
-  }
 }

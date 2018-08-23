@@ -8,7 +8,7 @@ public interface Signer {
   
   KeyPair generateKeyPair();
   
-  String sign(byte[] transactionHash, PrivateKey privateKey);
+  String sign(byte[] transactionHash, byte[] privateKey);
 
   boolean isSignatureValid(byte[] transactionHash, String publicKey, String signature);
 }

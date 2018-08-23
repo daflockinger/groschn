@@ -15,7 +15,7 @@ public class EdDsaSigner implements Signer {
   }
   
   @Override
-  public String sign(byte[] transactionHash, PrivateKey privateKey) {
+  public String sign(byte[] transactionHash, byte[] privateKey) {
     // TODO Auto-generated method stub
     return null;
   }

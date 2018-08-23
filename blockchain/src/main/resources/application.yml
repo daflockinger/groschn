@@ -10,6 +10,10 @@ spring:
 
       
 blockchain:
+  node:
+    credentials:
+      public-key: ${NODE_PUBLIC_KEY:PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSCwN3VGoADiKCrxqDdUeowvmxoCcEQoVNX63Mo9RYeRNLPSjnrHQpyQFeho1Kz8xu4dxX4nR8MB2NkeAxH74uM2LDp}
+      private-key: ${NODE_PRIVATE_KEY:3hupFSQNWwiJuQNc68HiWzPgyNpQA2yy9iiwhytMS7rZyXaRCMKct5L7sHaT9ZNgYUjgMeVh4vNN9xcM5LZpUcVzXkV5Hn4thLSNwwormNNdxSAjQ8BBAyNdpP51iG9SN93BwRzVFFeMyg1HWruNZgRhgskz2AoTU2VrbCJ2zrdQUUYR2MU13471c9DJSQH3zmNPU}
   punch-timer:
     initial-delay: 20000
     punch-rate: 15000

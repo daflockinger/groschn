@@ -130,7 +130,7 @@ public class TransactionManagerImpl implements TransactionManager {
     return transaction;
   }
   
-  private void signTransactionInput(TransactionInput input, List<TransactionOutput> outputs, PrivateKey privateKey) {
+  private void signTransactionInput(TransactionInput input, List<TransactionOutput> outputs, byte[] privateKey) {
      input.setPreviousOutputTransaction(createPointcut(input.getPublicKey()));
      String signature = signer.sign(HashUtils.toByteArray(outputs), privateKey);
      input.setSignature(signature);

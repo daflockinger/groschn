@@ -25,7 +25,7 @@ import com.flockinger.groschn.blockchain.util.crypto.KeyCipher;
 @Component
 public class KeyAESCipher implements KeyCipher {
   private final static String CIPHER_TRANSFORMATION = "AES/CBC/PKCS7Padding";
-  private final static String ENCRYPTION_ALGORITHM = "AES";
+  public final static String ENCRYPTION_ALGORITHM = "AES";
   private final static String SECURE_RANDOM_ALGORITHM = "SHA1PRNG";
   private final static int AES_KEY_SIZE_BITS = 256;
   /**

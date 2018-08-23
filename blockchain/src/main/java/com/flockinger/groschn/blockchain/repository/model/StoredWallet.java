@@ -1,6 +1,7 @@
 package com.flockinger.groschn.blockchain.repository.model;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Document(collection = "wallet")
@@ -9,6 +10,7 @@ public class StoredWallet {
   @Id
   private String id;
   
+  @Indexed(unique=true)
   private String publicKey;
   
   private byte[] initVector;
