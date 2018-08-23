@@ -4,7 +4,9 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
+import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,14 +20,16 @@ import com.flockinger.groschn.blockchain.exception.BlockchainException;
 import com.flockinger.groschn.blockchain.exception.validation.transaction.TransactionException;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.model.Transaction;
+import com.flockinger.groschn.blockchain.model.TransactionInput;
+import com.flockinger.groschn.blockchain.model.TransactionOutput;
 import com.flockinger.groschn.blockchain.transaction.Bookkeeper;
 import com.flockinger.groschn.blockchain.transaction.TransactionManager;
+import com.flockinger.groschn.blockchain.transaction.impl.TransactionUtils;
 import com.flockinger.groschn.blockchain.util.CompressedEntity;
 import com.flockinger.groschn.blockchain.util.CompressionUtils;
 import com.flockinger.groschn.blockchain.wallet.WalletService;
 import com.flockinger.groschn.messaging.model.Message;
 import com.flockinger.groschn.messaging.outbound.Broadcaster;
-import com.google.common.collect.ImmutableList;
 
 @Component
 public class BlockMakerImpl implements BlockMaker {
@@ -44,6 +48,8 @@ public class BlockMakerImpl implements BlockMaker {
   private WalletService wallet;
   @Autowired
   private Broadcaster<CompressedEntity> broadcaster;
+  @Autowired
+  private ModelMapper mapper;
 
   private final static Logger LOG = LoggerFactory.getLogger(BlockMaker.class);
 
@@ -52,7 +58,7 @@ public class BlockMakerImpl implements BlockMaker {
     List<Transaction> transactions =
         transactionManager.fetchTransactionsFromPool(Block.MAX_TRANSACTION_BYTE_SIZE);
     try {
-      transactions.add(createRewardTransaction(transactions));
+      addRewardTransaction(transactions);
       forgeBlockUnsafe(transactions);
     } catch (BlockchainException e) {
       LOG.error("Something went wrong while creating a new Block", e);
@@ -73,24 +79,46 @@ public class BlockMakerImpl implements BlockMaker {
     broadcaster.broadcast(message);
   }
 
-  // FIXME 
-  // if the miner has also a regular transaction in the mined ones, 
-  // then it the reward must be added to it, otherwise just create the new transaction!!!!!!
-  private Transaction createRewardTransaction(List<Transaction> transactions) {
+  private void addRewardTransaction(List<Transaction> transactions) {
+    String publicKey = wallet.getPublicKey();
+    TransactionDto baseRewardTransaction = createBaseRewardTransaction(transactions, publicKey);
+    TransactionDto rewardTransaction = new TransactionDto();
+    Optional<Transaction> possibleTransaction = findExpenseTransaction(transactions, publicKey);
+    if (possibleTransaction.isPresent()) {
+      fixStatementsSequenceCount(baseRewardTransaction, possibleTransaction.get());
+      rewardTransaction = mapper.map(possibleTransaction.get(), TransactionDto.class);
+      transactions.remove(possibleTransaction.get());
+    }
+    rewardTransaction.getInputs().addAll(baseRewardTransaction.getInputs());
+    rewardTransaction.getOutputs().addAll(baseRewardTransaction.getOutputs());
+    transactions.add(transactionManager.createSignedTransaction(rewardTransaction));
+  }
+
+  private TransactionDto createBaseRewardTransaction(List<Transaction> transactions,
+      String publicKey) {
     BigDecimal totalChange = transactions.stream().map(this::countTransactionSave)
         .reduce(BigDecimal::add).orElse(BigDecimal.ZERO);
     BigDecimal reward = bookkeeper.calculateBlockReward(storageService.getLatestBlockPosition());
-    String publicKey = wallet.getPublicKey();
-    TransactionDto rewardTransaction = new TransactionDto();
     TransactionStatementDto rewardInput = createTransactionStatement(reward, 1l, publicKey);
-    rewardTransaction.setInputs(ImmutableList.of(rewardInput));
     List<TransactionStatementDto> outputs = new ArrayList<>();
     outputs.add(createTransactionStatement(reward, 1l, publicKey));
     if (totalChange.compareTo(BigDecimal.ZERO) > 0) {
       outputs.add(createTransactionStatement(totalChange, 2l, publicKey));
     }
-    rewardTransaction.setOutputs(outputs);
-    return transactionManager.createSignedTransaction(rewardTransaction);
+    TransactionDto transaction = new TransactionDto();
+    transaction.getInputs().add(rewardInput);
+    transaction.setOutputs(outputs);
+    return transaction;
+  }
+
+  private BigDecimal countTransactionSave(Transaction transaction) {
+    BigDecimal change = BigDecimal.ZERO;
+    try {
+      change = bookkeeper.countChange(transaction);
+    } catch (TransactionException e) {
+      LOG.warn("Skip transaction for change calculation cause it's invalid for it!", e);
+    }
+    return change;
   }
 
   private TransactionStatementDto createTransactionStatement(BigDecimal amount, long sequenceNumber,
@@ -103,13 +131,24 @@ public class BlockMakerImpl implements BlockMaker {
     return output;
   }
 
-  private BigDecimal countTransactionSave(Transaction transaction) {
-    BigDecimal change = BigDecimal.ZERO;
-    try {
-      change = bookkeeper.countChange(transaction);
-    } catch (TransactionException e) {
-      LOG.warn("Skip transaction for change calculation cause it's invalid for it!", e);
+  private Optional<Transaction> findExpenseTransaction(List<Transaction> transactions,
+      String publicKey) {
+    TransactionUtils utils = TransactionUtils.build(publicKey);
+    return transactions.stream().filter(utils::containsPubKeyInput)
+        .reduce(utils::getLatestTransaction);
+  }
+
+  private void fixStatementsSequenceCount(TransactionDto rewardTransaction,
+      Transaction existingTransaction) {
+    Long lastInputSequence = existingTransaction.getInputs().stream()
+        .map(TransactionInput::getSequenceNumber).reduce(Long::max).orElse(1l);
+    Long lastOutputSequence = existingTransaction.getOutputs().stream()
+        .map(TransactionOutput::getSequenceNumber).reduce(Long::max).orElse(1l);
+
+    rewardTransaction.getInputs().get(0).setSequenceNumber(lastInputSequence + 1);
+    for (TransactionStatementDto output : rewardTransaction.getOutputs()) {
+      output.setSequenceNumber(++lastOutputSequence);
     }
-    return change;
   }
 }
+

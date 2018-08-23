@@ -6,6 +6,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import org.apache.commons.lang3.RandomUtils;
+import org.modelmapper.ModelMapper;
 import com.flockinger.groschn.blockchain.consensus.model.ConsensusType;
 import com.flockinger.groschn.blockchain.consensus.model.Consent;
 import com.flockinger.groschn.blockchain.model.Block;
@@ -22,6 +23,7 @@ import com.google.common.collect.ImmutableList;
 
 public class TestDataFactory {
   
+  public static ModelMapper mapper = new ModelMapper();
   
   public static Block getFakeBlock() {
     Block block = new Block();
@@ -103,6 +105,11 @@ public class TestDataFactory {
   }
   
   
+  public static Transaction mapToTransaction(StoredTransaction storedTransaction) {
+    return mapper.map(storedTransaction, Transaction.class);
+  }
+  
+  
   public static StoredTransactionOutput createRandomTransactionOutputWith(long sequenceNumber, String pubKey, Long amount) {
     StoredTransactionOutput output = new StoredTransactionOutput();
     output.setAmount(new BigDecimal(amount));
@@ -121,8 +128,8 @@ public class TestDataFactory {
   
   public static StoredTransactionInput createRandomTransactionInputWith(long sequenceNumber, String pubKey, Long amount) {
     StoredTransactionInput input = new StoredTransactionInput();
-    input.setAmount(new BigDecimal(RandomUtils.nextLong(1, 101)));
-    input.setPublicKey(UUID.randomUUID().toString());
+    input.setAmount(new BigDecimal(amount));
+    input.setPublicKey(pubKey);
     input.setSequenceNumber(sequenceNumber);
     input.setTimestamp(new Date().getTime());
     StoredTransactionPointCut pointcut = new StoredTransactionPointCut();
