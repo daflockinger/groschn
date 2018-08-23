@@ -1,6 +1,6 @@
-package com.flockinger.groschn.blockchain.exception;
+package com.flockinger.groschn.blockchain.exception.crypto;
 
-public class CantConfigureSigningAlgorithmException extends BlockchainException {
+public class CantConfigureSigningAlgorithmException extends CryptoException {
   /**
    * 
    */

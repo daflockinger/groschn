@@ -10,32 +10,57 @@ import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import com.flockinger.groschn.blockchain.dto.WalletDto;
+import com.flockinger.groschn.blockchain.dto.WalletSecretDto;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.model.Transaction;
 import com.flockinger.groschn.blockchain.model.TransactionOutput;
 import com.flockinger.groschn.blockchain.repository.BlockchainRepository;
+import com.flockinger.groschn.blockchain.repository.WalletRepository;
 import com.flockinger.groschn.blockchain.repository.model.StoredBlock;
 import com.flockinger.groschn.blockchain.transaction.impl.TransactionUtils;
+import com.flockinger.groschn.blockchain.util.crypto.KeyCipher;
 import com.flockinger.groschn.blockchain.wallet.WalletService;
 
+@Component
 public class WalletServiceImpl implements WalletService {
 
   @Autowired
   private BlockchainRepository blockDao;
   @Autowired
   private ModelMapper mapper;
+  @Autowired
+  private KeyCipher cipher;
+  @Autowired
+  private WalletRepository walletDao;
 
   @Override
-  public String getPublicKey() {
+  public String getNodePublicKey() {
     // TODO implement
     return null;
   }
 
   @Override
-  public PrivateKey getPrivateKey() {
-    // TODO implement
+  public PrivateKey getPrivateKey(String publicKey, String secretKey) {
+    // TODO Auto-generated method stub
     return null;
   }
+
+
+  @Override
+  public WalletDto createWallet() {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+
+  @Override
+  public WalletSecretDto fetchAndForgetWalletSecret(String publicKey) {
+    // TODO Auto-generated method stub
+    return null;
+  }
+  
 
   @Override
   public BigDecimal calculateBalance(String publicKey) {

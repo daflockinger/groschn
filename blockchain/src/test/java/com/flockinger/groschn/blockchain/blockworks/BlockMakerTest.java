@@ -271,7 +271,7 @@ public class BlockMakerTest {
         .forEach(input -> input.setSignature(MASTER_SIGNATURE));
         signedTransaction.setTransactionHash(MASTER_HASH);
         return signedTransaction;}});
-    when(wallet.getPublicKey()).thenReturn(MASTER_KEY);
+    when(wallet.getNodePublicKey()).thenReturn(MASTER_KEY);
   }
   
   public List<Transaction> createRandomTransactions(Optional<String> minerKey, Optional<Long> amount, boolean noInput) {

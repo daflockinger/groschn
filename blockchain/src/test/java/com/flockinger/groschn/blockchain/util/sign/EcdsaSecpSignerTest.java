@@ -17,7 +17,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import com.flockinger.groschn.blockchain.config.CryptoConfig;
-import com.flockinger.groschn.blockchain.exception.CantConfigureSigningAlgorithmException;
+import com.flockinger.groschn.blockchain.exception.crypto.CantConfigureSigningAlgorithmException;
 import com.flockinger.groschn.blockchain.util.sign.impl.EcdsaSecpSigner;
 
 @RunWith(SpringRunner.class)

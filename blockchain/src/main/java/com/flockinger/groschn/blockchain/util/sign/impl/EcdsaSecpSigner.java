@@ -28,7 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import com.flockinger.groschn.blockchain.exception.CantConfigureSigningAlgorithmException;
+import com.flockinger.groschn.blockchain.exception.crypto.CantConfigureSigningAlgorithmException;
 import com.flockinger.groschn.blockchain.util.sign.Signer;
 
 @Component("ECDSA_Signer")

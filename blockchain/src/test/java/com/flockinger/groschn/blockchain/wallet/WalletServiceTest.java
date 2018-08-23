@@ -14,12 +14,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import com.flockinger.groschn.blockchain.BaseDbTest;
 import com.flockinger.groschn.blockchain.repository.BlockchainRepository;
+import com.flockinger.groschn.blockchain.repository.WalletRepository;
 import com.flockinger.groschn.blockchain.repository.model.StoredBlock;
 import com.flockinger.groschn.blockchain.repository.model.StoredTransaction;
 import com.flockinger.groschn.blockchain.repository.model.StoredTransactionOutput;
+import com.flockinger.groschn.blockchain.util.crypto.impl.KeyAESCipher;
 import com.flockinger.groschn.blockchain.wallet.impl.WalletServiceImpl;
 
-@ContextConfiguration(classes = {WalletServiceImpl.class, BlockchainRepository.class})
+@ContextConfiguration(classes = {WalletServiceImpl.class, BlockchainRepository.class, WalletRepository.class, KeyAESCipher.class})
 public class WalletServiceTest extends BaseDbTest {
 
   @Autowired

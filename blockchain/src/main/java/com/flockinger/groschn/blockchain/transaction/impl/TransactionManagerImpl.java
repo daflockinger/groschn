@@ -1,8 +1,8 @@
 package com.flockinger.groschn.blockchain.transaction.impl;
 
+import java.security.PrivateKey;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -119,8 +119,10 @@ public class TransactionManagerImpl implements TransactionManager {
   @Override
   public Transaction createSignedTransaction(TransactionDto transactionSigningRequest) {
     var transaction = mapper.map(transactionSigningRequest, Transaction.class);
+    var walletPrivateKey = wallet.getPrivateKey(transactionSigningRequest.getPublicKey(), 
+        transactionSigningRequest.getSecretWalletKey());
     for(TransactionInput input: transaction.getInputs()) {
-      signTransactionInput(input, transaction.getOutputs());
+      signTransactionInput(input, transaction.getOutputs(), walletPrivateKey);
     }
     transaction.setTransactionHash(hashGenerator.generateHash(transaction));
     //TODO maybe find better way to generate entity ID's
@@ -128,9 +130,9 @@ public class TransactionManagerImpl implements TransactionManager {
     return transaction;
   }
   
-  private void signTransactionInput(TransactionInput input, List<TransactionOutput> outputs) {
+  private void signTransactionInput(TransactionInput input, List<TransactionOutput> outputs, PrivateKey privateKey) {
      input.setPreviousOutputTransaction(createPointcut(input.getPublicKey()));
-     String signature = signer.sign(HashUtils.toByteArray(outputs), wallet.getPrivateKey());
+     String signature = signer.sign(HashUtils.toByteArray(outputs), privateKey);
      input.setSignature(signature);
   }
   

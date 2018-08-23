@@ -80,7 +80,7 @@ public class BlockMakerImpl implements BlockMaker {
   }
 
   private void addRewardTransaction(List<Transaction> transactions) {
-    String publicKey = wallet.getPublicKey();
+    String publicKey = wallet.getNodePublicKey();
     TransactionDto baseRewardTransaction = createBaseRewardTransaction(transactions, publicKey);
     TransactionDto rewardTransaction = new TransactionDto();
     Optional<Transaction> possibleTransaction = findExpenseTransaction(transactions, publicKey);

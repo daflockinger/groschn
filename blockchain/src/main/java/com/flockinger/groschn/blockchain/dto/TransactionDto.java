@@ -5,6 +5,9 @@ import java.util.List;
 
 public class TransactionDto {
   
+  private String publicKey;
+  private String secretWalletKey;
+  
   private List<TransactionStatementDto> inputs = new ArrayList<>();
   private List<TransactionStatementDto> outputs = new ArrayList<>();
   
@@ -19,5 +22,17 @@ public class TransactionDto {
   }
   public void setOutputs(List<TransactionStatementDto> outputs) {
     this.outputs = outputs;
+  }
+  public String getPublicKey() {
+    return publicKey;
+  }
+  public void setPublicKey(String publicKey) {
+    this.publicKey = publicKey;
+  }
+  public String getSecretWalletKey() {
+    return secretWalletKey;
+  }
+  public void setSecretWalletKey(String secretWalletKey) {
+    this.secretWalletKey = secretWalletKey;
   }
 }
