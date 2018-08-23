@@ -78,6 +78,7 @@ public class TransactionManagerTest extends BaseDbTest {
   @Before
   public void setup() {
     when(distributedCollectionBuilder.createSetWithListener(any(), anyString())).thenReturn(null);
+    when(walletMock.getNodePublicKey()).thenReturn("masta-key");
     poolDao.deleteAll();
     blockDao.deleteAll();
   }
@@ -262,6 +263,23 @@ public class TransactionManagerTest extends BaseDbTest {
     request.setOutputs(ImmutableList.of(createStatement(1),createStatement(2),createStatement(3)));
     
     manager.createSignedTransaction(request);
+  }
+  
+  @Test
+  public void testCreateSignedTransaction_withNoOutputBalanceFoundButBeingNodeRewardTransaction_shouldWork() {  
+    TransactionDto request = new TransactionDto();
+    TransactionStatementDto input  = new TransactionStatementDto();
+    input.setAmount(100d);
+    input.setPublicKey("masta-key");
+    input.setSequenceNumber(1l);
+    input.setTimestamp(3000l);
+    request.setInputs(ImmutableList.of(input));
+    request.setOutputs(ImmutableList.of(createStatement(1),createStatement(2),createStatement(3)));
+    
+    Transaction signedTransaction = manager.createSignedTransaction(request);
+    // assert
+    assertNotNull("verify signed transaction is not null", signedTransaction);
+    assertNotNull("verify signed transaction has an ID", signedTransaction.getId());
   }
   
   @Test(expected = CantConfigureSigningAlgorithmException.class)

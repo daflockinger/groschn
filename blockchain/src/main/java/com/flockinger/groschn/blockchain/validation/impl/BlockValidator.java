@@ -1,16 +1,142 @@
 package com.flockinger.groschn.blockchain.validation.impl;
 
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
+import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import com.flockinger.groschn.blockchain.blockworks.BlockMaker;
+import com.flockinger.groschn.blockchain.blockworks.HashGenerator;
+import com.flockinger.groschn.blockchain.consensus.model.Consent;
+import com.flockinger.groschn.blockchain.exception.validation.AssessmentFailedException;
+import com.flockinger.groschn.blockchain.exception.validation.ValidationException;
 import com.flockinger.groschn.blockchain.model.Block;
+import com.flockinger.groschn.blockchain.model.Transaction;
+import com.flockinger.groschn.blockchain.repository.BlockchainRepository;
+import com.flockinger.groschn.blockchain.repository.model.StoredBlock;
+import com.flockinger.groschn.blockchain.util.CompressionUtils;
+import com.flockinger.groschn.blockchain.util.MerkleRootCalculator;
 import com.flockinger.groschn.blockchain.validation.Assessment;
+import com.flockinger.groschn.blockchain.validation.ConsentValidator;
 import com.flockinger.groschn.blockchain.validation.Validator;
 
 @Component
 public class BlockValidator implements Validator<Block> {
 
+  @Autowired
+  private Validator<Transaction> transactionValidator;
+  @Autowired
+  private List<ConsentValidator> consensusValidators;
   
+  @Autowired
+  private BlockchainRepository blockDao;
+  @Autowired
+  private ModelMapper mapper;
+  @Autowired
+  private HashGenerator hasher;
+  @Autowired
+  private MerkleRootCalculator merkleRootCalculator;
+  @Autowired
+  private CompressionUtils compressor;
+
   @Override
   public Assessment validate(Block value) {
-    return null;
+    Assessment isBlockValid = new Assessment();
+    // Validations for a new Block:
+    try {
+      // 1. check if position is higher than existing one
+      isPositionHigher(value.getPosition());
+      // 2. check if lastHash is correct 
+      verifyLastHash(value.getLastHash());
+      // 3. verify if current hash is correctly calculated
+      verifyCurrentHash(value);
+      // 4. check if transaction merkleRoot-Hash is correct
+      verifyTransactionsMerkleRoot(value);
+      // 5. check if timestamp is in the past but not too much (set limit for that maybe 2 hours like bitcoin or less)
+      verifyTimestamp(value.getTimestamp());
+      // 6. check if version is correct
+      verifyVersion(value.getVersion());
+      // 7. check max transaction size
+      checkTransactionSize(value.getTransactions());
+      // 8. call consent validation
+      validateConsensus(value.getConsent());
+      // 9. call transaction validations
+      validateTransactions(value.getTransactions());
+      isBlockValid.setValid(true);
+    } catch (ValidationException e) {
+      isBlockValid.setValid(false);
+      isBlockValid.setReasonOfFailure(e.getMessage());
+    }   
+    return isBlockValid;
+  }
+  
+  private void isPositionHigher(Long position) {
+    verifyAssessment(position != null && position > blockDao.count(), 
+        "Incomming block must have a higher position than the latest one!");
+  }
+  
+  private void verifyLastHash(String lastHash) {
+    Optional<StoredBlock> latestBlock = blockDao.findFirstByOrderByPositionDesc();
+    Block lastBlock = mapper.map(latestBlock.get(), Block.class);
+    lastBlock.setHash(null);
+    String generatedLastHash = hasher.generateHash(lastBlock);
+    
+    verifyAssessment(generatedLastHash.equals(lastHash),
+        "Last block hash is wrong!");
+  }
+  
+  private void verifyCurrentHash(Block block) {
+    String currentHash = block.getHash();
+    block.setHash(null);
+    String geheratedHash = hasher.generateHash(block);
+    block.setHash(currentHash);
+    
+    verifyAssessment(geheratedHash.equals(currentHash), "Block hash is wrong!");
+  }
+  
+  private void verifyTransactionsMerkleRoot(Block value) {
+    String rootHash = merkleRootCalculator.calculateMerkleRootHash(value.getTransactions());
+    verifyAssessment(rootHash.equals(value.getTransactionMerkleRoot()), 
+        "MerkleRoot-Hash of all transactions is wrong!");
+  }
+  
+  private void verifyTimestamp(Long timestamp) {
+    Long now = new Date().getTime();
+    verifyAssessment(timestamp != null && timestamp <= now, 
+        "Blocks cannot be dated in the future!");
+  }
+  
+  private void verifyVersion(Integer version) {
+    verifyAssessment(version != null && BlockMaker.CURRENT_BLOCK_VERSION == version, 
+        "Version is not valid for this client: " + version);
+  }
+  
+  private void checkTransactionSize(List<Transaction> transactions) {
+    int compressedSize = compressor.compressedByteSize(transactions);
+    verifyAssessment(compressedSize <= Block.MAX_TRANSACTION_BYTE_SIZE, 
+        "Max compressed transaction size exceeded: " + compressedSize);
+  }
+  
+  private void validateConsensus(Consent consent) {
+    ConsentValidator consentValidator = consensusValidators.stream().filter(validator -> validator.type()
+        .equals(consent.getType())).findFirst().get();
+    verifyAssessment(consentValidator.validate(consent));
+  }
+  
+  private void validateTransactions(List<Transaction> transactions) {
+    for(Transaction transaction: transactions) {
+      verifyAssessment(transactionValidator.validate(transaction));
+    }
+  }
+  
+  private void verifyAssessment(Assessment assessment) {
+    verifyAssessment(assessment.isValid(), assessment.getReasonOfFailure());
+  }
+  
+  private void verifyAssessment(boolean isValid, String errorMessage) {
+    if(!isValid) {
+      throw new AssessmentFailedException(errorMessage);
+    }
   }
 }

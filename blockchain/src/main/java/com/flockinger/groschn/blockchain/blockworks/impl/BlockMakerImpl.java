@@ -91,6 +91,7 @@ public class BlockMakerImpl implements BlockMaker {
     }
     rewardTransaction.getInputs().addAll(baseRewardTransaction.getInputs());
     rewardTransaction.getOutputs().addAll(baseRewardTransaction.getOutputs());
+    rewardTransaction.setPublicKey(publicKey);
     transactions.add(transactionManager.createSignedTransaction(rewardTransaction));
   }
 

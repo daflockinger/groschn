@@ -62,10 +62,7 @@ public class ProofOfWorkAlgorithm implements ConsensusAlgorithm {
     consent.setDifficulty(determineNewDifficulty(lastBlock));
     freshBlock.setConsent(consent);
     
-    StopWatch miningTimer = StopWatch.createStarted();
     forgeBlock(freshBlock);
-    miningTimer.stop();
-    consent.setMilliSecondsSpentMining(miningTimer.getTime(TimeUnit.MILLISECONDS));
     processingConsent = false;
     return freshBlock;
   }
@@ -86,7 +83,8 @@ public class ProofOfWorkAlgorithm implements ConsensusAlgorithm {
   }
   
   private void forgeBlock(Block freshBlock) {
-    Consent consent = Consent.class.cast(freshBlock.getConsent());
+    StopWatch miningTimer = StopWatch.createStarted();
+    Consent consent = freshBlock.getConsent();
     String blockHash = "";
     consent.setTimestamp(new Date().getTime());
     Long nonceCount=STARTING_NONCE;
@@ -98,8 +96,10 @@ public class ProofOfWorkAlgorithm implements ConsensusAlgorithm {
         nonceCount++;
       }
       consent.setNonce(nonceCount);
+      consent.setMilliSecondsSpentMining(miningTimer.getTime(TimeUnit.MILLISECONDS));
       blockHash = hashGenerator.generateHash(freshBlock);
     }
+    miningTimer.stop();
     freshBlock.setHash(blockHash);
   }
   

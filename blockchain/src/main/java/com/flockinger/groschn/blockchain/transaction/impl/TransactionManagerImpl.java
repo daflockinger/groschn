@@ -34,6 +34,7 @@ import com.flockinger.groschn.blockchain.util.sign.Signer;
 import com.flockinger.groschn.blockchain.wallet.WalletService;
 import com.flockinger.groschn.messaging.distribution.DistributedCollectionBuilder;
 import com.flockinger.groschn.messaging.distribution.DistributedExternalSet;
+import com.google.common.collect.ImmutableList;
 
 @Component
 public class TransactionManagerImpl implements TransactionManager {
@@ -57,40 +58,38 @@ public class TransactionManagerImpl implements TransactionManager {
   private WalletService wallet;
   @Autowired
   private HashGenerator hashGenerator;
-  
+
   private DistributedExternalSet<Transaction> externalTransactions;
-  
+
   @PostConstruct
   public void initDistributedTransactions() {
-    externalTransactions = distributedCollectionBuilder.createSetWithListener(transactionListener, "transactionPool");
+    externalTransactions =
+        distributedCollectionBuilder.createSetWithListener(transactionListener, "transactionPool");
   }
-  
+
 
   @Override
   public List<Transaction> fetchTransactionsFromPool(long maxByteSize) {
-    var transactionIterator = 
+    var transactionIterator =
         transactionDao.findByStatusOrderByCreatedAtDesc(TransactionStatus.RAW).iterator();
     var transactions = new ArrayList<Transaction>();
     var compressedTransactionsSize = 0l;
-    
-    while(compressedTransactionsSize < maxByteSize && transactionIterator.hasNext()) {
+
+    while (compressedTransactionsSize < maxByteSize && transactionIterator.hasNext()) {
       var freshTransaction = mapToRegularTransaction(transactionIterator.next());
-      compressedTransactionsSize += getSize(freshTransaction);
-      if(compressedTransactionsSize < maxByteSize) {
+      compressedTransactionsSize +=
+          compressor.compressedByteSize(ImmutableList.of(freshTransaction));
+      if (compressedTransactionsSize < maxByteSize) {
         transactions.add(freshTransaction);
       }
     }
     return transactions;
   }
 
-  private long getSize(Transaction transaction) {
-    return compressor.compress(transaction).getEntity().length;
-  }
-
   private Transaction mapToRegularTransaction(StoredPoolTransaction poolTransaction) {
     return mapper.map(poolTransaction, Transaction.class);
   }
-  
+
 
   @Override
   public Optional<TransactionOutput> findTransactionFromPointCut(TransactionPointCut pointCut) {
@@ -102,9 +101,7 @@ public class TransactionManagerImpl implements TransactionManager {
       foundTransaction = storedBlock.get().getTransactions().stream()
           .filter(
               transaction -> StringUtils.equals(transaction.getTransactionHash(), transactionHash))
-          .map(StoredTransaction::getOutputs)
-          .filter(Objects::nonNull)
-          .flatMap(Collection::stream)
+          .map(StoredTransaction::getOutputs).filter(Objects::nonNull).flatMap(Collection::stream)
           .filter(output -> output.getSequenceNumber() == pointCut.getSequenceNumber())
           .map(this::mapToRegularOutput).findAny();
     }
@@ -119,44 +116,50 @@ public class TransactionManagerImpl implements TransactionManager {
   @Override
   public Transaction createSignedTransaction(TransactionDto transactionSigningRequest) {
     var transaction = mapper.map(transactionSigningRequest, Transaction.class);
-    var walletPrivateKey = wallet.getPrivateKey(transactionSigningRequest.getPublicKey(), 
+    var walletPrivateKey = wallet.getPrivateKey(transactionSigningRequest.getPublicKey(),
         transactionSigningRequest.getSecretWalletKey());
-    for(TransactionInput input: transaction.getInputs()) {
+    for (TransactionInput input : transaction.getInputs()) {
       signTransactionInput(input, transaction.getOutputs(), walletPrivateKey);
     }
     transaction.setTransactionHash(hashGenerator.generateHash(transaction));
-    //TODO maybe find better way to generate entity ID's
+    // TODO maybe find better way to generate entity ID's
     transaction.setId(UUID.randomUUID().toString());
     return transaction;
   }
-  
-  private void signTransactionInput(TransactionInput input, List<TransactionOutput> outputs, byte[] privateKey) {
-     input.setPreviousOutputTransaction(createPointcut(input.getPublicKey()));
-     String signature = signer.sign(HashUtils.toByteArray(outputs), privateKey);
-     input.setSignature(signature);
+
+  private void signTransactionInput(TransactionInput input, List<TransactionOutput> outputs,
+      byte[] privateKey) {
+    if (!isRewardTransaction(input)) {
+      input.setPreviousOutputTransaction(createPointcut(input.getPublicKey()));
+    }
+    String signature = signer.sign(HashUtils.toByteArray(outputs), privateKey);
+    input.setSignature(signature);
   }
-  
+
+  private boolean isRewardTransaction(TransactionInput input) {
+    return wallet.getNodePublicKey().equals(input.getPublicKey());
+  }
+
   private TransactionPointCut createPointcut(String publicKey) {
     var latestTransaction = findLatestWithOutputFrom(publicKey);
     var pointcut = new TransactionPointCut();
     pointcut.setTransactionHash(latestTransaction.getTransactionHash());
-    
-    long outputSequenceNumber = latestTransaction.getOutputs().stream().filter(output -> 
-    StringUtils.equals(publicKey,output.getPublicKey()))
+
+    long outputSequenceNumber = latestTransaction.getOutputs().stream()
+        .filter(output -> StringUtils.equals(publicKey, output.getPublicKey()))
         .map(StoredTransactionOutput::getSequenceNumber).findFirst().get();
     pointcut.setSequenceNumber(outputSequenceNumber);
     return pointcut;
   }
-  
+
   private StoredTransaction findLatestWithOutputFrom(String publicKey) {
     var block = blockDao.findFirstByTransactionsOutputsPublicKeyOrderByPositionDesc(publicKey);
-    Optional<StoredTransaction> lastTransaction = block.stream()
-      .map(StoredBlock::getTransactions)
-      .flatMap(Collection::stream)
-      .filter(transaction -> transaction.getOutputs().stream()
-          .anyMatch(output -> StringUtils.equals(publicKey,output.getPublicKey())))
-      .findFirst();
-    if(!lastTransaction.isPresent()) {
+    Optional<StoredTransaction> lastTransaction =
+        block.stream().map(StoredBlock::getTransactions).flatMap(Collection::stream)
+            .filter(transaction -> transaction.getOutputs().stream()
+                .anyMatch(output -> StringUtils.equals(publicKey, output.getPublicKey())))
+            .findFirst();
+    if (!lastTransaction.isPresent()) {
       throw new TransactionInputMissingOutputBalanceException("Public key "
           + "has no balance (output statement) on the blockchain with with address: " + publicKey);
     }

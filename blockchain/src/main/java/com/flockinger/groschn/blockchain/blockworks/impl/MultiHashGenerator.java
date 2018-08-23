@@ -11,7 +11,7 @@ import org.bouncycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import com.flockinger.groschn.blockchain.blockworks.HashGenerator;
-import com.flockinger.groschn.blockchain.config.CryptoConfig;
+import static com.flockinger.groschn.blockchain.config.CryptoConfig.*;
 import com.flockinger.groschn.blockchain.exception.HashingException;
 import com.flockinger.groschn.blockchain.model.Hashable;
 
@@ -35,8 +35,8 @@ public class MultiHashGenerator implements HashGenerator {
   @Autowired
   public MultiHashGenerator(Provider cryptoProvider) {
     try {
-      sha3Digest = MessageDigest.getInstance(SHA3_DIGEST_NAME, CryptoConfig.DEFAULT_PROVIDER_NAME);
-      sha2Digest = MessageDigest.getInstance(SHA2_DIGEST_NAME, CryptoConfig.DEFAULT_PROVIDER_NAME);
+      sha3Digest = MessageDigest.getInstance(SHA3_DIGEST_NAME, DEFAULT_PROVIDER_NAME);
+      sha2Digest = MessageDigest.getInstance(SHA2_DIGEST_NAME, DEFAULT_PROVIDER_NAME);
     } catch (NoSuchAlgorithmException noAlgorithmException) {
       throw new HashingException("Essential hashing Algorithm not available!", noAlgorithmException);
     } catch (NoSuchProviderException noProviderException) {

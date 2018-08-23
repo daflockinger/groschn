@@ -1,7 +1,9 @@
 package com.flockinger.groschn.blockchain.util;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
+import org.apache.commons.collections4.ListUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -55,5 +57,13 @@ public class CompressionUtils {
       LOGGER.error("Can't convert byteArray Json to original Object back!", e);
     }
     return Optional.empty();
+  }
+  
+  public <T extends Hashable> int compressedByteSize(List<T> entities) {
+    if(ListUtils.emptyIfNull(entities).isEmpty()) {
+      return 0;
+    }
+    byte[] entityBytes = toByteArray(entities);
+    return compressor.compress(entityBytes, new byte[entityBytes.length]);
   }
 }

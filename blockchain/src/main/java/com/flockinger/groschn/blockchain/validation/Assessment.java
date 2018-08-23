@@ -1,5 +1,7 @@
 package com.flockinger.groschn.blockchain.validation;
 
+import org.springframework.data.mongodb.core.aggregation.SetOperators.SetIsSubset;
+
 public class Assessment {
   
   private boolean isValid;
@@ -16,5 +18,19 @@ public class Assessment {
   }
   public void setReasonOfFailure(String reasonOfFailure) {
     this.reasonOfFailure = reasonOfFailure;
+  }
+  
+  public static Assessment build() {
+    return new Assessment();
+  }
+  
+  public Assessment valid(boolean isValid) {
+    setValid(isValid);
+    return this;
+  }
+  
+  public Assessment reason(String reasonOfFailure) {
+    setReasonOfFailure(reasonOfFailure);
+    return this;
   }
 }

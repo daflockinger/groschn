@@ -3,7 +3,11 @@ package com.flockinger.groschn.blockchain.util;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -78,6 +82,18 @@ public class CompressionUtilsTest {
         firstUncompressedTr.getOutputs().get(0).getTimestamp());
     assertEquals("verify correct block first transaction locktime", firstTransaction.getLockTime(), firstUncompressedTr.getLockTime());
     assertEquals("verify correct block ", fakeBlock.getVersion(), uncompressedBlock.get().getVersion());
+  }
+  
+  @Test
+  public void testCompressedByteSize_withSomeTransactions_shouldReturnCorrect() {
+    int byteSize = utils.compressedByteSize(TestDataFactory.fakeTransactions());
+    assertEquals("verify correct compressed size of entities", 274, byteSize);
+  }
+  
+  @Test
+  public void testCompressedByteSize_withEmptyTransactions_shouldReturnCorrect() {
+    int byteSize = utils.compressedByteSize(new ArrayList<>());
+    assertEquals("verify correct compressed size of entities", 0, byteSize);
   }
   
   @Test
