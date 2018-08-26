@@ -1,5 +1,8 @@
 package com.flockinger.groschn.blockchain.transaction;
 
+import static com.flockinger.groschn.blockchain.TestDataFactory.createRandomTransactionInputWith;
+import static com.flockinger.groschn.blockchain.TestDataFactory.createRandomTransactionOutputWith;
+import static com.flockinger.groschn.blockchain.TestDataFactory.createRandomTransactionWith;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -35,9 +38,7 @@ import com.flockinger.groschn.blockchain.repository.TransactionPoolRepository;
 import com.flockinger.groschn.blockchain.repository.model.StoredBlock;
 import com.flockinger.groschn.blockchain.repository.model.StoredPoolTransaction;
 import com.flockinger.groschn.blockchain.repository.model.StoredTransaction;
-import com.flockinger.groschn.blockchain.repository.model.StoredTransactionInput;
 import com.flockinger.groschn.blockchain.repository.model.StoredTransactionOutput;
-import com.flockinger.groschn.blockchain.repository.model.StoredTransactionPointCut;
 import com.flockinger.groschn.blockchain.repository.model.TransactionStatus;
 import com.flockinger.groschn.blockchain.transaction.impl.TransactionManagerImpl;
 import com.flockinger.groschn.blockchain.transaction.impl.TransactionPoolListener;
@@ -312,17 +313,6 @@ public class TransactionManagerTest extends BaseDbTest {
     
     manager.createSignedTransaction(request);
   }
-  
-  /*
-  TODO write tests
-  
-  @Test
- public void test_with_should() {}
-   
- Transaction createSignedTransaction(TransactionDto transactionSigningRequest);
-  
-  
-  * */
     
   
   private List<StoredPoolTransaction> createFakePooledTransactions() {
@@ -343,8 +333,10 @@ public class TransactionManagerTest extends BaseDbTest {
     StoredPoolTransaction tr = new StoredPoolTransaction();
     tr.setCreatedAt(new Date(createdAt));
     tr.setId(UUID.randomUUID().toString());
-    tr.setOutputs(ImmutableList.of(createOutput(1),createOutput(2),createOutput(3),createOutput(4)));
-    tr.setInputs(ImmutableList.of(createInput(1),createInput(2),createInput(3)));
+    tr.setOutputs(ImmutableList.of(createRandomTransactionOutputWith(1),createRandomTransactionOutputWith(2),
+        createRandomTransactionOutputWith(3),createRandomTransactionOutputWith(4)));
+    tr.setInputs(ImmutableList.of(createRandomTransactionInputWith(1),createRandomTransactionInputWith(2),
+        createRandomTransactionInputWith(3)));
     tr.setStatus(status);
     tr.setTransactionId(UUID.randomUUID().toString());
     return tr;
@@ -377,55 +369,17 @@ public class TransactionManagerTest extends BaseDbTest {
   
   private List<StoredTransaction> createFakeTransactions(StoredTransactionOutput importantOutput, String importantHash) {
     List<StoredTransaction> transactions = new ArrayList<>();
-    transactions.add(createFakeTransaction(null,null));
-    transactions.add(createFakeTransaction(null,null));
-    transactions.add(createFakeTransaction(null,null));
-    transactions.add(createFakeTransaction(null,null));
+    transactions.add(createRandomTransactionWith(null,null,null));
+    transactions.add(createRandomTransactionWith(null,null,null));
+    transactions.add(createRandomTransactionWith(null,null,null));
+    transactions.add(createRandomTransactionWith(null,null,null));
     if(importantOutput != null && importantHash != null) {
-      transactions.add(createFakeTransaction(importantOutput, importantHash));
+      transactions.add(createRandomTransactionWith(importantHash,importantOutput,null));
     }
-    transactions.add(createFakeTransaction(null,null));
-    transactions.add(createFakeTransaction(null,null));
-    transactions.add(createFakeTransaction(null,null));
-    transactions.add(createFakeTransaction(null,null));
+    transactions.add(createRandomTransactionWith(null,null,null));
+    transactions.add(createRandomTransactionWith(null,null,null));
+    transactions.add(createRandomTransactionWith(null,null,null));
+    transactions.add(createRandomTransactionWith(null,null,null));
     return transactions;
-  }
-  
-  private StoredTransaction createFakeTransaction(StoredTransactionOutput importantOutput, String importantHash) {
-    StoredTransaction transaction = new StoredTransaction();
-    if(importantHash != null) {
-      transaction.setTransactionHash(importantHash);
-    } else {
-      transaction.setTransactionHash(UUID.randomUUID().toString());
-    }
-    if(importantOutput != null) {
-      transaction.setOutputs(ImmutableList.of(createOutput(1), importantOutput, createOutput(3),createOutput(4)));
-    } else {
-      transaction.setOutputs(ImmutableList.of(createOutput(1),createOutput(2),createOutput(3),createOutput(4)));
-    }
-    return transaction;
-  }
-  
-  private StoredTransactionOutput createOutput(long sequenceNumber) {
-    StoredTransactionOutput output = new StoredTransactionOutput();
-    output.setAmount(new BigDecimal(RandomUtils.nextLong(1, 101)));
-    output.setPublicKey(UUID.randomUUID().toString());
-    output.setSequenceNumber(sequenceNumber);
-    output.setTimestamp(new Date().getTime());
-    return output;
-  }
-  
-  private StoredTransactionInput createInput(long sequenceNumber) {
-    StoredTransactionInput input = new StoredTransactionInput();
-    input.setAmount(new BigDecimal(RandomUtils.nextLong(1, 101)));
-    input.setPublicKey(UUID.randomUUID().toString());
-    input.setSequenceNumber(sequenceNumber);
-    input.setTimestamp(new Date().getTime());
-    StoredTransactionPointCut pointcut = new StoredTransactionPointCut();
-    pointcut.setSequenceNumber(RandomUtils.nextLong(1, 10));
-    pointcut.setTransactionHash(UUID.randomUUID().toString());
-    input.setPreviousOutputTransaction(pointcut);
-    input.setSignature(UUID.randomUUID().toString());
-    return input;
   }
 }

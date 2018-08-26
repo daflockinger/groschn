@@ -12,6 +12,7 @@ import com.flockinger.groschn.blockchain.consensus.model.Consent;
 @Document(collection="blockchain")
 @CompoundIndexes({
   @CompoundIndex(name="idx_transaction_hash", def= "{'transactions.transactionHash': 1}", background=true),
+  @CompoundIndex(name="idx_tx_input_addr_pos_sorted", def= "{'transactions.inputs.publicKey': 1, 'position': -1}", background=true),
   @CompoundIndex(name="idx_tx_output_addr_pos_sorted", def= "{'transactions.outputs.publicKey': 1, 'position': -1}", background=true),
 })
 public class StoredBlock {

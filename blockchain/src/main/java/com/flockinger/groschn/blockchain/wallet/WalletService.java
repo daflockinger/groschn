@@ -1,5 +1,6 @@
 package com.flockinger.groschn.blockchain.wallet;
 
+import java.math.BigDecimal;
 import java.security.PrivateKey;
 
 public interface WalletService {
@@ -9,4 +10,9 @@ public interface WalletService {
   PrivateKey getPrivateKey();
   
   //TODO add calculate balance and stuff
+  
+  BigDecimal calculateBalance(String publicKey);
+  
+  
+  
 }
