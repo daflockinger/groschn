@@ -1,11 +1,13 @@
 package com.flockinger.groschn.blockchain.validation;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import java.math.BigDecimal;
+import java.util.Date;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -13,12 +15,8 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.ConfigFileApplicationContextInitializer;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.mock.mockito.MockitoTestExecutionListener;
-import org.springframework.boot.test.mock.mockito.ResetMocksTestExecutionListener;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
 import com.flockinger.groschn.blockchain.BaseDbTest;
 import com.flockinger.groschn.blockchain.blockworks.BlockMaker;
 import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
@@ -28,11 +26,7 @@ import com.flockinger.groschn.blockchain.consensus.impl.ConsensusFactory;
 import com.flockinger.groschn.blockchain.consensus.impl.ProofOfMajorityAlgorithm;
 import com.flockinger.groschn.blockchain.consensus.impl.ProofOfWorkAlgorithm;
 import com.flockinger.groschn.blockchain.consensus.model.ConsensusType;
-import com.flockinger.groschn.blockchain.consensus.model.Consent;
 import com.flockinger.groschn.blockchain.model.Block;
-import com.flockinger.groschn.blockchain.model.Transaction;
-import com.flockinger.groschn.blockchain.model.TransactionInput;
-import com.flockinger.groschn.blockchain.model.TransactionOutput;
 import com.flockinger.groschn.blockchain.repository.BlockProcessRepository;
 import com.flockinger.groschn.blockchain.repository.BlockchainRepository;
 import com.flockinger.groschn.blockchain.repository.TransactionPoolRepository;
@@ -93,9 +87,8 @@ public class BlockValidatorTest extends BaseDbTest {
   @Autowired
   private BlockMaker maker;
   
-  private Block freshBlock;
+  private static Block freshBlock;
  
-  //TODO add many more tests that cover all the failure possibilities
   /*
    Test about those failures:
    * 
@@ -113,11 +106,10 @@ public class BlockValidatorTest extends BaseDbTest {
   @Before
   public void setup() {    
     when(consentMockator.type()).thenReturn(ConsensusType.PROOF_OF_WORK);
+    when(storageService.getLatestBlock()).thenReturn(Block.GENESIS_BLOCK());
     
     if(freshBlock == null) {
-      when(storageService.getLatestBlockPosition()).thenReturn(1l);
-      blockDao.save(mapper.map(Block.GENESIS_BLOCK(), StoredBlock.class));
-      
+      blockDao.save(mapper.map(Block.GENESIS_BLOCK(),StoredBlock.class));
       maker.produceBlock();
       ArgumentCaptor<Block> blockCaptor = ArgumentCaptor.forClass(Block.class);
       verify(storageService).saveInBlockchain(blockCaptor.capture());
@@ -126,7 +118,7 @@ public class BlockValidatorTest extends BaseDbTest {
   }
   
   @Test
-  public void testValidate_withValidBigBlock_shouldValidateCorrectly() {
+  public void testValidate_withValidBigBlock_shouldValidateSuccess() {
     when(compressor.compressedByteSize(anyList())).thenReturn(Block.MAX_TRANSACTION_BYTE_SIZE.intValue() - 1);
     when(transactionMockator.validate(any())).thenReturn(Assessment.build().valid(true));
     when(consentMockator.validate(any())).thenReturn(Assessment.build().valid(true));
@@ -136,5 +128,127 @@ public class BlockValidatorTest extends BaseDbTest {
     assertEquals("verify that correct mined reward block is VALID", true, result.isValid());
   }
   
+  @Test
+  public void testValidate_withTooLowPosition_shouldValidateFail() {
+    when(compressor.compressedByteSize(anyList())).thenReturn(Block.MAX_TRANSACTION_BYTE_SIZE.intValue() - 1);
+    when(transactionMockator.validate(any())).thenReturn(Assessment.build().valid(true));
+    when(consentMockator.validate(any())).thenReturn(Assessment.build().valid(true));
+    freshBlock.setPosition(1l);
+    
+    Assessment result = validator.validate(freshBlock);
+    
+    freshBlock.setPosition(2l);
+    assertEquals("verify that block with too low position is NOT valid", false, result.isValid());
+    assertTrue("verify that error message is correct", StringUtils.containsIgnoreCase(result.getReasonOfFailure(),"position"));
+  }
   
+  @Test
+  public void testValidate_withWrongLastHash_shouldValidateFail() {
+    when(compressor.compressedByteSize(anyList())).thenReturn(Block.MAX_TRANSACTION_BYTE_SIZE.intValue() - 1);
+    when(transactionMockator.validate(any())).thenReturn(Assessment.build().valid(true));
+    when(consentMockator.validate(any())).thenReturn(Assessment.build().valid(true));
+    String lastHash = freshBlock.getLastHash();
+    freshBlock.setLastHash("A" + lastHash.substring(1, lastHash.length()));
+    
+    Assessment result = validator.validate(freshBlock);
+    
+    freshBlock.setLastHash(lastHash);
+    assertEquals("verify that block with wrong last hash is NOT valid", false, result.isValid());
+    assertTrue("verify that error message is correct", StringUtils.containsIgnoreCase(result.getReasonOfFailure(),"last"));
+  }
+  
+  @Test
+  public void testValidate_withWrongCurrentBlockHash_shouldValidateFail() {
+    when(compressor.compressedByteSize(anyList())).thenReturn(Block.MAX_TRANSACTION_BYTE_SIZE.intValue() - 1);
+    when(transactionMockator.validate(any())).thenReturn(Assessment.build().valid(true));
+    when(consentMockator.validate(any())).thenReturn(Assessment.build().valid(true));
+    String blockHash = freshBlock.getHash();
+    freshBlock.setHash("A" + blockHash.substring(1, blockHash.length()));
+    
+    Assessment result = validator.validate(freshBlock);
+    
+    freshBlock.setHash(blockHash);
+    assertEquals("verify that block with wrong hash is NOT valid", false, result.isValid());
+    assertTrue("verify that error message is correct", StringUtils.containsIgnoreCase(result.getReasonOfFailure(),"hash"));
+  }
+  
+  @Test
+  public void testValidate_withWrongMerkleRootHash_shouldValidateFail() {
+    when(compressor.compressedByteSize(anyList())).thenReturn(Block.MAX_TRANSACTION_BYTE_SIZE.intValue() - 1);
+    when(transactionMockator.validate(any())).thenReturn(Assessment.build().valid(true));
+    when(consentMockator.validate(any())).thenReturn(Assessment.build().valid(true));
+    String merkleRoot = freshBlock.getTransactionMerkleRoot();
+    freshBlock.setTransactionMerkleRoot("A" + merkleRoot.substring(1, merkleRoot.length()));
+    
+    Assessment result = validator.validate(freshBlock);
+    
+    freshBlock.setTransactionMerkleRoot(merkleRoot);
+    assertEquals("verify that block with wrong merkleRoot is NOT valid", false, result.isValid());
+    assertTrue("verify that error message is correct", StringUtils.containsIgnoreCase(result.getReasonOfFailure(),"MerkleRoot"));
+  }
+  
+  @Test
+  public void testValidate_withFutureTimestamp_shouldValidateFail() {
+    when(compressor.compressedByteSize(anyList())).thenReturn(Block.MAX_TRANSACTION_BYTE_SIZE.intValue() - 1);
+    when(transactionMockator.validate(any())).thenReturn(Assessment.build().valid(true));
+    when(consentMockator.validate(any())).thenReturn(Assessment.build().valid(true));
+    long timeStamp = freshBlock.getTimestamp();
+    freshBlock.setTimestamp(new Date().getTime() + 10000);
+    
+    Assessment result = validator.validate(freshBlock);
+    
+    freshBlock.setTimestamp(timeStamp);
+    assertEquals("verify that block with future timestamp is NOT valid", false, result.isValid());
+    assertTrue("verify that error message is correct", StringUtils.containsIgnoreCase(result.getReasonOfFailure(),"future"));
+  }
+  
+  @Test
+  public void testValidate_withWrongVersion_shouldValidateFail() {
+    when(compressor.compressedByteSize(anyList())).thenReturn(Block.MAX_TRANSACTION_BYTE_SIZE.intValue() - 1);
+    when(transactionMockator.validate(any())).thenReturn(Assessment.build().valid(true));
+    when(consentMockator.validate(any())).thenReturn(Assessment.build().valid(true));
+    freshBlock.setVersion(2);
+    
+    Assessment result = validator.validate(freshBlock);
+    
+    freshBlock.setVersion(BlockMaker.CURRENT_BLOCK_VERSION);
+    assertEquals("verify that block with wrong version is NOT valid", false, result.isValid());
+    assertTrue("verify that error message is correct", StringUtils.containsIgnoreCase(result.getReasonOfFailure(),"version"));
+  }
+  
+  @Test
+  public void testValidate_withTooHighTransactionSize_shouldValidateFail() {
+    when(compressor.compressedByteSize(anyList())).thenReturn(Block.MAX_TRANSACTION_BYTE_SIZE.intValue() + 1);
+    when(transactionMockator.validate(any())).thenReturn(Assessment.build().valid(true));
+    when(consentMockator.validate(any())).thenReturn(Assessment.build().valid(true));
+    
+    Assessment result = validator.validate(freshBlock);
+    
+    assertEquals("verify that block with too big transaction size is NOT valid", false, result.isValid());
+    assertTrue("verify that error message is correct", StringUtils.containsIgnoreCase(result.getReasonOfFailure(),"size"));
+  }
+  
+  @Test
+  public void testValidate_withFailedConsensusValidation_shouldValidateFail() {
+    when(compressor.compressedByteSize(anyList())).thenReturn(Block.MAX_TRANSACTION_BYTE_SIZE.intValue() - 1);
+    when(transactionMockator.validate(any())).thenReturn(Assessment.build().valid(true));
+    when(consentMockator.validate(any())).thenReturn(Assessment.build().valid(false).reason("Not consent dude."));
+    
+    Assessment result = validator.validate(freshBlock);
+    
+    assertEquals("verify that block with consensus validation failed is NOT valid", false, result.isValid());
+    assertTrue("verify that error message is correct", StringUtils.containsIgnoreCase(result.getReasonOfFailure(),"Not consent dude."));
+  }
+  
+  @Test
+  public void testValidate_withFailedTransactionValidation_shouldValidateFail() {
+    when(compressor.compressedByteSize(anyList())).thenReturn(Block.MAX_TRANSACTION_BYTE_SIZE.intValue() - 1);
+    when(transactionMockator.validate(any())).thenReturn(Assessment.build().valid(false).reason("Some numbers must be mixed up."));
+    when(consentMockator.validate(any())).thenReturn(Assessment.build().valid(true));
+    
+    Assessment result = validator.validate(freshBlock);
+    
+    assertEquals("verify that block with transaction validation failed is NOT valid", false, result.isValid());
+    assertTrue("verify that error message is correct", StringUtils.containsIgnoreCase(result.getReasonOfFailure(),"Some numbers must be mixed up."));
+  }
 }

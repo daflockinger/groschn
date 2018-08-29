@@ -1,6 +1,13 @@
 package com.flockinger.groschn.blockchain.blockworks;
 
-import static org.junit.Assert.*;
+import static com.flockinger.groschn.blockchain.TestDataFactory.createRandomTransactionInputWith;
+import static com.flockinger.groschn.blockchain.TestDataFactory.createRandomTransactionOutputWith;
+import static com.flockinger.groschn.blockchain.TestDataFactory.createRandomTransactionWith;
+import static com.flockinger.groschn.blockchain.TestDataFactory.mapToTransaction;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -25,7 +32,6 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import com.flockinger.groschn.blockchain.TestConfig;
-import static com.flockinger.groschn.blockchain.TestDataFactory.*;
 import com.flockinger.groschn.blockchain.blockworks.impl.BlockMakerImpl;
 import com.flockinger.groschn.blockchain.consensus.impl.ConsensusFactory;
 import com.flockinger.groschn.blockchain.dto.TransactionDto;
@@ -75,6 +81,7 @@ public class BlockMakerTest {
 
   @Before
   public void setup() {
+    when(storageService.getLatestBlock()).thenReturn(Block.GENESIS_BLOCK());
     when(bookkeeper.countChange(any())).thenReturn(new BigDecimal("1"));
     when(bookkeeper.calculateBlockReward(anyLong())).thenReturn(new BigDecimal("100"));
     when(compressor.compress(any())).thenReturn(CompressedEntity.build());

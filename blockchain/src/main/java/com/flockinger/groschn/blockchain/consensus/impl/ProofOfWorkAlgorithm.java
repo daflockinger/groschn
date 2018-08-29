@@ -116,6 +116,8 @@ public class ProofOfWorkAlgorithm implements ConsensusAlgorithm {
   }
   
   private Block findLastBlock() {
+    
+    //TODO replace by block Storage service!!
     return blockDao
         .findTop3ByConsentTypeOrderByPositionDesc(ConsensusType.PROOF_OF_WORK)
         .stream().map(dbBlock -> mapper.map(dbBlock, Block.class))

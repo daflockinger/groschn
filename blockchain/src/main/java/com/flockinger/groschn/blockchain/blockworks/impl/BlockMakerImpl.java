@@ -99,7 +99,7 @@ public class BlockMakerImpl implements BlockMaker {
       String publicKey) {
     BigDecimal totalChange = transactions.stream().map(this::countTransactionSave)
         .reduce(BigDecimal::add).orElse(BigDecimal.ZERO);
-    BigDecimal reward = bookkeeper.calculateBlockReward(storageService.getLatestBlockPosition());
+    BigDecimal reward = bookkeeper.calculateBlockReward(storageService.getLatestBlock().getPosition());
     TransactionStatementDto rewardInput = createTransactionStatement(reward, 1l, publicKey);
     List<TransactionStatementDto> outputs = new ArrayList<>();
     outputs.add(createTransactionStatement(reward, 1l, publicKey));

@@ -2,19 +2,16 @@ package com.flockinger.groschn.blockchain.validation.impl;
 
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
-import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import com.flockinger.groschn.blockchain.blockworks.BlockMaker;
+import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
 import com.flockinger.groschn.blockchain.blockworks.HashGenerator;
 import com.flockinger.groschn.blockchain.consensus.model.Consent;
 import com.flockinger.groschn.blockchain.exception.validation.AssessmentFailedException;
 import com.flockinger.groschn.blockchain.exception.validation.ValidationException;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.model.Transaction;
-import com.flockinger.groschn.blockchain.repository.BlockchainRepository;
-import com.flockinger.groschn.blockchain.repository.model.StoredBlock;
 import com.flockinger.groschn.blockchain.util.CompressionUtils;
 import com.flockinger.groschn.blockchain.util.MerkleRootCalculator;
 import com.flockinger.groschn.blockchain.validation.Assessment;
@@ -30,9 +27,7 @@ public class BlockValidator implements Validator<Block> {
   private List<ConsentValidator> consensusValidators;
   
   @Autowired
-  private BlockchainRepository blockDao;
-  @Autowired
-  private ModelMapper mapper;
+  private BlockStorageService blockService;
   @Autowired
   private HashGenerator hasher;
   @Autowired
@@ -45,12 +40,12 @@ public class BlockValidator implements Validator<Block> {
     Assessment isBlockValid = new Assessment();
     // Validations for a new Block:
     try {
+      Block lastBlock = blockService.getLatestBlock();
+      
       // 1. check if position is higher than existing one
-      isPositionHigher(value.getPosition());
+      isPositionHigher(value.getPosition(), lastBlock);
       // 2. check if lastHash is correct 
-      verifyLastHash(value.getLastHash());
-      // 3. verify if current hash is correctly calculated
-      verifyCurrentHash(value);
+      verifyLastHash(value.getLastHash(), lastBlock);
       // 4. check if transaction merkleRoot-Hash is correct
       verifyTransactionsMerkleRoot(value);
       // 5. check if timestamp is in the past but not too much (set limit for that maybe 2 hours like bitcoin or less)
@@ -60,9 +55,11 @@ public class BlockValidator implements Validator<Block> {
       // 7. check max transaction size
       checkTransactionSize(value.getTransactions());
       // 8. call consent validation
-      validateConsensus(value.getConsent());
+      validateConsensus(value);
       // 9. call transaction validations
       validateTransactions(value.getTransactions());
+      // 3. verify if current hash is correctly calculated
+      verifyCurrentHash(value);
       isBlockValid.setValid(true);
     } catch (ValidationException e) {
       isBlockValid.setValid(false);
@@ -71,16 +68,14 @@ public class BlockValidator implements Validator<Block> {
     return isBlockValid;
   }
   
-  private void isPositionHigher(Long position) {
-    verifyAssessment(position != null && position > blockDao.count(), 
+  private void isPositionHigher(Long position, Block block) {    
+    verifyAssessment(position != null && position > block.getPosition(), 
         "Incomming block must have a higher position than the latest one!");
   }
   
-  private void verifyLastHash(String lastHash) {
-    Optional<StoredBlock> latestBlock = blockDao.findFirstByOrderByPositionDesc();
-    Block lastBlock = mapper.map(latestBlock.get(), Block.class);
-    lastBlock.setHash(null);
-    String generatedLastHash = hasher.generateHash(lastBlock);
+  private void verifyLastHash(String lastHash, Block block) {
+    block.setHash(null);
+    String generatedLastHash = hasher.generateHash(block);
     
     verifyAssessment(generatedLastHash.equals(lastHash),
         "Last block hash is wrong!");
@@ -118,10 +113,10 @@ public class BlockValidator implements Validator<Block> {
         "Max compressed transaction size exceeded: " + compressedSize);
   }
   
-  private void validateConsensus(Consent consent) {
+  private void validateConsensus(Block block) {
     ConsentValidator consentValidator = consensusValidators.stream().filter(validator -> validator.type()
-        .equals(consent.getType())).findFirst().get();
-    verifyAssessment(consentValidator.validate(consent));
+        .equals(block.getConsent().getType())).findFirst().get();
+    verifyAssessment(consentValidator.validate(block));
   }
   
   private void validateTransactions(List<Transaction> transactions) {

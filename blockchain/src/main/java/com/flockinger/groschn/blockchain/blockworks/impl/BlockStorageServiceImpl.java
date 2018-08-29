@@ -5,6 +5,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
+import com.flockinger.groschn.blockchain.consensus.model.ConsensusType;
 import com.flockinger.groschn.blockchain.exception.validation.BlockValidationException;
 import com.flockinger.groschn.blockchain.exception.validation.ValidationException;
 import com.flockinger.groschn.blockchain.model.Block;
@@ -52,7 +53,19 @@ public class BlockStorageServiceImpl implements BlockStorageService {
   }
 
   @Override
-  public Long getLatestBlockPosition() {
-    return dao.findFirstByOrderByPositionDesc().get().getPosition();
+  public Block getLatestBlock() {
+    return mapToBlock(dao.findFirstByOrderByPositionDesc().get());
+  }
+  
+  private Block mapToBlock(StoredBlock block) {
+    return mapper.map(block, Block.class);
+  }
+
+  @Override
+  public Block getLatestProofOfWorkBlock() {
+    return dao
+        .findTop3ByConsentTypeOrderByPositionDesc(ConsensusType.PROOF_OF_WORK)
+        .stream().map(dbBlock -> mapper.map(dbBlock, Block.class))
+        .findFirst().get();
   }
 }
