@@ -5,6 +5,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.Provider;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.jcajce.util.MessageDigestUtils;
 import org.bouncycastle.util.encoders.Hex;
@@ -63,5 +64,10 @@ public class MultiHashGenerator implements HashGenerator {
   private byte[] hashWithDigest(byte[] hashableMessage, MessageDigest digest) {
     digest.update(hashableMessage);
     return digest.digest();
+  }
+
+  @Override
+  public boolean isHashCorrect(String hash, Hashable hashable) {
+    return StringUtils.equalsIgnoreCase(hash, generateHash(hashable));
   }
 }

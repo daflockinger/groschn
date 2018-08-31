@@ -38,6 +38,7 @@ public class HashGeneratorTest {
     assertNotNull("verify returned hash is not null", generatedHash);
     assertEquals("verify correct generated hash", expectedHash, generatedHash);
   }
+  
 
   @Test
   public void testGenerateHash_withVerifyThatSlightlyChangesHashesAreVeryDifferent_shouldCreateCorrectly()
@@ -94,6 +95,51 @@ public class HashGeneratorTest {
       }
     });
     assertNotNull("verify returned hash is not null", generatedHash);
+  }
+  
+  @Test
+  public void testIsHashCorrect_withCorrectHashAndHashable_shouldReturnTrue() {
+    Hashable hashable = createTestData(123l);
+    String hash = "ead4bf68adc722df1dfadd5bf833b26579150e23bf865a1cc72ed39c394a3b26e22158877a7fa79f54a4614c65d3a502e71537f697f5987145f0d137a3e21e49";
+
+    assertEquals("verify that correct hash for hashable returns true", true, 
+        hasher.isHashCorrect(hash, hashable));
+  }
+  
+  @Test
+  public void testIsHashCorrect_withCorrectHashAndHashableSomeUpperCase_shouldReturnTrue() {
+    Hashable hashable = createTestData(123l);
+    String hash = "EAD4BF68ADC722DF1DFADD5bf833b26579150e23bf865a1cc72ed39c394a3b26e22158877a7fa79f54a4614c65d3a502e71537f697f5987145f0d137a3e21e49";
+
+    assertEquals("verify that correct hash for hashable returns true", true, 
+        hasher.isHashCorrect(hash, hashable));
+  }
+  
+  @Test
+  public void testIsHashCorrect_withSlightlyModifiedHash_shouldReturnFalse() {
+    Hashable hashable = createTestData(123l);
+    String hash = "fad4bf68adc722df1dfadd5bf833b26579150e23bf865a1cc72ed39c394a3b26e22158877a7fa79f54a4614c65d3a502e71537f697f5987145f0d137a3e21e49";
+
+    assertEquals("verify that slightly modified hash returns false", false, 
+        hasher.isHashCorrect(hash, hashable));
+  }
+  
+  @Test
+  public void testIsHashCorrect_withSlightlyModifiedHashableValue_shouldReturnFalse() {
+    Hashable hashable = createTestData(124l);
+    String hash = "ead4bf68adc722df1dfadd5bf833b26579150e23bf865a1cc72ed39c394a3b26e22158877a7fa79f54a4614c65d3a502e71537f697f5987145f0d137a3e21e49";
+
+    assertEquals("verify that slightly modified hashable value returns false", false, 
+        hasher.isHashCorrect(hash, hashable));
+  }
+  
+  @Test
+  public void testIsHashCorrect_withInvalidHash_shouldReturnFalse() {
+    Hashable hashable = createTestData(123l);
+    String hash = "ZZd4bf68adc722df1dfadd5bf833b26579150e23bf865a1cc72ed39c394a3b26e22158877a7fa79f54a4614c65d3a502e71537f697f5987145f0d137a3e21e49";
+
+    assertEquals("verify with invalid hash returns false", false, 
+        hasher.isHashCorrect(hash, hashable));
   }
 
   private Block createTestData(long timestamp) {

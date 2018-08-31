@@ -6,4 +6,6 @@ import com.flockinger.groschn.blockchain.model.Hashable;
 public interface HashGenerator {
   
   String generateHash(Hashable hashable) throws HashingException;
+  
+  boolean isHashCorrect(String hash, Hashable hashable);
 }

@@ -5,7 +5,7 @@ import org.junit.runner.RunWith;
 import org.springframework.test.context.junit4.SpringRunner;
 
 @RunWith(SpringRunner.class)
-public class InputKeyAwareTest {
+public class TransactionValidatorTest {
 
   
   //TODO write crazy many tests to verify that this is solid!!

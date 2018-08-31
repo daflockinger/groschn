@@ -74,19 +74,16 @@ public class BlockValidator implements Validator<Block> {
   
   private void verifyLastHash(String lastHash, Block block) {
     block.setHash(null);
-    String generatedLastHash = hasher.generateHash(block);
-    
-    verifyAssessment(generatedLastHash.equals(lastHash),
-        "Last block hash is wrong!");
+    verifyAssessment(hasher.isHashCorrect(lastHash, block), "Last block hash is wrong!");
   }
   
   private void verifyCurrentHash(Block block) {
     String currentHash = block.getHash();
     block.setHash(null);
-    String geheratedHash = hasher.generateHash(block);
+    boolean isHashCorrect = hasher.isHashCorrect(currentHash, block);
     block.setHash(currentHash);
     
-    verifyAssessment(geheratedHash.equals(currentHash), "Block hash is wrong!");
+    verifyAssessment(isHashCorrect, "Block hash is wrong!");
   }
   
   private void verifyTransactionsMerkleRoot(Block value) {
