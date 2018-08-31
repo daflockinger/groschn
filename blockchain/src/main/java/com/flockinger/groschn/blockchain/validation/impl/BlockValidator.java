@@ -7,7 +7,6 @@ import org.springframework.stereotype.Component;
 import com.flockinger.groschn.blockchain.blockworks.BlockMaker;
 import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
 import com.flockinger.groschn.blockchain.blockworks.HashGenerator;
-import com.flockinger.groschn.blockchain.consensus.model.Consent;
 import com.flockinger.groschn.blockchain.exception.validation.AssessmentFailedException;
 import com.flockinger.groschn.blockchain.exception.validation.ValidationException;
 import com.flockinger.groschn.blockchain.model.Block;
@@ -22,7 +21,7 @@ import com.flockinger.groschn.blockchain.validation.Validator;
 public class BlockValidator implements Validator<Block> {
 
   @Autowired
-  private Validator<Transaction> transactionValidator;
+  private Validator<List<Transaction>> transactionValidator;
   @Autowired
   private List<ConsentValidator> consensusValidators;
   
@@ -120,9 +119,7 @@ public class BlockValidator implements Validator<Block> {
   }
   
   private void validateTransactions(List<Transaction> transactions) {
-    for(Transaction transaction: transactions) {
-      verifyAssessment(transactionValidator.validate(transaction));
-    }
+    verifyAssessment(transactionValidator.validate(transactions));
   }
   
   private void verifyAssessment(Assessment assessment) {

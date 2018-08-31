@@ -11,7 +11,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
-import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.ConfigFileApplicationContextInitializer;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -31,7 +30,6 @@ import com.flockinger.groschn.blockchain.repository.BlockProcessRepository;
 import com.flockinger.groschn.blockchain.repository.BlockchainRepository;
 import com.flockinger.groschn.blockchain.repository.TransactionPoolRepository;
 import com.flockinger.groschn.blockchain.repository.WalletRepository;
-import com.flockinger.groschn.blockchain.repository.model.StoredBlock;
 import com.flockinger.groschn.blockchain.transaction.impl.BookkeeperImpl;
 import com.flockinger.groschn.blockchain.transaction.impl.TransactionManagerImpl;
 import com.flockinger.groschn.blockchain.transaction.impl.TransactionPoolListener;
@@ -41,7 +39,7 @@ import com.flockinger.groschn.blockchain.util.MerkleRootCalculator;
 import com.flockinger.groschn.blockchain.util.crypto.impl.KeyAESCipher;
 import com.flockinger.groschn.blockchain.util.sign.impl.EcdsaSecpSigner;
 import com.flockinger.groschn.blockchain.validation.impl.BlockValidator;
-import com.flockinger.groschn.blockchain.validation.impl.TransactionValidator;
+import com.flockinger.groschn.blockchain.validation.impl.BlockTransactionsValidator;
 import com.flockinger.groschn.blockchain.wallet.impl.WalletServiceImpl;
 import com.flockinger.groschn.messaging.distribution.DistributedCollectionBuilder;
 import com.flockinger.groschn.messaging.members.ElectionStatistics;
@@ -59,7 +57,7 @@ import com.flockinger.groschn.messaging.outbound.Broadcaster;
 public class BlockValidatorTest extends BaseDbTest {
 
   @MockBean
-  private TransactionValidator transactionMockator;
+  private BlockTransactionsValidator transactionMockator;
   @MockBean
   private ConsentValidator consentMockator;
   @MockBean
@@ -76,13 +74,8 @@ public class BlockValidatorTest extends BaseDbTest {
   @MockBean
   private Broadcaster<CompressedEntity> broadcaster;
   
-  
   @Autowired
   private BlockValidator validator;
-  @Autowired
-  private BlockchainRepository blockDao;
-  @Autowired
-  private ModelMapper mapper;
   
   @Autowired
   private BlockMaker maker;
@@ -107,9 +100,9 @@ public class BlockValidatorTest extends BaseDbTest {
   public void setup() {    
     when(consentMockator.type()).thenReturn(ConsensusType.PROOF_OF_WORK);
     when(storageService.getLatestBlock()).thenReturn(Block.GENESIS_BLOCK());
+    when(storageService.getLatestProofOfWorkBlock()).thenReturn(Block.GENESIS_BLOCK());
     
     if(freshBlock == null) {
-      blockDao.save(mapper.map(Block.GENESIS_BLOCK(),StoredBlock.class));
       maker.produceBlock();
       ArgumentCaptor<Block> blockCaptor = ArgumentCaptor.forClass(Block.class);
       verify(storageService).saveInBlockchain(blockCaptor.capture());

@@ -65,7 +65,7 @@ public class BlockStorageServiceImpl implements BlockStorageService {
   public Block getLatestProofOfWorkBlock() {
     return dao
         .findTop3ByConsentTypeOrderByPositionDesc(ConsensusType.PROOF_OF_WORK)
-        .stream().map(dbBlock -> mapper.map(dbBlock, Block.class))
+        .stream().map(this::mapToBlock)
         .findFirst().get();
   }
 }

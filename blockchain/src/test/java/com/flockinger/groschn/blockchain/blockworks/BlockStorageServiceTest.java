@@ -5,15 +5,19 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import java.util.List;
 import java.util.Optional;
 import org.junit.After;
 import org.junit.Test;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ContextConfiguration;
 import com.flockinger.groschn.blockchain.BaseDbTest;
 import com.flockinger.groschn.blockchain.TestDataFactory;
 import com.flockinger.groschn.blockchain.blockworks.impl.BlockStorageServiceImpl;
+import com.flockinger.groschn.blockchain.consensus.model.ConsensusType;
+import com.flockinger.groschn.blockchain.consensus.model.Consent;
 import com.flockinger.groschn.blockchain.exception.validation.BlockValidationException;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.model.Transaction;
@@ -21,6 +25,8 @@ import com.flockinger.groschn.blockchain.repository.BlockchainRepository;
 import com.flockinger.groschn.blockchain.repository.model.StoredBlock;
 import com.flockinger.groschn.blockchain.repository.model.StoredTransaction;
 import com.flockinger.groschn.blockchain.validation.impl.BlockValidator;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 
 @ContextConfiguration(classes = {BlockchainRepository.class, BlockStorageServiceImpl.class, })
 public class BlockStorageServiceTest extends BaseDbTest {
@@ -29,9 +35,12 @@ public class BlockStorageServiceTest extends BaseDbTest {
   private BlockStorageService service;
   @Autowired
   private BlockchainRepository dao;
+  @Autowired
+  private ModelMapper mapper;
   
   @MockBean
   private BlockValidator validator;
+  
   
   @After
   public void teardown() {
@@ -119,4 +128,59 @@ public class BlockStorageServiceTest extends BaseDbTest {
     assertNotNull("verify latest block position is not null", lastBlock);
     assertEquals("verify latest block position is correct", 97l, lastBlock.getPosition().longValue());
   }
+  
+  @Test
+  public void testGetLatestProofOfWorkBlock_filledChain_shouldReturnCorrect() {
+    dao.saveAll(fakeBlocks());
+    
+    Block lastBlock = service.getLatestProofOfWorkBlock();
+    assertNotNull("verify last block is not null", lastBlock);
+    assertEquals("verify last block has correct position", 98l, 
+        lastBlock.getPosition().longValue());
+    assertEquals("verify last block is of right consensus type", 
+        ConsensusType.PROOF_OF_WORK, lastBlock.getConsent().getType());
+  }
+  
+  @Test
+  public void testGetLatestProofOfWorkBlock_withEmptyChain_shouldReturnGenesisBlock() {
+    ((BlockStorageServiceImpl)service).initBlockchain();
+    
+    Block lastBlock = service.getLatestProofOfWorkBlock();
+    assertNotNull("verify last block is not null", lastBlock);
+    assertEquals("verify last block has correct position", 1l, 
+        lastBlock.getPosition().longValue());
+    assertEquals("verify last block is of right consensus type", 
+        ConsensusType.PROOF_OF_WORK, lastBlock.getConsent().getType());
+  }
+  
+  
+  private List<StoredBlock> fakeBlocks() {
+    Block block1 = TestDataFactory.getFakeBlock();
+    block1.setConsent(fakeConsent(ConsensusType.PROOF_OF_WORK));
+    block1.setPosition(23l);
+    Block block2 = TestDataFactory.getFakeBlock();
+    block2.setConsent(fakeConsent(ConsensusType.PROOF_OF_MAJORITY));
+    block2.setPosition(50l);
+    Block block3 = TestDataFactory.getFakeBlock();
+    block3.setConsent(fakeConsent(ConsensusType.PROOF_OF_WORK));
+    block3.setPosition(54l);
+    Block block4 = TestDataFactory.getFakeBlock();
+    block4.setConsent(fakeConsent(ConsensusType.PROOF_OF_WORK));
+    block4.setPosition(98l);
+    Block block7 = TestDataFactory.getFakeBlock();
+    block7.setConsent(fakeConsent(ConsensusType.PROOF_OF_MAJORITY));
+    block7.setPosition(101l);
+    return ImmutableList.of(map(block1), map(block7), map(block3), map(block4), map(block2));
+  }
+  
+  private Consent fakeConsent(ConsensusType type) {
+    Consent consent = new Consent();
+    consent.setType(type);
+    return consent;
+  }
+  
+  private StoredBlock map(Block block) {
+    return mapper.map(block, StoredBlock.class);
+  }
+  
 }

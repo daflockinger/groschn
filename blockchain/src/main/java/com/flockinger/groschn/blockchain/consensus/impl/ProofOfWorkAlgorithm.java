@@ -5,17 +5,16 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
-import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import com.flockinger.groschn.blockchain.blockworks.BlockMaker;
+import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
 import com.flockinger.groschn.blockchain.blockworks.HashGenerator;
 import com.flockinger.groschn.blockchain.consensus.ConsensusAlgorithm;
 import com.flockinger.groschn.blockchain.consensus.model.ConsensusType;
 import com.flockinger.groschn.blockchain.consensus.model.Consent;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.model.Transaction;
-import com.flockinger.groschn.blockchain.repository.BlockchainRepository;
 import com.flockinger.groschn.blockchain.util.MerkleRootCalculator;
 
 @Component(value = "POW")
@@ -31,10 +30,14 @@ public class ProofOfWorkAlgorithm implements ConsensusAlgorithm {
    */
   public final static Integer DEFAULT_DIFFICULTY = 4;
   
+  /**
+   * Every PoW proven hash must start with a certain amount of those
+   * characters (depending on the difficulty).
+   */
+  public final static String LEADING_ZERO = "0";
+  
   @Autowired
-  private BlockchainRepository blockDao;
-  @Autowired
-  private ModelMapper mapper;
+  private BlockStorageService blockService;
   @Autowired
   private HashGenerator hashGenerator;
   @Autowired
@@ -43,14 +46,16 @@ public class ProofOfWorkAlgorithm implements ConsensusAlgorithm {
   private final Long STARTING_NONCE = 1l;
   
   private boolean processingConsent = false;
+  
+  
 
   @Override
   public Block reachConsensus(List<Transaction> transactions) {
     processingConsent = true;
-    Block lastBlock = findLastBlock();
+    Block lastBlock = blockService.getLatestProofOfWorkBlock();
     
     Block freshBlock = new Block();
-    freshBlock.setPosition(getLastPosition() + 1);
+    freshBlock.setPosition(blockService.getLatestBlock().getPosition() + 1);
     freshBlock.setTransactions(transactions);
     freshBlock.setLastHash(lastBlock.getHash());
     freshBlock.setTimestamp(new Date().getTime());
@@ -65,10 +70,6 @@ public class ProofOfWorkAlgorithm implements ConsensusAlgorithm {
     forgeBlock(freshBlock);
     processingConsent = false;
     return freshBlock;
-  }
-  
-  private long getLastPosition() {
-    return blockDao.findFirstByOrderByPositionDesc().get().getPosition();
   }
   
   private int determineNewDifficulty(Block lastBlock) {
@@ -112,16 +113,7 @@ public class ProofOfWorkAlgorithm implements ConsensusAlgorithm {
    * @return
    */
   private boolean didWorkSucceed(String blockHash, Consent consent) {
-    return StringUtils.startsWith(blockHash, StringUtils.repeat("0", consent.getDifficulty()));
-  }
-  
-  private Block findLastBlock() {
-    
-    //TODO replace by block Storage service!!
-    return blockDao
-        .findTop3ByConsentTypeOrderByPositionDesc(ConsensusType.PROOF_OF_WORK)
-        .stream().map(dbBlock -> mapper.map(dbBlock, Block.class))
-        .findFirst().get();
+    return StringUtils.startsWith(blockHash, StringUtils.repeat(LEADING_ZERO, consent.getDifficulty()));
   }
 
   @Override
