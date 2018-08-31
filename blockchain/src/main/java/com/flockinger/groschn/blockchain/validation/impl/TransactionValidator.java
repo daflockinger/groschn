@@ -66,25 +66,38 @@ public class TransactionValidator implements Validator<Transaction> {
     try {
       //1. verify correct transactionHash
       verifyTransactionHash(value);
-      //2. verify all input signed correctly all outputs
-      verifySignatures(value);
       //3. verify input sum is >= output sum
       verifyPositiveTransactionBalance(value);
-      //4. sequence numbers must be starting from 1 and increasing only by 1 (no gaps)
-      verifySequenceNumbers(value);
-      //5. timestamps must not be in the future
-      verifyTimestamps(value);
-      //6. amount must be more than zero and less than MAX_COIN_AMOUNT
-      verifyAmounts(value);
-      //7. input funds must be equal to the current balance for each input-publicKey
-      verifyInputFundsAreSufficient(value);
+      byte[] outputHash = hasher.generateListHash(value.getOutputs());
       
+      for(int inCount=0; inCount < value.getInputs().size(); inCount++) {
+        TransactionInput input = value.getInputs().get(inCount);
+        //2. verify all input signed correctly all outputs
+        verifySignature(input, outputHash);
+        // verify basic statement values
+        verifyBasicTransactionStatement(input, inCount);
+        //7. input funds must be equal to the current balance for each input-publicKey
+        isInputFundSufficient(input);
+      }
+      for(int outCount=0; outCount < value.getOutputs().size(); outCount++) {
+        // verify output
+        verifyBasicTransactionStatement(value.getOutputs().get(outCount), outCount);
+      }
       isBlockValid.setValid(true);
     } catch (BlockchainException e) {
       isBlockValid.setValid(false);
       isBlockValid.setReasonOfFailure(e.getMessage());
     }  
   return isBlockValid;
+  }
+  
+  private <T extends TransactionOutput> void verifyBasicTransactionStatement(T statement, int inCount) {
+    //4. sequence numbers must be starting from 1 and increasing only by 1 (no gaps)
+    verifySequenceNumber(inCount + 1, statement.getSequenceNumber());
+    //5. timestamps must not be in the future
+    verifyTimestamp(statement.getTimestamp());
+    //6. amount must be more than zero and less than MAX_COIN_AMOUNT
+    verifyAmount(statement.getAmount());
   }
   
   private void verifyTransactionHash(Transaction transaction) {
@@ -95,16 +108,12 @@ public class TransactionValidator implements Validator<Transaction> {
     
     verifyAssessment(isHashCorrect, "Transaction hash is not correct!");
   }
-  
-  private void verifySignatures(Transaction transaction) {
-    byte[] outputHash = hasher.generateListHash(transaction.getOutputs());
-    
-    for(TransactionInput input: transaction.getInputs()) {
-      boolean isValid =  signer.isSignatureValid(outputHash, 
-          input.getPublicKey(), input.getSignature());
-      verifyAssessment(isValid, "Transaction signature is invalid for publicKey: " 
-          + input.getPublicKey());
-    }
+
+  private void verifySignature(TransactionInput input, byte[] outputHash) {
+    boolean isValid =  signer.isSignatureValid(outputHash, 
+        input.getPublicKey(), input.getSignature());
+    verifyAssessment(isValid, "Transaction signature is invalid for publicKey: " 
+        + input.getPublicKey());
   }
   
   private void verifyPositiveTransactionBalance(Transaction transaction) {
@@ -116,24 +125,9 @@ public class TransactionValidator implements Validator<Transaction> {
         "Total input amount must be higher than total output amount!");
   }
   
-  private void verifySequenceNumbers(Transaction transaction) {
-    boolean areSequencesCorrect = isSequenceCorrect(transaction.getInputs()) && isSequenceCorrect(transaction.getOutputs());
-    verifyAssessment(areSequencesCorrect, "Input/Output sequence is not correct! Must start with one and increment by one, without gaps!");
-  }
-  
-  private <T extends Sequential> boolean isSequenceCorrect(List<T> transactionStatements) {
-    var longSequence = transactionStatements.stream()
-        .map(Sequential::getSequenceNumber).sorted().collect(Collectors.toList());
-    var wantedSequence = LongStream.range(1, longSequence.stream().reduce(Long::max).orElse(0l) + 1)
-        .boxed().collect(Collectors.toList());
-    return CollectionUtils.isEqualCollection(longSequence, wantedSequence);
-  }
-  
-  private void verifyTimestamps(Transaction transaction) {
-    transaction.getOutputs().stream().map(TransactionOutput::getTimestamp)
-      .forEach(this::verifyTimestamp);
-    transaction.getInputs().stream().map(TransactionInput::getTimestamp)
-      .forEach(this::verifyTimestamp);
+  private void verifySequenceNumber(long wantedNumber, Long presentNumber) {
+    verifyAssessment(presentNumber != null && wantedNumber == presentNumber, 
+        "Input/Output sequence is not correct! Must start with one and increment by one, without gaps!");
   }
   
   private void verifyTimestamp(Long timestamp) {
@@ -142,26 +136,13 @@ public class TransactionValidator implements Validator<Transaction> {
         "Transaction statements cannot be dated in the future!");
   }
   
-  private void verifyAmounts(Transaction transaction) {
-    boolean areOutputAmountsValid = transaction.getOutputs().stream().map(TransactionOutput::getAmount)
-        .filter(Objects::nonNull).allMatch(this::isAmountValid);
-    boolean areInputAmountsValid = transaction.getInputs().stream().map(TransactionInput::getAmount)
-        .filter(Objects::nonNull).allMatch(this::isAmountValid);
-    verifyAssessment(areInputAmountsValid && areOutputAmountsValid, "Transaction statement amount must be"
+  private void verifyAmount(BigDecimal amount) {
+    boolean isAmountValid = amount.compareTo(BigDecimal.ZERO) > 0 
+        && amount.compareTo(new BigDecimal(MAX_AMOUNT_MINED_GROSCHN)) < 0;
+    verifyAssessment(isAmountValid, "Transaction statement amount must be"
         + "greater than zero and less than " + MAX_AMOUNT_MINED_GROSCHN + "!");
   }
-  
-  private boolean isAmountValid(BigDecimal amount) {
-    return amount.compareTo(BigDecimal.ZERO) > 0 
-        && amount.compareTo(new BigDecimal(MAX_AMOUNT_MINED_GROSCHN)) < 0;
-  }
-  
-  private void verifyInputFundsAreSufficient(Transaction transaction) {
-    for(TransactionInput input: transaction.getInputs()) {
-      isInputFundSufficient(input);
-    }
-  }
-  
+    
   private void isInputFundSufficient(TransactionInput input) {
     BigDecimal realBalance = wallet.calculateBalance(input.getPublicKey());
     verifyAssessment(realBalance.compareTo(input.getAmount()) == 0, 
