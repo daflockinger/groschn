@@ -10,6 +10,7 @@ import java.util.stream.LongStream;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 import com.flockinger.groschn.blockchain.blockworks.HashGenerator;
 import com.flockinger.groschn.blockchain.exception.BlockchainException;
 import com.flockinger.groschn.blockchain.exception.validation.AssessmentFailedException;
@@ -26,6 +27,7 @@ import com.flockinger.groschn.blockchain.wallet.WalletService;
  * Single Transaction Validator should be used for new incomming <br>
  * independent Transactions to verify.
  */
+@Component
 public class TransactionValidator implements Validator<Transaction> {
   /*
    Transaction check (regarding the Transaction itself):
@@ -57,7 +59,7 @@ public class TransactionValidator implements Validator<Transaction> {
   @Qualifier("ECDSA_Signer")
   private Signer signer;
   @Autowired
-  private WalletService wallet;
+  protected WalletService wallet;
   
   @Override
   public Assessment validate(Transaction value) {
@@ -67,7 +69,7 @@ public class TransactionValidator implements Validator<Transaction> {
       //1. verify correct transactionHash
       verifyTransactionHash(value);
       //3. verify input sum is >= output sum
-      verifyPositiveTransactionBalance(value);
+      verifyTransactionBalance(value);
       byte[] outputHash = hasher.generateListHash(value.getOutputs());
       
       for(int inCount=0; inCount < value.getInputs().size(); inCount++) {
@@ -116,7 +118,7 @@ public class TransactionValidator implements Validator<Transaction> {
         + input.getPublicKey());
   }
   
-  private void verifyPositiveTransactionBalance(Transaction transaction) {
+  protected void verifyTransactionBalance(Transaction transaction) {
     var inputAmount = transaction.getInputs().stream().map(TransactionInput::getAmount)
       .filter(Objects::nonNull).reduce(BigDecimal::add).orElse(BigDecimal.ZERO);
     var outputAmount = transaction.getOutputs().stream().map(TransactionOutput::getAmount)
@@ -143,13 +145,13 @@ public class TransactionValidator implements Validator<Transaction> {
         + "greater than zero and less than " + MAX_AMOUNT_MINED_GROSCHN + "!");
   }
     
-  private void isInputFundSufficient(TransactionInput input) {
+  protected void isInputFundSufficient(TransactionInput input) {
     BigDecimal realBalance = wallet.calculateBalance(input.getPublicKey());
     verifyAssessment(realBalance.compareTo(input.getAmount()) == 0, 
         "Input amount must be exactly the same as the current balance!");
   }
   
-  private void verifyAssessment(boolean isValid, String errorMessage) {
+  protected void verifyAssessment(boolean isValid, String errorMessage) {
     if(!isValid) {
       throw new AssessmentFailedException(errorMessage);
     }

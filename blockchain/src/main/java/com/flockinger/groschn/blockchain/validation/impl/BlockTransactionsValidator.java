@@ -17,6 +17,7 @@ import com.flockinger.groschn.blockchain.model.TransactionOutput;
 import com.flockinger.groschn.blockchain.util.sign.Signer;
 import com.flockinger.groschn.blockchain.validation.Assessment;
 import com.flockinger.groschn.blockchain.validation.Validator;
+import com.google.common.collect.ImmutableList;
 
 @Component
 public class BlockTransactionsValidator implements Validator<List<Transaction>>{
@@ -63,17 +64,19 @@ public class BlockTransactionsValidator implements Validator<List<Transaction>>{
     Assessment isBlockValid = new Assessment();
     // Validations for a new BlockTransactions:
     try {
-      //1. verify that a input publicKey transaction-unique in one block 
-      verifyTransactionUniqueInputPublicKey(transactions);
-      //2. verify correct double-bookkeeping (input amounts must equal output amounts)
-      verifyEqualBalance(transactions);
-      //3. extract reward transaction
-      
+      //1. verify correct double-bookkeeping (input amounts must equal output amounts)
+      verifyEqualBalance(transactions);     
+      //2. extract reward transaction
+      Map<Boolean, List<Transaction>> extract = extractRewardTransaction(transactions);
+      List<Transaction> normalTransactions = extract.get(false);
+      //3. verify that a input publicKey transaction-unique in one block 
+      verifyTransactionUniqueInputPublicKey(normalTransactions);
       //4. verify reward transaction
-      
+      verifyReward(extract.get(true).get(0));
       //5. verify normal transactions
-      
-      
+      for(Transaction normalTransaction: normalTransactions) {
+        transactionValidator.validate(normalTransaction);
+      }
       isBlockValid.setValid(true);
     } catch (BlockchainException e) {
       isBlockValid.setValid(false);
@@ -92,20 +95,65 @@ public class BlockTransactionsValidator implements Validator<List<Transaction>>{
   }
   
   private void verifyEqualBalance(List<Transaction> transactions) {
-    BigDecimal outputSum = transactions.stream()
-      .map(Transaction::getOutputs)
-      .flatMap(Collection::stream)
-      .map(TransactionOutput::getAmount)
-      .reduce(BigDecimal::add).orElse(BigDecimal.ZERO);
-    BigDecimal inputSum = transactions.stream()
-        .map(Transaction::getInputs)
-        .flatMap(Collection::stream)
-        .map(TransactionInput::getAmount)
-        .reduce(BigDecimal::add).orElse(BigDecimal.ZERO);
-    verifyAssessment(inputSum.compareTo(outputSum) == 0, 
+    verifyAssessment(compareTransactionInputsWithOutputs(transactions) == 0, 
         "Block transactions output total sum must equal to inputs total sum!");
   }
+  
+  private int compareTransactionInputsWithOutputs(List<Transaction> transactions) {
+    BigDecimal outputSum = transactions.stream()
+        .map(Transaction::getOutputs)
+        .flatMap(Collection::stream)
+        .map(TransactionOutput::getAmount)
+        .reduce(BigDecimal::add).orElse(BigDecimal.ZERO);
+      BigDecimal inputSum = transactions.stream()
+          .map(Transaction::getInputs)
+          .flatMap(Collection::stream)
+          .map(TransactionInput::getAmount)
+          .reduce(BigDecimal::add).orElse(BigDecimal.ZERO);
+      return inputSum.compareTo(outputSum);
+  }
 
+  
+  private Map<Boolean, List<Transaction>> extractRewardTransaction(List<Transaction> transactions) {
+    Map<Boolean, List<Transaction>> extract = transactions.stream()
+        .collect(Collectors.groupingBy(this::isOutputSumHigherThanInputSum));
+    if(extract.get(true).size() != 1) {
+      throw new AssessmentFailedException("There can only be one Reward Transaction no more or less!");
+    }
+    return extract;
+  }
+  
+  private Boolean isOutputSumHigherThanInputSum(Transaction transaction) {
+    int inputSumComaredToOutputSum = compareTransactionInputsWithOutputs(ImmutableList.of(transaction));
+    return inputSumComaredToOutputSum < 0;
+  }
+  
+  
+  /*
+   
+    Only special check the Reward Transaction:
+   ********************************
+   !! FIXME the reward transaction can be found when searching for the only one 
+     that has a higher out value than in value!!
+   - verify correct reward input amount
+   - must be signed by the miner
+   - verify correct reward output
+   - verify correct change output
+   - only the reward transaction has a higher output value than input value
+     - TODO ideally treat the reward transaction differently
+   
+   difference between reward and normal transaction:
+   - reward has 2 inputs of the same pubKey
+   - reward has a higher output sum than input sum
+   - reward contains one extra reward-in and output and one change-output
+   
+   * */
+  private void verifyReward(Transaction reward) {
+    
+  }
+  
+  
+  
   
   private void verifyAssessment(boolean isValid, String errorMessage) {
     if(!isValid) {
