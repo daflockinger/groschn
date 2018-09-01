@@ -30,7 +30,6 @@ import org.springframework.stereotype.Component;
 import com.flockinger.groschn.blockchain.exception.crypto.CantConfigureSigningAlgorithmException;
 import com.flockinger.groschn.blockchain.util.Base58;
 
-@Component("ECDSA_Signer")
 public class EcdsaSecpSigner implements Signer {
   /**
    * Elliptic Curve Digital Signature Algorithm

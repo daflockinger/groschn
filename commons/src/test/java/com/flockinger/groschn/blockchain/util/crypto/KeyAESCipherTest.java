@@ -11,12 +11,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
-import com.flockinger.groschn.blockchain.config.CryptoConfig;
+import com.flockinger.groschn.blockchain.config.CommonsConfig;
 import com.flockinger.groschn.blockchain.exception.crypto.CipherConfigurationException;
 
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes = {KeyAESCipher.class})
-@Import(CryptoConfig.class)
+@Import(CommonsConfig.class)
 public class KeyAESCipherTest {
 
   @Autowired

@@ -11,7 +11,6 @@ import com.flockinger.groschn.blockchain.exception.HashingException;
 import com.flockinger.groschn.blockchain.model.Hashable;
 import com.flockinger.groschn.blockchain.util.hash.HashGenerator;
 
-@Component
 public class MerkleRootCalculator {
   
   @Autowired

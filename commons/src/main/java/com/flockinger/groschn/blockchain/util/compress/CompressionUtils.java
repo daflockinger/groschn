@@ -15,7 +15,6 @@ import net.jpountz.lz4.LZ4Exception;
 import net.jpountz.lz4.LZ4Factory;
 import net.jpountz.lz4.LZ4FastDecompressor;
 
-@Component
 public class CompressionUtils {
   private final LZ4Factory compressorFactory = LZ4Factory.fastestJavaInstance();
   private final LZ4Compressor compressor = compressorFactory.fastCompressor();

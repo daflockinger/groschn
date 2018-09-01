@@ -3,7 +3,6 @@ package com.flockinger.groschn.blockchain.util.sign;
 import java.security.KeyPair;
 import org.springframework.stereotype.Component;
 
-@Component("EDDSA_Signer")
 public class EdDsaSigner implements Signer {
 
   @Override

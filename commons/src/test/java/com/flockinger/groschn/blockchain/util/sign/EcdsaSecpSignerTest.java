@@ -15,13 +15,13 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
-import com.flockinger.groschn.blockchain.config.CryptoConfig;
+import com.flockinger.groschn.blockchain.config.CommonsConfig;
 import com.flockinger.groschn.blockchain.exception.crypto.CantConfigureSigningAlgorithmException;
 import com.flockinger.groschn.blockchain.util.Base58;
 
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes = {EcdsaSecpSigner.class})
-@Import(CryptoConfig.class)
+@Import(CommonsConfig.class)
 public class EcdsaSecpSignerTest {
 
   @Autowired

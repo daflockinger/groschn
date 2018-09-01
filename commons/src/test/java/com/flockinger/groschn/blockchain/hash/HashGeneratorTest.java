@@ -17,7 +17,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import com.flockinger.groschn.blockchain.TestConfig;
-import com.flockinger.groschn.blockchain.config.CryptoConfig;
+import com.flockinger.groschn.blockchain.config.CommonsConfig;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.model.Hashable;
 import com.flockinger.groschn.blockchain.model.TransactionOutput;
@@ -25,9 +25,8 @@ import com.flockinger.groschn.blockchain.util.hash.HashGenerator;
 import com.flockinger.groschn.blockchain.util.hash.MultiHashGenerator;
 import com.google.common.collect.ImmutableList;
 
-@ContextConfiguration(classes = {MultiHashGenerator.class})
 @RunWith(SpringRunner.class)
-@Import({CryptoConfig.class, TestConfig.class})
+@Import({CommonsConfig.class, TestConfig.class})
 public class HashGeneratorTest {
 
   @Autowired

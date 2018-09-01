@@ -1,6 +1,6 @@
 package com.flockinger.groschn.blockchain.util.hash;
 
-import static com.flockinger.groschn.blockchain.config.CryptoConfig.DEFAULT_PROVIDER_NAME;
+import static com.flockinger.groschn.blockchain.config.CommonsConfig.DEFAULT_PROVIDER_NAME;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
@@ -26,7 +26,6 @@ import com.flockinger.groschn.blockchain.util.serialize.BlockSerializer;
  * will be returned as final hash. <br>
  *
  */
-@Component
 public class MultiHashGenerator implements HashGenerator {
 
   private final static String SHA3_DIGEST_NAME = MessageDigestUtils.getDigestName(NISTObjectIdentifiers.id_sha3_512);

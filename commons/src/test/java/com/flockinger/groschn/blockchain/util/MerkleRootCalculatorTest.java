@@ -16,7 +16,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import com.flockinger.groschn.blockchain.TestConfig;
-import com.flockinger.groschn.blockchain.config.CryptoConfig;
+import com.flockinger.groschn.blockchain.config.CommonsConfig;
 import com.flockinger.groschn.blockchain.exception.HashingException;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.model.BlockInfo;
@@ -31,7 +31,7 @@ import com.google.common.collect.ImmutableList;
 
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes = {MerkleRootCalculator.class, MultiHashGenerator.class})
-@Import({CryptoConfig.class, TestConfig.class})
+@Import({CommonsConfig.class, TestConfig.class})
 public class MerkleRootCalculatorTest {
   
   @Autowired

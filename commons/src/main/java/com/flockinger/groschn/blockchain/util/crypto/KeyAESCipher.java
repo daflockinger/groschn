@@ -1,6 +1,6 @@
 package com.flockinger.groschn.blockchain.util.crypto;
 
-import static com.flockinger.groschn.blockchain.config.CryptoConfig.DEFAULT_PROVIDER_NAME;
+import static com.flockinger.groschn.blockchain.config.CommonsConfig.DEFAULT_PROVIDER_NAME;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.Key;
@@ -19,7 +19,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import com.flockinger.groschn.blockchain.exception.crypto.CipherConfigurationException;
 
-@Component
 public class KeyAESCipher implements KeyCipher {
   private final static String CIPHER_TRANSFORMATION = "AES/CBC/PKCS7Padding";
   public final static String ENCRYPTION_ALGORITHM = "AES";
