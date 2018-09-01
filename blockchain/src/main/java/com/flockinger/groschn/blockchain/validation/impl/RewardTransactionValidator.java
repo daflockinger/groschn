@@ -7,11 +7,10 @@ import static java.util.stream.Collectors.toList;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.stream.Collectors;
-import org.springframework.stereotype.Component;
-import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
 import com.flockinger.groschn.blockchain.exception.BlockchainException;
 import com.flockinger.groschn.blockchain.model.Transaction;
@@ -21,20 +20,15 @@ import com.flockinger.groschn.blockchain.transaction.Bookkeeper;
 import com.flockinger.groschn.blockchain.validation.Assessment;
 import com.google.common.collect.ImmutableList;
 
-@Component
+@Component("RewardTransaction_Validator")
 public class RewardTransactionValidator extends TransactionValidator {
-  
   /*
-    difference between reward and normal transaction:
-   - reward has 2 inputs of the same pubKey
-   + reward has a higher output sum than input sum
-   - reward contains one extra reward-in and output and one change-output
-   
    !! if there's a miners transaction having either exactly the reward amounts in- or output
    then the transaction will validate false !!
-   
    * */
+  @Autowired
   private BlockStorageService blockService;
+  @Autowired
   private Bookkeeper bookKeeper;
   
   private final static Boolean NORMAL = false;
@@ -50,8 +44,8 @@ public class RewardTransactionValidator extends TransactionValidator {
       var txAssessment = super.validate(value);
       verifyAssessment(txAssessment.isValid(), txAssessment.getReasonOfFailure());
       // get Miner's public key and calculate it's correct Reward amount.
-      var minerPublicKey = findMinerPublicKey(value.getInputs());
       var rewardAmount = bookKeeper.calculateBlockReward(blockService.getLatestBlock().getPosition());
+      var minerPublicKey = findMinerPublicKey(value, rewardAmount);
       
       // extract reward transaction Input from the others
       var extract = extractRewardStatement(RewardContext.build(value.getInputs())
@@ -59,7 +53,7 @@ public class RewardTransactionValidator extends TransactionValidator {
       //2. regular input funds must be equal to their current balance
       extract.get(NORMAL).forEach(super::isInputFundSufficient);
       //3. check if reward input exists
-      verifyRewardInput(extract, minerPublicKey.get());
+      verifyRewardInput(extract);
       //4. check that there's not more than one other input from the miner
       long normalMinerInputs = verifyPossibleOtherMinerInput(extract, minerPublicKey.get());
       //5. verify if reward outputs exist
@@ -89,15 +83,28 @@ public class RewardTransactionValidator extends TransactionValidator {
       && context.getMinerPublicKey().get().equals(statement.getPublicKey());
   }
   
-  private Optional<String> findMinerPublicKey(List<TransactionInput> inputs) {
-    return inputs.stream()
-        .collect(groupingBy(TransactionInput::getPublicKey,counting()))
-        .entrySet().stream()
-        .filter(pubKeyOccurence -> pubKeyOccurence.getValue() == 2)
-        .map(Entry::getKey).findFirst();
-  }
+  /**
+   * Only the miners pubKey has an exact reward in and output 
+   * and also has an equal in and output sum or an higher output sum
+   * 
+   * @param transaction
+   * @param reward
+   * @return
+   */
+  private Optional<String> findMinerPublicKey(Transaction transaction, BigDecimal reward) {
+    List<String> possibleMinersFromInput = transaction.getInputs().stream()
+        .filter(input -> input.getAmount().compareTo(reward) == 0).map(TransactionInput::getPublicKey)
+        .collect(Collectors.toList());
+    List<String> possibleMinersFromOutput = transaction.getOutputs().stream()
+        .filter(output -> output.getAmount().compareTo(reward) == 0).map(TransactionOutput::getPublicKey)
+        .collect(Collectors.toList());
+    possibleMinersFromInput.retainAll(possibleMinersFromOutput);    
+    return possibleMinersFromInput.stream()
+      .filter(key -> calcualteTransactionBalance(transaction, statement -> statement.getPublicKey().equals(key)) <= 0)
+      .findFirst();
+  }  
   
-  private void verifyRewardInput(Map<Boolean, List<TransactionInput>> extract, String minerPublicKey) {
+  private void verifyRewardInput(Map<Boolean, List<TransactionInput>> extract) {
     verifyAssessment(extract.containsKey(REWARD) && 
         extract.get(REWARD).size() == 1, "There must be exactly one miner's Reward input!");
   }
@@ -136,12 +143,6 @@ public class RewardTransactionValidator extends TransactionValidator {
    * */
   @Override
   protected void isInputFundSufficient(TransactionInput input) {}
-  
-  @Override
-  public boolean canValidate(Transaction transaction) {
-    return calcualteTransactionBalance(transaction) <= 0;
-  }
-  
   
   private final static class RewardContext<T extends TransactionOutput> {
     private List<T> statements;

@@ -8,13 +8,11 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
-import com.flockinger.groschn.blockchain.blockworks.HashGenerator;
 import com.flockinger.groschn.blockchain.exception.BlockchainException;
 import com.flockinger.groschn.blockchain.exception.validation.AssessmentFailedException;
 import com.flockinger.groschn.blockchain.model.Transaction;
 import com.flockinger.groschn.blockchain.model.TransactionInput;
 import com.flockinger.groschn.blockchain.model.TransactionOutput;
-import com.flockinger.groschn.blockchain.util.sign.Signer;
 import com.flockinger.groschn.blockchain.validation.Assessment;
 import com.flockinger.groschn.blockchain.validation.Validator;
 import com.google.common.collect.ImmutableList;
@@ -52,12 +50,11 @@ public class BlockTransactionsValidator implements Validator<List<Transaction>>{
    * */
   
   @Autowired
-  private TransactionValidator transactionValidator;
+  @Qualifier("Transaction_Validator")
+  private Validator<Transaction> transactionValidator;
   @Autowired
-  private HashGenerator hasher;
-  @Autowired
-  @Qualifier("ECDSA_Signer")
-  private Signer signer;
+  @Qualifier("RewardTransaction_Validator")
+  private Validator<Transaction> rewardTransactionValidator;
   
   @Override
   public Assessment validate(List<Transaction> transactions) {
@@ -72,7 +69,7 @@ public class BlockTransactionsValidator implements Validator<List<Transaction>>{
       //3. verify that a input publicKey transaction-unique in one block 
       verifyTransactionUniqueInputPublicKey(normalTransactions);
       //4. verify reward transaction
-      verifyReward(extract.get(true).get(0));
+      rewardTransactionValidator.validate(extract.get(true).get(0));
       //5. verify normal transactions
       for(Transaction normalTransaction: normalTransactions) {
         transactionValidator.validate(normalTransaction);
@@ -112,7 +109,6 @@ public class BlockTransactionsValidator implements Validator<List<Transaction>>{
           .reduce(BigDecimal::add).orElse(BigDecimal.ZERO);
       return inputSum.compareTo(outputSum);
   }
-
   
   private Map<Boolean, List<Transaction>> extractRewardTransaction(List<Transaction> transactions) {
     Map<Boolean, List<Transaction>> extract = transactions.stream()
@@ -127,33 +123,6 @@ public class BlockTransactionsValidator implements Validator<List<Transaction>>{
     int inputSumComaredToOutputSum = compareTransactionInputsWithOutputs(ImmutableList.of(transaction));
     return inputSumComaredToOutputSum < 0;
   }
-  
-  
-  /*
-   
-    Only special check the Reward Transaction:
-   ********************************
-   !! FIXME the reward transaction can be found when searching for the only one 
-     that has a higher out value than in value!!
-   - verify correct reward input amount
-   - must be signed by the miner
-   - verify correct reward output
-   - verify correct change output
-   - only the reward transaction has a higher output value than input value
-     - TODO ideally treat the reward transaction differently
-   
-   difference between reward and normal transaction:
-   - reward has 2 inputs of the same pubKey
-   - reward has a higher output sum than input sum
-   - reward contains one extra reward-in and output and one change-output
-   
-   * */
-  private void verifyReward(Transaction reward) {
-    
-  }
-  
-  
-  
   
   private void verifyAssessment(boolean isValid, String errorMessage) {
     if(!isValid) {

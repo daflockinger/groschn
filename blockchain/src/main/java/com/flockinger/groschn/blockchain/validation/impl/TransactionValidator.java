@@ -5,6 +5,8 @@ import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import org.apache.commons.collections4.CollectionUtils;
@@ -27,7 +29,7 @@ import com.flockinger.groschn.blockchain.wallet.WalletService;
  * Single Transaction Validator should be used for new incomming <br>
  * independent Transactions to verify.
  */
-@Component
+@Component("Transaction_Validator")
 public class TransactionValidator implements Validator<Transaction> {
   /*
    Transaction check (regarding the Transaction itself):
@@ -123,12 +125,16 @@ public class TransactionValidator implements Validator<Transaction> {
         "Total input amount must be higher than total output amount!");
   }
   
-  protected int calcualteTransactionBalance(Transaction transaction) {
-    var inputAmount = transaction.getInputs().stream().map(TransactionInput::getAmount)
-        .filter(Objects::nonNull).reduce(BigDecimal::add).orElse(BigDecimal.ZERO);
-      var outputAmount = transaction.getOutputs().stream().map(TransactionOutput::getAmount)
+  protected int calcualteTransactionBalance(Transaction transaction, Predicate<TransactionOutput> filter) {
+    var inputAmount = transaction.getInputs().stream().filter(filter).map(TransactionInput::getAmount)
+       .filter(Objects::nonNull).reduce(BigDecimal::add).orElse(BigDecimal.ZERO);
+      var outputAmount = transaction.getOutputs().stream().filter(filter).map(TransactionOutput::getAmount)
           .filter(Objects::nonNull).reduce(BigDecimal::add).orElse(BigDecimal.ZERO);
       return inputAmount.compareTo(outputAmount);
+  }
+  
+  protected int calcualteTransactionBalance(Transaction transaction) {
+    return calcualteTransactionBalance(transaction, statement -> true);
   }
   
   private void verifySequenceNumber(long wantedNumber, Long presentNumber) {
