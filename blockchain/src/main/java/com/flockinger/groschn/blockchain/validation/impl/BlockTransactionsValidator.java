@@ -1,6 +1,6 @@
 package com.flockinger.groschn.blockchain.validation.impl;
 
-import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -12,10 +12,8 @@ import com.flockinger.groschn.blockchain.exception.BlockchainException;
 import com.flockinger.groschn.blockchain.exception.validation.AssessmentFailedException;
 import com.flockinger.groschn.blockchain.model.Transaction;
 import com.flockinger.groschn.blockchain.model.TransactionInput;
-import com.flockinger.groschn.blockchain.model.TransactionOutput;
 import com.flockinger.groschn.blockchain.validation.Assessment;
 import com.flockinger.groschn.blockchain.validation.Validator;
-import com.google.common.collect.ImmutableList;
 
 @Component
 public class BlockTransactionsValidator implements Validator<List<Transaction>>{
@@ -34,19 +32,7 @@ public class BlockTransactionsValidator implements Validator<List<Transaction>>{
      and or the the whole balance in either one of the transactions can be tampered with -> possible double spend)
    2. verify correct double-bookkeeping
      - total transactions input amounts must equal output amounts (with having the reward Transaction)
-
-   
-   Only special check the Reward Transaction:
-   ********************************
-   !! FIXME the reward transaction can be found when searching for the only one 
-     that has a higher out value than in value!!
-   - verify correct reward input amount
-   - must be signed by the miner
-   - verify correct reward output
-   - verify correct change output
-   - only the reward transaction has a higher output value than input value
-     - TODO ideally treat the reward transaction differently
-   
+       
    * */
   
   @Autowired
@@ -55,6 +41,11 @@ public class BlockTransactionsValidator implements Validator<List<Transaction>>{
   @Autowired
   @Qualifier("RewardTransaction_Validator")
   private Validator<Transaction> rewardTransactionValidator;
+  @Autowired
+  private TransactionValidationHelper helper;
+  
+  private final static Boolean NORMAL = false;
+  private final static Boolean REWARD = true;
   
   @Override
   public Assessment validate(List<Transaction> transactions) {
@@ -65,13 +56,12 @@ public class BlockTransactionsValidator implements Validator<List<Transaction>>{
       verifyEqualBalance(transactions);     
       //2. extract reward transaction
       Map<Boolean, List<Transaction>> extract = extractRewardTransaction(transactions);
-      List<Transaction> normalTransactions = extract.get(false);
       //3. verify that a input publicKey transaction-unique in one block 
-      verifyTransactionUniqueInputPublicKey(normalTransactions);
+      checkDoubleSpendInputs(extract);
       //4. verify reward transaction
-      rewardTransactionValidator.validate(extract.get(true).get(0));
+      rewardTransactionValidator.validate(extract.get(REWARD).get(0));
       //5. verify normal transactions
-      for(Transaction normalTransaction: normalTransactions) {
+      for(Transaction normalTransaction: extract.get(NORMAL)) {
         transactionValidator.validate(normalTransaction);
       }
       isBlockValid.setValid(true);
@@ -82,46 +72,45 @@ public class BlockTransactionsValidator implements Validator<List<Transaction>>{
   return isBlockValid;
   }
   
-  private void verifyTransactionUniqueInputPublicKey(List<Transaction> transactions) {
-    Map<String, Long> groupedTransactionPubKeys = transactions.stream()
-        .map(Transaction::getInputs)
-        .flatMap(Collection::stream)
-        .collect(Collectors.groupingBy(TransactionInput::getPublicKey, Collectors.counting()));
-    boolean areKeysUnique = groupedTransactionPubKeys.values().stream().allMatch(pubKeyCount -> pubKeyCount == 1);
+  /**
+   * Very important check that Transaction-Inputs are unique on the publicKey Level.
+   * There's no internal verification for the Reward-Transaction since this is already done
+   * in it's Validator.
+   * 
+   * @param extract
+   */
+  private void checkDoubleSpendInputs(Map<Boolean, List<Transaction>> extract) {
+    List<String> inputKeys = new ArrayList<String>();
+    inputKeys.addAll(extract.get(NORMAL).stream()
+        .map(Transaction::getInputs).flatMap(Collection::stream)
+        .map(TransactionInput::getPublicKey).collect(Collectors.toList()));
+    // for the reward-transaction duplicity is transaction-internally already checked,
+    // so only the external duplicity (only each unique reward-input-key) is needed for external checking.
+    inputKeys.addAll(extract.get(REWARD).stream() 
+        .map(Transaction::getInputs).flatMap(Collection::stream)
+        .map(TransactionInput::getPublicKey).collect(Collectors.toSet()));
+    Map<String, Long> groupedNormalTransactionPubKeys = inputKeys.stream()
+        .collect(Collectors.groupingBy(key -> key, Collectors.counting()));
+    boolean areKeysUnique = groupedNormalTransactionPubKeys.values().stream().allMatch(pubKeyCount -> pubKeyCount == 1);
     verifyAssessment(areKeysUnique, "Each transaction-input public-key must be unique for all transactions in one Block!");
   }
   
   private void verifyEqualBalance(List<Transaction> transactions) {
-    verifyAssessment(compareTransactionInputsWithOutputs(transactions) == 0, 
+    verifyAssessment(helper.calcualteTransactionBalance(transactions, tx -> true) == 0, 
         "Block transactions output total sum must equal to inputs total sum!");
-  }
-  
-  private int compareTransactionInputsWithOutputs(List<Transaction> transactions) {
-    BigDecimal outputSum = transactions.stream()
-        .map(Transaction::getOutputs)
-        .flatMap(Collection::stream)
-        .map(TransactionOutput::getAmount)
-        .reduce(BigDecimal::add).orElse(BigDecimal.ZERO);
-      BigDecimal inputSum = transactions.stream()
-          .map(Transaction::getInputs)
-          .flatMap(Collection::stream)
-          .map(TransactionInput::getAmount)
-          .reduce(BigDecimal::add).orElse(BigDecimal.ZERO);
-      return inputSum.compareTo(outputSum);
   }
   
   private Map<Boolean, List<Transaction>> extractRewardTransaction(List<Transaction> transactions) {
     Map<Boolean, List<Transaction>> extract = transactions.stream()
-        .collect(Collectors.groupingBy(this::isOutputSumHigherThanInputSum));
+        .collect(Collectors.groupingBy(this::isOutputSumHigherorEqualThanInputSum));
     if(extract.get(true).size() != 1) {
       throw new AssessmentFailedException("There can only be one Reward Transaction no more or less!");
     }
     return extract;
   }
   
-  private Boolean isOutputSumHigherThanInputSum(Transaction transaction) {
-    int inputSumComaredToOutputSum = compareTransactionInputsWithOutputs(ImmutableList.of(transaction));
-    return inputSumComaredToOutputSum < 0;
+  private Boolean isOutputSumHigherorEqualThanInputSum(Transaction transaction) {
+    return helper.calcualteTransactionBalance(transaction) <= 0;
   }
   
   private void verifyAssessment(boolean isValid, String errorMessage) {

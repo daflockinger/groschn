@@ -61,21 +61,7 @@ public class RewardTransactionValidator extends TransactionValidator {
     return isBlockValid;
   }
 
-
-  private List<TransactionInput> extractNormalInputs(
-      RewardContext<TransactionInput> context) {
-    return context.getStatements().stream()
-        .filter(input -> !isRewardTransactionStatement(RewardContext.build(input).use(context)))
-        .collect(Collectors.toList());
-  }
-
-  private <T extends TransactionOutput> boolean isRewardTransactionStatement(
-      RewardContext<T> context) {
-    T statement = context.getStatement();
-    return context.getStatements().size() == 1 && context.isAmountEqualToReward().test(statement)
-        && context.hasPublicKey().test(statement);
-  }
-
+  
   /**
    * Only the miners pubKey has an exact reward in and output and also has an equal in and output
    * sum or an higher output sum
@@ -93,6 +79,21 @@ public class RewardTransactionValidator extends TransactionValidator {
   private void verifyRewardInputs(List<String> rewardPublicKeys) {
     verifyAssessment(rewardPublicKeys.size() == 1, "There must be exactly one miner's Reward input!");
   }
+
+  private List<TransactionInput> extractNormalInputs(
+      RewardContext<TransactionInput> context) {
+    return context.getStatements().stream()
+        .filter(input -> !isRewardTransactionStatement(RewardContext.build(input).use(context)))
+        .collect(Collectors.toList());
+  }
+
+  private <T extends TransactionOutput> boolean isRewardTransactionStatement(
+      RewardContext<T> context) {
+    T statement = context.getStatement();
+    return context.getStatements().size() == 1 && context.isAmountEqualToReward().test(statement)
+        && context.hasPublicKey().test(statement);
+  }
+
 
   private long verifyPossibleOtherMinerInput(List<TransactionInput> normalInputs,
       String minerPublicKey) {
@@ -114,6 +115,14 @@ public class RewardTransactionValidator extends TransactionValidator {
         "A reward transaction must contain one Reward Transaction Output and another one for the Change!");
   }
   
+  
+  /**
+   * Very important check that verifies that all Transaction inputs except the miner's
+   * have are unique on Transaction-Input PublicKey Level. This check verifies only the 
+   * Transaction internal integrity.
+   * 
+   * @param context
+   */
   private void checkDoubleSpendInputs(RewardContext<TransactionInput> context) {
     Map<String, Long> groupedTransactionPubKeys = context.getStatements().stream()
         .filter(context.containsNoPublicKey())
