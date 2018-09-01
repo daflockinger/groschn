@@ -119,12 +119,16 @@ public class TransactionValidator implements Validator<Transaction> {
   }
   
   protected void verifyTransactionBalance(Transaction transaction) {
-    var inputAmount = transaction.getInputs().stream().map(TransactionInput::getAmount)
-      .filter(Objects::nonNull).reduce(BigDecimal::add).orElse(BigDecimal.ZERO);
-    var outputAmount = transaction.getOutputs().stream().map(TransactionOutput::getAmount)
-        .filter(Objects::nonNull).reduce(BigDecimal::add).orElse(BigDecimal.ZERO);
-    verifyAssessment(inputAmount.compareTo(outputAmount) > 0, 
+    verifyAssessment(calcualteTransactionBalance(transaction) > 0, 
         "Total input amount must be higher than total output amount!");
+  }
+  
+  protected int calcualteTransactionBalance(Transaction transaction) {
+    var inputAmount = transaction.getInputs().stream().map(TransactionInput::getAmount)
+        .filter(Objects::nonNull).reduce(BigDecimal::add).orElse(BigDecimal.ZERO);
+      var outputAmount = transaction.getOutputs().stream().map(TransactionOutput::getAmount)
+          .filter(Objects::nonNull).reduce(BigDecimal::add).orElse(BigDecimal.ZERO);
+      return inputAmount.compareTo(outputAmount);
   }
   
   private void verifySequenceNumber(long wantedNumber, Long presentNumber) {
@@ -155,5 +159,16 @@ public class TransactionValidator implements Validator<Transaction> {
     if(!isValid) {
       throw new AssessmentFailedException(errorMessage);
     }
+  }
+  
+  /**
+   * Returns true if the Class can validate that kind of transaction.<br>
+   * (mostly used to distinguish between regular and reward transactions)
+   * 
+   * @param transaction
+   * @return
+   */
+  public boolean canValidate(Transaction transaction) {
+    return calcualteTransactionBalance(transaction) > 0;
   }
 }

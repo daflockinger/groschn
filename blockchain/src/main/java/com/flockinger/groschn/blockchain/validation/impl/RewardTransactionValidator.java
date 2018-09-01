@@ -8,6 +8,8 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
+import org.springframework.stereotype.Component;
 import java.util.Objects;
 import java.util.Optional;
 import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
@@ -19,19 +21,17 @@ import com.flockinger.groschn.blockchain.transaction.Bookkeeper;
 import com.flockinger.groschn.blockchain.validation.Assessment;
 import com.google.common.collect.ImmutableList;
 
-/**
- * @author root
- *
- */
+@Component
 public class RewardTransactionValidator extends TransactionValidator {
-
   
   /*
-   
     difference between reward and normal transaction:
    - reward has 2 inputs of the same pubKey
    + reward has a higher output sum than input sum
    - reward contains one extra reward-in and output and one change-output
+   
+   !! if there's a miners transaction having either exactly the reward amounts in- or output
+   then the transaction will validate false !!
    
    * */
   private BlockStorageService blockService;
@@ -56,14 +56,15 @@ public class RewardTransactionValidator extends TransactionValidator {
       // extract reward transaction Input from the others
       var extract = extractRewardStatement(RewardContext.build(value.getInputs())
           .use(minerPublicKey, rewardAmount));
-      //2. regular input funds must be equal to the current balance
+      //2. regular input funds must be equal to their current balance
       extract.get(NORMAL).forEach(super::isInputFundSufficient);
       //3. check if reward input exists
-      verifyRewardInput(extract);
- 
-      //4. verify if reward outputs exist
-      checkForRewardOutputs(RewardContext
-          .build(value.getOutputs()).use(minerPublicKey, rewardAmount));
+      verifyRewardInput(extract, minerPublicKey.get());
+      //4. check that there's not more than one other input from the miner
+      long normalMinerInputs = verifyPossibleOtherMinerInput(extract, minerPublicKey.get());
+      //5. verify if reward outputs exist
+      checkForRewardOutputs(RewardContext.build(value.getOutputs())
+          .use(minerPublicKey, rewardAmount), normalMinerInputs);
       
       isBlockValid.setValid(true);
     } catch (BlockchainException e) {
@@ -82,12 +83,10 @@ public class RewardTransactionValidator extends TransactionValidator {
   
   private <T extends TransactionOutput> boolean isRewardTransactionStatement(RewardContext<T> context) {
     T statement = context.getStatement();
-    if(statement == null) {
-      return false;
-    }
-    return context.getReward().compareTo(statement.getAmount()) == 0 
-     && context.getMinerPublicKey().isPresent() 
-     && context.getMinerPublicKey().get().equals(statement.getPublicKey());
+    return context.getStatements().size() == 1 
+      && context.getReward().compareTo(statement.getAmount()) == 0 
+      && context.getMinerPublicKey().isPresent() 
+      && context.getMinerPublicKey().get().equals(statement.getPublicKey());
   }
   
   private Optional<String> findMinerPublicKey(List<TransactionInput> inputs) {
@@ -98,31 +97,50 @@ public class RewardTransactionValidator extends TransactionValidator {
         .map(Entry::getKey).findFirst();
   }
   
-  private void verifyRewardInput(Map<Boolean, List<TransactionInput>> extract) {
-    verifyAssessment(extract.get(REWARD).size() == 1, "There must be exactly one miner's Reward input!");
+  private void verifyRewardInput(Map<Boolean, List<TransactionInput>> extract, String minerPublicKey) {
+    verifyAssessment(extract.containsKey(REWARD) && 
+        extract.get(REWARD).size() == 1, "There must be exactly one miner's Reward input!");
   }
   
-  private void checkForRewardOutputs(RewardContext<TransactionOutput> context) {
-    //TODO implement
+  private long verifyPossibleOtherMinerInput(Map<Boolean, List<TransactionInput>> extract, String minerPublicKey) {
+    long normalMinerInputCount = extract.get(NORMAL).stream()
+        .filter(input -> input.getPublicKey().equals(minerPublicKey)).count();
+    verifyAssessment(normalMinerInputCount <= 1, 
+        "Besides the reward Transaction input the miner can have only ONE other!");
+    return normalMinerInputCount;
   }
   
+  private void checkForRewardOutputs(RewardContext<TransactionOutput> context, long normalMinerInputs) {
+    List<TransactionOutput> minerOutputs = context.getStatements().stream()
+        .filter(output -> output.getPublicKey().equals(context.getMinerPublicKey().orElse("")))
+        .collect(Collectors.toList());
+    boolean containsExactlyOneReward = minerOutputs.stream()
+        .filter(output -> output.getAmount().compareTo(context.getReward()) == 0).count() == 1;
+    boolean containsAlsoTheChange = minerOutputs.size() == 2 + normalMinerInputs;
+    verifyAssessment(containsExactlyOneReward && containsAlsoTheChange, 
+        "A reward transaction must contain one Reward Transaction Output and another one for the Change!");
+  }
   
   /* 
    * reward has a higher output sum than input sum
    */
   @Override
   protected void verifyTransactionBalance(Transaction transaction) {
-    var inputAmount = transaction.getInputs().stream().map(TransactionInput::getAmount)
-      .filter(Objects::nonNull).reduce(BigDecimal::add).orElse(BigDecimal.ZERO);
-    var outputAmount = transaction.getOutputs().stream().map(TransactionOutput::getAmount)
-        .filter(Objects::nonNull).reduce(BigDecimal::add).orElse(BigDecimal.ZERO);
-    verifyAssessment(inputAmount.compareTo(outputAmount) < 0, 
+    verifyAssessment(calcualteTransactionBalance(transaction) <= 0, 
         "The Reward's total input amount must be higher than  it's total output amount!");
   }
   
+  /*
+   * Skip checking for sufficient funds in the regular run, since the 
+   * reward input has no funding. Will be checked separately.
+   * */
   @Override
   protected void isInputFundSufficient(TransactionInput input) {}
   
+  @Override
+  public boolean canValidate(Transaction transaction) {
+    return calcualteTransactionBalance(transaction) <= 0;
+  }
   
   
   private final static class RewardContext<T extends TransactionOutput> {
