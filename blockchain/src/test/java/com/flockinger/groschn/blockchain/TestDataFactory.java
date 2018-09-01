@@ -196,4 +196,114 @@ public class TestDataFactory {
     }
     return transaction;
   }
+  
+  public static Transaction createRewardTransaction(boolean onlyReward) {
+    Transaction transaction = new Transaction();
+    transaction.setId(UUID.randomUUID().toString());
+    transaction.setTransactionHash("0FABDD34578");
+    List<TransactionInput> inputs = new ArrayList<>();
+    TransactionInput input1 = new TransactionInput();
+    input1.setAmount(new BigDecimal("100"));
+    input1.setPublicKey("minerKey");
+    input1.setSequenceNumber(1l);
+    input1.setSignature("x0x0x0");
+    input1.setTimestamp(new Date().getTime() - 4000l);
+    inputs.add(input1);
+    if(!onlyReward) {
+      TransactionInput input2 = new TransactionInput();
+      input2.setAmount(new BigDecimal("100"));
+      input2.setPublicKey("very-secret2");
+      input2.setSequenceNumber(2l);
+      input2.setSignature("x1x1x1");
+      input2.setTimestamp(new Date().getTime() - 100l);
+      inputs.add(input2);
+      TransactionInput input3 = new TransactionInput();
+      input3.setAmount(new BigDecimal("300"));
+      input3.setPublicKey("minerKey");
+      input3.setSequenceNumber(3l);
+      input3.setSignature("x2x2x2");
+      input3.setTimestamp(new Date().getTime() - 10l);
+      inputs.add(input3);
+    }
+    transaction.setInputs(inputs);
+    List<TransactionOutput> outputs = new ArrayList<>();
+    TransactionOutput out1 = new TransactionOutput(); // reward
+    out1.setAmount(new BigDecimal("100"));
+    out1.setPublicKey("minerKey");
+    out1.setSequenceNumber(1l);
+    out1.setTimestamp(new Date().getTime() - 5000l);
+    outputs.add(out1);
+    if(!onlyReward) {
+      TransactionOutput out2 = new TransactionOutput();
+      out2.setAmount(new BigDecimal("99"));
+      out2.setPublicKey("very-secret2");
+      out2.setSequenceNumber(2l);
+      out2.setTimestamp(new Date().getTime() - 500l);
+      outputs.add(out2);
+      TransactionOutput out3 = new TransactionOutput();
+      out3.setAmount(new BigDecimal("300"));
+      out3.setPublicKey("minerKey");
+      out3.setSequenceNumber(3l);
+      out3.setTimestamp(new Date().getTime() - 50l);
+      outputs.add(out3);
+    }
+    TransactionOutput out4 = new TransactionOutput(); //change
+    out4.setAmount(new BigDecimal("12"));
+    out4.setPublicKey("minerKey");
+    out4.setSequenceNumber(onlyReward ? 2l : 4l);
+    out4.setTimestamp(new Date().getTime() - 25l);
+    outputs.add(out4);
+    transaction.setOutputs(outputs);
+    return transaction;
+  }
+  
+  public static Transaction createValidTransaction(String expense1, String expense2, String expense3, String income1) {
+    Transaction transaction = new Transaction();
+    transaction.setId(UUID.randomUUID().toString());
+    transaction.setTransactionHash("0FABDD34578");
+    List<TransactionInput> inputs = new ArrayList<>();
+    TransactionInput input1 = new TransactionInput();
+    input1.setAmount(new BigDecimal("100"));
+    input1.setPublicKey(expense1);
+    input1.setSequenceNumber(1l);
+    input1.setSignature("x0x0x0");
+    input1.setTimestamp(new Date().getTime() - 4000l);
+    inputs.add(input1);
+    TransactionInput input2 = new TransactionInput();
+    input2.setAmount(new BigDecimal("200"));
+    input2.setPublicKey(expense2);
+    input2.setSequenceNumber(2l);
+    input2.setSignature("x1x1x1");
+    input2.setTimestamp(new Date().getTime() - 100l);
+    inputs.add(input2);
+    TransactionInput input3 = new TransactionInput();
+    input3.setAmount(new BigDecimal("300"));
+    input3.setPublicKey(expense3);
+    input3.setSequenceNumber(3l);
+    input3.setSignature("x2x2x2");
+    input3.setTimestamp(new Date().getTime() - 10l);
+    inputs.add(input3);
+    transaction.setInputs(inputs);
+    List<TransactionOutput> outputs = new ArrayList<>();
+    TransactionOutput out1 = new TransactionOutput();
+    out1.setAmount(new BigDecimal("99"));
+    out1.setPublicKey(expense2);
+    out1.setSequenceNumber(1l);
+    out1.setTimestamp(new Date().getTime() - 5000l);
+    outputs.add(out1);
+    TransactionOutput out2 = new TransactionOutput();
+    out2.setAmount(new BigDecimal("350"));
+    out2.setPublicKey(expense1);
+    out2.setSequenceNumber(2l);
+    out2.setTimestamp(new Date().getTime() - 500l);
+    outputs.add(out2);
+    TransactionOutput out3 = new TransactionOutput();
+    out3.setAmount(new BigDecimal("150"));
+    out3.setPublicKey(income1);
+    out3.setSequenceNumber(3l);
+    out3.setTimestamp(new Date().getTime() - 50l);
+    outputs.add(out3);
+    transaction.setOutputs(outputs);
+    return transaction;
+  }
 }

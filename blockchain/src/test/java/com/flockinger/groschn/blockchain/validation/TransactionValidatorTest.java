@@ -9,10 +9,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
-import java.util.UUID;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -20,13 +17,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
+import com.flockinger.groschn.blockchain.TestDataFactory;
 import com.flockinger.groschn.blockchain.blockworks.HashGenerator;
 import com.flockinger.groschn.blockchain.exception.HashingException;
 import com.flockinger.groschn.blockchain.exception.crypto.CantConfigureSigningAlgorithmException;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.model.Transaction;
-import com.flockinger.groschn.blockchain.model.TransactionInput;
-import com.flockinger.groschn.blockchain.model.TransactionOutput;
 import com.flockinger.groschn.blockchain.util.sign.Signer;
 import com.flockinger.groschn.blockchain.validation.impl.TransactionValidationHelper;
 import com.flockinger.groschn.blockchain.validation.impl.TransactionValidator;
@@ -46,7 +42,6 @@ public class TransactionValidatorTest {
   @Autowired
   private TransactionValidator validator;
   
-  //TODO maybe check if I forgot some special cases of stuff going wrong
   @Test
   public void testValidate_withValidTransaction_shouldReturnTrue() {
     Transaction transaction = createValidTransaction();
@@ -54,7 +49,7 @@ public class TransactionValidatorTest {
     when(hasher.generateListHash(any())).thenReturn(new byte[0]);
     when(signer.isSignatureValid(any(), any(), any())).thenReturn(true);
     when(wallet.calculateBalance(matches("very-secret1"))).thenReturn(new BigDecimal("100"));
-    when(wallet.calculateBalance(matches("very-secret2"))).thenReturn(new BigDecimal("200"));
+    when(wallet.calculateBalance(matches("very-secret4"))).thenReturn(new BigDecimal("200"));
     when(wallet.calculateBalance(matches("very-secret3"))).thenReturn(new BigDecimal("300"));
     
     Assessment result = validator.validate(transaction);
@@ -73,7 +68,7 @@ public class TransactionValidatorTest {
     when(hasher.generateListHash(any())).thenReturn(new byte[0]);
     when(signer.isSignatureValid(any(), any(), any())).thenReturn(true);
     when(wallet.calculateBalance(matches("very-secret1"))).thenReturn(new BigDecimal("100"));
-    when(wallet.calculateBalance(matches("very-secret2"))).thenReturn(new BigDecimal("200"));
+    when(wallet.calculateBalance(matches("very-secret4"))).thenReturn(new BigDecimal("200"));
     when(wallet.calculateBalance(matches("very-secret3"))).thenReturn(new BigDecimal("300"));
     
     Assessment result = validator.validate(transaction);
@@ -89,7 +84,7 @@ public class TransactionValidatorTest {
     when(hasher.generateListHash(any())).thenReturn(new byte[0]);
     when(signer.isSignatureValid(any(), any(), any())).thenReturn(true);
     when(wallet.calculateBalance(matches("very-secret1"))).thenReturn(new BigDecimal("100"));
-    when(wallet.calculateBalance(matches("very-secret2"))).thenReturn(new BigDecimal("200"));
+    when(wallet.calculateBalance(matches("very-secret4"))).thenReturn(new BigDecimal("200"));
     when(wallet.calculateBalance(matches("very-secret3"))).thenReturn(new BigDecimal("300"));
     
     Assessment result = validator.validate(transaction);
@@ -104,7 +99,7 @@ public class TransactionValidatorTest {
     when(hasher.generateListHash(any())).thenThrow(HashingException.class);
     when(signer.isSignatureValid(any(), any(), any())).thenReturn(true);
     when(wallet.calculateBalance(matches("very-secret1"))).thenReturn(new BigDecimal("100"));
-    when(wallet.calculateBalance(matches("very-secret2"))).thenReturn(new BigDecimal("200"));
+    when(wallet.calculateBalance(matches("very-secret4"))).thenReturn(new BigDecimal("200"));
     when(wallet.calculateBalance(matches("very-secret3"))).thenReturn(new BigDecimal("300"));
     
     Assessment result = validator.validate(transaction);
@@ -119,7 +114,7 @@ public class TransactionValidatorTest {
     when(hasher.generateListHash(any())).thenReturn(new byte[0]);
     when(signer.isSignatureValid(any(), any(), any())).thenReturn(false);
     when(wallet.calculateBalance(matches("very-secret1"))).thenReturn(new BigDecimal("100"));
-    when(wallet.calculateBalance(matches("very-secret2"))).thenReturn(new BigDecimal("200"));
+    when(wallet.calculateBalance(matches("very-secret4"))).thenReturn(new BigDecimal("200"));
     when(wallet.calculateBalance(matches("very-secret3"))).thenReturn(new BigDecimal("300"));
     
     Assessment result = validator.validate(transaction);
@@ -135,7 +130,7 @@ public class TransactionValidatorTest {
     when(hasher.generateListHash(any())).thenReturn(new byte[0]);
     when(signer.isSignatureValid(any(), any(), any())).thenThrow(CantConfigureSigningAlgorithmException.class);
     when(wallet.calculateBalance(matches("very-secret1"))).thenReturn(new BigDecimal("100"));
-    when(wallet.calculateBalance(matches("very-secret2"))).thenReturn(new BigDecimal("200"));
+    when(wallet.calculateBalance(matches("very-secret4"))).thenReturn(new BigDecimal("200"));
     when(wallet.calculateBalance(matches("very-secret3"))).thenReturn(new BigDecimal("300"));
     
     Assessment result = validator.validate(transaction);
@@ -150,7 +145,7 @@ public class TransactionValidatorTest {
     when(hasher.generateListHash(any())).thenReturn(new byte[0]);
     when(signer.isSignatureValid(any(), any(), any())).thenReturn(true);
     when(wallet.calculateBalance(matches("very-secret1"))).thenReturn(new BigDecimal("100"));
-    when(wallet.calculateBalance(matches("very-secret2"))).thenReturn(new BigDecimal("200"));
+    when(wallet.calculateBalance(matches("very-secret4"))).thenReturn(new BigDecimal("200"));
     when(wallet.calculateBalance(matches("very-secret3"))).thenReturn(new BigDecimal("300"));
     
     transaction.getOutputs().get(0).setAmount(new BigDecimal("100"));
@@ -168,7 +163,7 @@ public class TransactionValidatorTest {
     when(hasher.generateListHash(any())).thenReturn(new byte[0]);
     when(signer.isSignatureValid(any(), any(), any())).thenReturn(true);
     when(wallet.calculateBalance(matches("very-secret1"))).thenReturn(new BigDecimal("100"));
-    when(wallet.calculateBalance(matches("very-secret2"))).thenReturn(new BigDecimal("200"));
+    when(wallet.calculateBalance(matches("very-secret4"))).thenReturn(new BigDecimal("200"));
     when(wallet.calculateBalance(matches("very-secret3"))).thenReturn(new BigDecimal("300"));
     
     transaction.getOutputs().get(0).setAmount(new BigDecimal("101"));
@@ -186,7 +181,7 @@ public class TransactionValidatorTest {
     when(hasher.generateListHash(any())).thenReturn(new byte[0]);
     when(signer.isSignatureValid(any(), any(), any())).thenReturn(true);
     when(wallet.calculateBalance(matches("very-secret1"))).thenReturn(new BigDecimal("100"));
-    when(wallet.calculateBalance(matches("very-secret2"))).thenReturn(new BigDecimal("200"));
+    when(wallet.calculateBalance(matches("very-secret4"))).thenReturn(new BigDecimal("200"));
     when(wallet.calculateBalance(matches("very-secret3"))).thenReturn(new BigDecimal("300"));
     
     transaction.getInputs().get(0).setAmount(null);
@@ -206,7 +201,7 @@ public class TransactionValidatorTest {
     when(hasher.generateListHash(any())).thenReturn(new byte[0]);
     when(signer.isSignatureValid(any(), any(), any())).thenReturn(true);
     when(wallet.calculateBalance(matches("very-secret1"))).thenReturn(new BigDecimal("100"));
-    when(wallet.calculateBalance(matches("very-secret2"))).thenReturn(new BigDecimal("200"));
+    when(wallet.calculateBalance(matches("very-secret4"))).thenReturn(new BigDecimal("200"));
     when(wallet.calculateBalance(matches("very-secret3"))).thenReturn(new BigDecimal("300"));
     
     transaction.getInputs().get(2).setSequenceNumber(4l);
@@ -224,7 +219,7 @@ public class TransactionValidatorTest {
     when(hasher.generateListHash(any())).thenReturn(new byte[0]);
     when(signer.isSignatureValid(any(), any(), any())).thenReturn(true);
     when(wallet.calculateBalance(matches("very-secret1"))).thenReturn(new BigDecimal("100"));
-    when(wallet.calculateBalance(matches("very-secret2"))).thenReturn(new BigDecimal("200"));
+    when(wallet.calculateBalance(matches("very-secret4"))).thenReturn(new BigDecimal("200"));
     when(wallet.calculateBalance(matches("very-secret3"))).thenReturn(new BigDecimal("300"));
     
     transaction.getOutputs().get(2).setSequenceNumber(4l);
@@ -242,7 +237,7 @@ public class TransactionValidatorTest {
     when(hasher.generateListHash(any())).thenReturn(new byte[0]);
     when(signer.isSignatureValid(any(), any(), any())).thenReturn(true);
     when(wallet.calculateBalance(matches("very-secret1"))).thenReturn(new BigDecimal("100"));
-    when(wallet.calculateBalance(matches("very-secret2"))).thenReturn(new BigDecimal("200"));
+    when(wallet.calculateBalance(matches("very-secret4"))).thenReturn(new BigDecimal("200"));
     when(wallet.calculateBalance(matches("very-secret3"))).thenReturn(new BigDecimal("300"));
     
     transaction.getOutputs().get(0).setSequenceNumber(0l);
@@ -262,7 +257,7 @@ public class TransactionValidatorTest {
     when(hasher.generateListHash(any())).thenReturn(new byte[0]);
     when(signer.isSignatureValid(any(), any(), any())).thenReturn(true);
     when(wallet.calculateBalance(matches("very-secret1"))).thenReturn(new BigDecimal("100"));
-    when(wallet.calculateBalance(matches("very-secret2"))).thenReturn(new BigDecimal("200"));
+    when(wallet.calculateBalance(matches("very-secret4"))).thenReturn(new BigDecimal("200"));
     when(wallet.calculateBalance(matches("very-secret3"))).thenReturn(new BigDecimal("300"));
     
     transaction.getInputs().get(0).setSequenceNumber(0l);
@@ -282,7 +277,7 @@ public class TransactionValidatorTest {
     when(hasher.generateListHash(any())).thenReturn(new byte[0]);
     when(signer.isSignatureValid(any(), any(), any())).thenReturn(true);
     when(wallet.calculateBalance(matches("very-secret1"))).thenReturn(new BigDecimal("100"));
-    when(wallet.calculateBalance(matches("very-secret2"))).thenReturn(new BigDecimal("200"));
+    when(wallet.calculateBalance(matches("very-secret4"))).thenReturn(new BigDecimal("200"));
     when(wallet.calculateBalance(matches("very-secret3"))).thenReturn(new BigDecimal("300"));
     
     transaction.getOutputs().get(1).setTimestamp(new Date().getTime() + 1000l);
@@ -300,7 +295,7 @@ public class TransactionValidatorTest {
     when(hasher.generateListHash(any())).thenReturn(new byte[0]);
     when(signer.isSignatureValid(any(), any(), any())).thenReturn(true);
     when(wallet.calculateBalance(matches("very-secret1"))).thenReturn(new BigDecimal("100"));
-    when(wallet.calculateBalance(matches("very-secret2"))).thenReturn(new BigDecimal("200"));
+    when(wallet.calculateBalance(matches("very-secret4"))).thenReturn(new BigDecimal("200"));
     when(wallet.calculateBalance(matches("very-secret3"))).thenReturn(new BigDecimal("300"));
     
     transaction.getInputs().get(1).setTimestamp(new Date().getTime() + 1000l);
@@ -318,7 +313,7 @@ public class TransactionValidatorTest {
     when(hasher.generateListHash(any())).thenReturn(new byte[0]);
     when(signer.isSignatureValid(any(), any(), any())).thenReturn(true);
     when(wallet.calculateBalance(matches("very-secret1"))).thenReturn(new BigDecimal("100"));
-    when(wallet.calculateBalance(matches("very-secret2"))).thenReturn(new BigDecimal("200"));
+    when(wallet.calculateBalance(matches("very-secret4"))).thenReturn(new BigDecimal("200"));
     when(wallet.calculateBalance(matches("very-secret3"))).thenReturn(new BigDecimal("300"));
     
     transaction.getInputs().get(0).setAmount(BigDecimal.ZERO);
@@ -336,7 +331,7 @@ public class TransactionValidatorTest {
     when(hasher.generateListHash(any())).thenReturn(new byte[0]);
     when(signer.isSignatureValid(any(), any(), any())).thenReturn(true);
     when(wallet.calculateBalance(matches("very-secret1"))).thenReturn(new BigDecimal("100"));
-    when(wallet.calculateBalance(matches("very-secret2"))).thenReturn(new BigDecimal("200"));
+    when(wallet.calculateBalance(matches("very-secret4"))).thenReturn(new BigDecimal("200"));
     when(wallet.calculateBalance(matches("very-secret3"))).thenReturn(new BigDecimal("300"));
     
     transaction.getOutputs().get(0).setAmount(BigDecimal.ZERO);
@@ -354,7 +349,7 @@ public class TransactionValidatorTest {
     when(hasher.generateListHash(any())).thenReturn(new byte[0]);
     when(signer.isSignatureValid(any(), any(), any())).thenReturn(true);
     when(wallet.calculateBalance(matches("very-secret1"))).thenReturn(new BigDecimal("100"));
-    when(wallet.calculateBalance(matches("very-secret2"))).thenReturn(new BigDecimal("200"));
+    when(wallet.calculateBalance(matches("very-secret4"))).thenReturn(new BigDecimal("200"));
     when(wallet.calculateBalance(matches("very-secret3"))).thenReturn(new BigDecimal("300"));
     
     transaction.getInputs().get(0).setAmount(new BigDecimal(Block.MAX_AMOUNT_MINED_GROSCHN));
@@ -372,7 +367,7 @@ public class TransactionValidatorTest {
     when(hasher.generateListHash(any())).thenReturn(new byte[0]);
     when(signer.isSignatureValid(any(), any(), any())).thenReturn(true);
     when(wallet.calculateBalance(matches("very-secret1"))).thenReturn(new BigDecimal("100"));
-    when(wallet.calculateBalance(matches("very-secret2"))).thenReturn(new BigDecimal("200"));
+    when(wallet.calculateBalance(matches("very-secret4"))).thenReturn(new BigDecimal("200"));
     when(wallet.calculateBalance(matches("very-secret3"))).thenReturn(new BigDecimal("300"));
     
     transaction.getOutputs().get(0).setAmount(new BigDecimal(Block.MAX_AMOUNT_MINED_GROSCHN));
@@ -390,7 +385,7 @@ public class TransactionValidatorTest {
     when(hasher.generateListHash(any())).thenReturn(new byte[0]);
     when(signer.isSignatureValid(any(), any(), any())).thenReturn(true);
     when(wallet.calculateBalance(matches("very-secret1"))).thenReturn(new BigDecimal("99"));
-    when(wallet.calculateBalance(matches("very-secret2"))).thenReturn(new BigDecimal("200"));
+    when(wallet.calculateBalance(matches("very-secret4"))).thenReturn(new BigDecimal("200"));
     when(wallet.calculateBalance(matches("very-secret3"))).thenReturn(new BigDecimal("300"));
     
     Assessment result = validator.validate(transaction);
@@ -406,7 +401,7 @@ public class TransactionValidatorTest {
     when(hasher.generateListHash(any())).thenReturn(new byte[0]);
     when(signer.isSignatureValid(any(), any(), any())).thenReturn(true);
     when(wallet.calculateBalance(matches("very-secret1"))).thenReturn(new BigDecimal("101"));
-    when(wallet.calculateBalance(matches("very-secret2"))).thenReturn(new BigDecimal("200"));
+    when(wallet.calculateBalance(matches("very-secret4"))).thenReturn(new BigDecimal("200"));
     when(wallet.calculateBalance(matches("very-secret3"))).thenReturn(new BigDecimal("300"));
     
     Assessment result = validator.validate(transaction);
@@ -417,52 +412,6 @@ public class TransactionValidatorTest {
   
   
   private Transaction createValidTransaction() {
-    Transaction transaction = new Transaction();
-    transaction.setId(UUID.randomUUID().toString());
-    transaction.setTransactionHash("0FABDD34578");
-    List<TransactionInput> inputs = new ArrayList<>();
-    TransactionInput input1 = new TransactionInput();
-    input1.setAmount(new BigDecimal("100"));
-    input1.setPublicKey("very-secret1");
-    input1.setSequenceNumber(1l);
-    input1.setSignature("x0x0x0");
-    input1.setTimestamp(new Date().getTime() - 4000l);
-    inputs.add(input1);
-    TransactionInput input2 = new TransactionInput();
-    input2.setAmount(new BigDecimal("200"));
-    input2.setPublicKey("very-secret2");
-    input2.setSequenceNumber(2l);
-    input2.setSignature("x1x1x1");
-    input2.setTimestamp(new Date().getTime() - 100l);
-    inputs.add(input2);
-    TransactionInput input3 = new TransactionInput();
-    input3.setAmount(new BigDecimal("300"));
-    input3.setPublicKey("very-secret3");
-    input3.setSequenceNumber(3l);
-    input3.setSignature("x2x2x2");
-    input3.setTimestamp(new Date().getTime() - 10l);
-    inputs.add(input3);
-    transaction.setInputs(inputs);
-    List<TransactionOutput> outputs = new ArrayList<>();
-    TransactionOutput out1 = new TransactionOutput();
-    out1.setAmount(new BigDecimal("99"));
-    out1.setPublicKey("very-secret2");
-    out1.setSequenceNumber(1l);
-    out1.setTimestamp(new Date().getTime() - 5000l);
-    outputs.add(out1);
-    TransactionOutput out2 = new TransactionOutput();
-    out2.setAmount(new BigDecimal("350"));
-    out2.setPublicKey("very-secret1");
-    out2.setSequenceNumber(2l);
-    out2.setTimestamp(new Date().getTime() - 500l);
-    outputs.add(out2);
-    TransactionOutput out3 = new TransactionOutput();
-    out3.setAmount(new BigDecimal("150"));
-    out3.setPublicKey("someone-else");
-    out3.setSequenceNumber(3l);
-    out3.setTimestamp(new Date().getTime() - 50l);
-    outputs.add(out3);
-    transaction.setOutputs(outputs);
-    return transaction;
+    return TestDataFactory.createValidTransaction("very-secret1", "very-secret4", "very-secret3", "someone-else");
   }
 }

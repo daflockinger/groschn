@@ -17,13 +17,7 @@ import com.flockinger.groschn.blockchain.validation.Validator;
 
 @Component
 public class BlockTransactionsValidator implements Validator<List<Transaction>>{
-/*
-   Probably need multiple kinds of transaction Validators one for:
-   + When validating for Block -> BlockTransactionsValidator-> check for Reward and perfect balance
-   + When validating for fetching Transactions from pool -> TransactionValidator -> for single Transactions
-   
-   TODO maybe create a Uber-Interface returning only the valid Transactions
-   
+  /*
    Overall checks (regarding all Transactions):
    ********************************************
    1. verify that a input publicKey is unique for all
@@ -32,8 +26,7 @@ public class BlockTransactionsValidator implements Validator<List<Transaction>>{
      and or the the whole balance in either one of the transactions can be tampered with -> possible double spend)
    2. verify correct double-bookkeeping
      - total transactions input amounts must equal output amounts (with having the reward Transaction)
-       
-   * */
+   **/
   
   @Autowired
   @Qualifier("Transaction_Validator")
@@ -103,7 +96,10 @@ public class BlockTransactionsValidator implements Validator<List<Transaction>>{
   private Map<Boolean, List<Transaction>> extractRewardTransaction(List<Transaction> transactions) {
     Map<Boolean, List<Transaction>> extract = transactions.stream()
         .collect(Collectors.groupingBy(this::isOutputSumHigherorEqualThanInputSum));
-    if(extract.get(true).size() != 1) {
+    if(!extract.containsKey(NORMAL)) {
+      extract.put(NORMAL, new ArrayList<>());
+    }
+    if(extract.containsKey(REWARD) && extract.get(REWARD).size() != 1) {
       throw new AssessmentFailedException("There can only be one Reward Transaction no more or less!");
     }
     return extract;
