@@ -1,7 +1,6 @@
 package com.flockinger.groschn.blockchain.util.sign;
 
 import java.security.KeyPair;
-import java.security.PrivateKey;
 
 
 public interface Signer {

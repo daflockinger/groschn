@@ -1,6 +1,5 @@
 package com.flockinger.groschn.blockchain.transaction.impl;
 
-import java.security.PrivateKey;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -113,6 +112,11 @@ public class TransactionManagerImpl implements TransactionManager {
   }
 
 
+  /*
+   * TODO maybe check if a Transaction from the same input publicKey is already in the pool, 
+   * but not yet added to the chain that the new one is revoked until the old one is processed, 
+   * to ensure that the new one is not kicked later one (cause the input amount value is wrong).
+   */
   @Override
   public Transaction createSignedTransaction(TransactionDto transactionSigningRequest) {
     var transaction = mapper.map(transactionSigningRequest, Transaction.class);

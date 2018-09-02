@@ -5,7 +5,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.Provider;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import org.apache.commons.lang3.ArrayUtils;

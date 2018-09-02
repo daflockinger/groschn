@@ -110,13 +110,16 @@ public class TestDataFactory {
   }
   
   
-  public static StoredTransactionOutput createRandomTransactionOutputWith(long sequenceNumber, String pubKey, Long amount) {
+  public static StoredTransactionOutput createRandomTransactionOutputWith(long sequenceNumber, String pubKey, Long amount, Long timestamp) {
     StoredTransactionOutput output = new StoredTransactionOutput();
     output.setAmount(new BigDecimal(amount));
     output.setPublicKey(pubKey);
     output.setSequenceNumber(sequenceNumber);
-    output.setTimestamp(new Date().getTime());
+    output.setTimestamp(timestamp);
     return output;
+  }
+  public static StoredTransactionOutput createRandomTransactionOutputWith(long sequenceNumber, String pubKey, Long amount) {
+    return createRandomTransactionOutputWith(sequenceNumber, pubKey, amount, new Date().getTime());
   }
   public static StoredTransactionOutput createRandomTransactionOutputWith(long sequenceNumber, String pubKey) {
     return createRandomTransactionOutputWith(sequenceNumber, pubKey, RandomUtils.nextLong(1, 101));
@@ -126,18 +129,21 @@ public class TestDataFactory {
   }
   
   
-  public static StoredTransactionInput createRandomTransactionInputWith(long sequenceNumber, String pubKey, Long amount) {
+  public static StoredTransactionInput createRandomTransactionInputWith(long sequenceNumber, String pubKey, Long amount, Long timestamp) {
     StoredTransactionInput input = new StoredTransactionInput();
     input.setAmount(new BigDecimal(amount));
     input.setPublicKey(pubKey);
     input.setSequenceNumber(sequenceNumber);
-    input.setTimestamp(new Date().getTime());
+    input.setTimestamp(timestamp);
     StoredTransactionPointCut pointcut = new StoredTransactionPointCut();
     pointcut.setSequenceNumber(RandomUtils.nextLong(1, 10));
     pointcut.setTransactionHash(UUID.randomUUID().toString());
     input.setPreviousOutputTransaction(pointcut);
     input.setSignature(UUID.randomUUID().toString());
     return input;
+  }
+  public static StoredTransactionInput createRandomTransactionInputWith(long sequenceNumber, String pubKey, Long amount) {
+    return createRandomTransactionInputWith(sequenceNumber, pubKey, amount, new Date().getTime());   
   }
   public static StoredTransactionInput createRandomTransactionInputWith(long sequenceNumber, String pubKey) {
     return createRandomTransactionInputWith(sequenceNumber, pubKey, RandomUtils.nextLong(1, 101));

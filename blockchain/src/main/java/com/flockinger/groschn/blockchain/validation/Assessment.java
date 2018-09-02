@@ -1,7 +1,5 @@
 package com.flockinger.groschn.blockchain.validation;
 
-import org.springframework.data.mongodb.core.aggregation.SetOperators.SetIsSubset;
-
 public class Assessment {
   
   private boolean isValid;

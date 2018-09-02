@@ -7,8 +7,8 @@ import org.springframework.stereotype.Component;
 import com.flockinger.groschn.blockchain.blockworks.BlockMaker;
 import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
 import com.flockinger.groschn.blockchain.blockworks.HashGenerator;
+import com.flockinger.groschn.blockchain.exception.BlockchainException;
 import com.flockinger.groschn.blockchain.exception.validation.AssessmentFailedException;
-import com.flockinger.groschn.blockchain.exception.validation.ValidationException;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.model.Transaction;
 import com.flockinger.groschn.blockchain.util.CompressionUtils;
@@ -60,7 +60,7 @@ public class BlockValidator implements Validator<Block> {
       // 3. verify if current hash is correctly calculated
       verifyCurrentHash(value);
       isBlockValid.setValid(true);
-    } catch (ValidationException e) {
+    } catch (BlockchainException e) {
       isBlockValid.setValid(false);
       isBlockValid.setReasonOfFailure(e.getMessage());
     }   

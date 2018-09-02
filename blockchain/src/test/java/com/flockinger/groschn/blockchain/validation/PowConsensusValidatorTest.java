@@ -1,6 +1,9 @@
 package com.flockinger.groschn.blockchain.validation;
 
-import static org.junit.Assert.*;
+import static com.flockinger.groschn.blockchain.consensus.impl.ProofOfWorkAlgorithm.MINING_RATE_MILLISECONDS;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 import java.util.Date;
 import org.apache.commons.lang3.StringUtils;
@@ -11,7 +14,6 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
-import static com.flockinger.groschn.blockchain.consensus.impl.ProofOfWorkAlgorithm.MINING_RATE_MILLISECONDS;
 import com.flockinger.groschn.blockchain.consensus.model.ConsensusType;
 import com.flockinger.groschn.blockchain.consensus.model.Consent;
 import com.flockinger.groschn.blockchain.model.Block;

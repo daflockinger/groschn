@@ -1,6 +1,8 @@
 package com.flockinger.groschn.blockchain.transaction.impl;
 
 import static org.apache.commons.collections4.ListUtils.emptyIfNull;
+import java.util.List;
+import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
 import com.flockinger.groschn.blockchain.model.Transaction;
 import com.flockinger.groschn.blockchain.model.TransactionInput;
@@ -19,17 +21,19 @@ public class TransactionUtils {
     this.key = key;
   }
   
-  public boolean containsPubKeyOutput(Transaction transaction) {
-    return emptyIfNull(transaction.getOutputs()).stream()
-        .anyMatch(output -> StringUtils.equals(output.getPublicKey(), key));
+  
+  public Optional<Transaction> findLatestExpenseTransaction(List<Transaction> transactions) {
+    return transactions.stream()
+        .filter(this::containsPubKeyInput)
+        .reduce(this::getLatestTransaction);
   }
   
-  public boolean containsPubKeyInput(Transaction transaction) {
+  private boolean containsPubKeyInput(Transaction transaction) {
     return emptyIfNull(transaction.getInputs()).stream()
-        .anyMatch(output -> StringUtils.equals(output.getPublicKey(), key));
+        .anyMatch(input -> StringUtils.equals(input.getPublicKey(), key));
   }
   
-  public Transaction getLatestTransaction(Transaction firstTx, Transaction secondTx) {
+  private Transaction getLatestTransaction(Transaction firstTx, Transaction secondTx) {
     return (latestTxInputTimeStamp(firstTx, key) > latestTxInputTimeStamp(secondTx, key)) 
         ? firstTx : secondTx;
   }
@@ -41,5 +45,4 @@ public class TransactionUtils {
       .reduce((firstStamp, secondStamp) -> (firstStamp > secondStamp)
           ? firstStamp : secondStamp).orElse(0l);
   }
-  
 }

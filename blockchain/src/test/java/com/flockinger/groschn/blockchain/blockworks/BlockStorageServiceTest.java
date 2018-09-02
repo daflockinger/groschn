@@ -26,7 +26,6 @@ import com.flockinger.groschn.blockchain.repository.model.StoredBlock;
 import com.flockinger.groschn.blockchain.repository.model.StoredTransaction;
 import com.flockinger.groschn.blockchain.validation.impl.BlockValidator;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 
 @ContextConfiguration(classes = {BlockchainRepository.class, BlockStorageServiceImpl.class, })
 public class BlockStorageServiceTest extends BaseDbTest {

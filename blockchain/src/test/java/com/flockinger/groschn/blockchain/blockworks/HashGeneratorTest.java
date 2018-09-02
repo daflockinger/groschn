@@ -8,8 +8,6 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.List;
-import java.util.UUID;
 import org.apache.commons.text.similarity.LevenshteinDistance;
 import org.bouncycastle.util.encoders.Hex;
 import org.junit.Test;

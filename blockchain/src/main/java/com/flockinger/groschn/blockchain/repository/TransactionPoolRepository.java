@@ -6,4 +6,5 @@ import com.flockinger.groschn.blockchain.repository.model.TransactionStatus;
 
 public interface TransactionPoolRepository extends MongoRepository<StoredPoolTransaction, String>{
   Iterable<StoredPoolTransaction> findByStatusOrderByCreatedAtDesc(TransactionStatus status);
+  boolean existsByTransactionId(String transactionId);
 }

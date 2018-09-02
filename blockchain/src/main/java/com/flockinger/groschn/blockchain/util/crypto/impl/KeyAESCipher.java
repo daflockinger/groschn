@@ -1,7 +1,6 @@
 package com.flockinger.groschn.blockchain.util.crypto.impl;
 
 import static com.flockinger.groschn.blockchain.config.CryptoConfig.DEFAULT_PROVIDER_NAME;
-import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.Key;

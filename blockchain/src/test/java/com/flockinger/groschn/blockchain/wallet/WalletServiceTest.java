@@ -166,7 +166,7 @@ public class WalletServiceTest extends BaseDbTest {
     BigDecimal balance = service.calculateBalance("daRealMaster");
 
     assertNotNull("verify calculated balance is not null", balance);
-    assertEquals("verify balance is correct", 180, balance.intValue());
+    assertEquals("verify balance is correct", (14 * 10) + (3 * 10), balance.intValue());
   }
 
   @Test
@@ -176,7 +176,7 @@ public class WalletServiceTest extends BaseDbTest {
     BigDecimal balance = service.calculateBalance("daRealMaster");
 
     assertNotNull("verify calculated balance is not null", balance);
-    assertEquals("verify balance is correct", 360, balance.intValue());
+    assertEquals("verify balance is correct", (14 * 20) + (3 * 40), balance.intValue());
   }
 
   @Test
@@ -186,7 +186,7 @@ public class WalletServiceTest extends BaseDbTest {
     BigDecimal balance = service.calculateBalance("daRealMaster");
 
     assertNotNull("verify calculated balance is not null", balance);
-    assertEquals("verify balance is correct", 2200, balance.intValue());
+    assertEquals("verify balance is correct", 10 * 10, balance.intValue());
   }
 
   @Test
@@ -196,7 +196,7 @@ public class WalletServiceTest extends BaseDbTest {
     BigDecimal balance = service.calculateBalance("daRealMaster");
 
     assertNotNull("verify calculated balance is not null", balance);
-    assertEquals("verify balance is correct", 4400, balance.intValue());
+    assertEquals("verify balance is correct", 10 * 40, balance.intValue());
   }
 
 
@@ -232,25 +232,21 @@ public class WalletServiceTest extends BaseDbTest {
     var blocks = createTotallyRandomBlocks();
     if (multipleOut || singleOut) {
       IntStream.range(0, blocks.size()).forEach(blockCount -> {
-        int multiplier = (20 - blockCount);
         if (blockCount % 2 == 0 && (multipleOut || singleOut)) {
-          blocks.get(blockCount).getTransactions().get(3)
-              .setOutputs(createTransactionOutputs(multipleOut, masterPubKey, multiplier));
           blocks.get(blockCount).getTransactions().get(7)
-              .setOutputs(createTransactionOutputs(multipleOut, masterPubKey, multiplier));
+              .setOutputs(createTransactionOutputs(multipleOut, masterPubKey, 1));
+          if(multipleOut) {
+            blocks.get(blockCount).getTransactions().get(5)
+              .setOutputs(createTransactionOutputs(multipleOut, masterPubKey, 1));
+          }
         }
         if (blockCount % 7 == 0 && singleIn) {
-          var modifyInput1 = blocks.get(blockCount).getTransactions().get(3).getInputs()
-              .get(RandomUtils.nextInt(0, 4));
-          blocks.get(blockCount).getTransactions().get(3).getOutputs().get(1)
-              .setAmount(new BigDecimal(123));
-          modifyInput1.setPublicKey(masterPubKey);
-          modifyInput1.setTimestamp(1001l);
-
-          var modifyInput2 = blocks.get(blockCount).getTransactions().get(7).getInputs()
-              .get(RandomUtils.nextInt(0, 4));
-          modifyInput2.setPublicKey(masterPubKey);
-          modifyInput2.setTimestamp(1002l);
+          var expenseTransaction = blocks.get(blockCount).getTransactions().get(3);
+          var modifyInput = expenseTransaction.getInputs().get(2);
+          modifyInput.setPublicKey(masterPubKey);
+          modifyInput.setTimestamp(1000l + blockCount);
+          expenseTransaction
+            .setOutputs(createTransactionOutputs(multipleOut, masterPubKey, blockCount));
         }
       });
     }

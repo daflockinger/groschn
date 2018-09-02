@@ -1,5 +1,7 @@
 package com.flockinger.groschn.blockchain.consensus.impl;
 
+import static com.flockinger.groschn.blockchain.consensus.impl.ProofOfMajorityAlgorithm.MIN_ACTIVE_NODE_COUNT;
+import static com.flockinger.groschn.blockchain.consensus.impl.ProofOfMajorityAlgorithm.MIN_BLOCK_COUNT_BEFORE_ACTIVATE_POM;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -18,7 +20,6 @@ import com.flockinger.groschn.blockchain.repository.BlockchainRepository;
 import com.flockinger.groschn.blockchain.repository.model.BlockProcess;
 import com.flockinger.groschn.blockchain.repository.model.ProcessStatus;
 import com.flockinger.groschn.messaging.members.ElectionStatistics;
-import static com.flockinger.groschn.blockchain.consensus.impl.ProofOfMajorityAlgorithm.*;
 
 @Component("ConsensusDecider")
 public class ConsensusFactory implements ConsensusAlgorithm {

@@ -6,7 +6,6 @@ import com.flockinger.groschn.blockchain.dto.TransactionDto;
 import com.flockinger.groschn.blockchain.model.Transaction;
 import com.flockinger.groschn.blockchain.model.TransactionOutput;
 import com.flockinger.groschn.blockchain.model.TransactionPointCut;
-import com.flockinger.groschn.blockchain.repository.model.TransactionStatus;
 
 public interface TransactionManager {
 

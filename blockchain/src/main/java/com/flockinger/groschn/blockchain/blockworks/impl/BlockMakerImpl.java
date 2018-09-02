@@ -135,8 +135,7 @@ public class BlockMakerImpl implements BlockMaker {
   private Optional<Transaction> findExpenseTransaction(List<Transaction> transactions,
       String publicKey) {
     TransactionUtils utils = TransactionUtils.build(publicKey);
-    return transactions.stream().filter(utils::containsPubKeyInput)
-        .reduce(utils::getLatestTransaction);
+    return utils.findLatestExpenseTransaction(transactions);
   }
 
   private void fixStatementsSequenceCount(TransactionDto rewardTransaction,

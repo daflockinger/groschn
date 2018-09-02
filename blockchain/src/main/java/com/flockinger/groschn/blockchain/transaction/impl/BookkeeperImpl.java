@@ -1,8 +1,8 @@
 package com.flockinger.groschn.blockchain.transaction.impl;
 
+import static org.apache.commons.collections4.ListUtils.emptyIfNull;
 import java.math.BigDecimal;
 import java.util.Objects;
-import static org.apache.commons.collections4.ListUtils.emptyIfNull;
 import org.springframework.stereotype.Component;
 import com.flockinger.groschn.blockchain.exception.validation.transaction.CheapskateException;
 import com.flockinger.groschn.blockchain.exception.validation.transaction.NegativeTransactionBalanceException;

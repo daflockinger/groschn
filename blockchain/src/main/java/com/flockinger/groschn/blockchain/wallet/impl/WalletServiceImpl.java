@@ -1,22 +1,18 @@
 package com.flockinger.groschn.blockchain.wallet.impl;
 
 import java.math.BigDecimal;
-import java.security.KeyFactory;
 import java.security.KeyPair;
-import java.security.PrivateKey;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
-import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPrivateKey;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import com.flockinger.groschn.blockchain.dto.UnlockedWalletDto;
 import com.flockinger.groschn.blockchain.dto.WalletDto;
 import com.flockinger.groschn.blockchain.exception.wallet.WalletNotFoundException;
 import com.flockinger.groschn.blockchain.model.Block;
@@ -100,23 +96,17 @@ public class WalletServiceImpl implements WalletService {
 
   @Override
   public BigDecimal calculateBalance(String publicKey) {
-    var firstExpense = getFirstExpense(publicKey);
-    long outputScannerStartPosition = 0;
-    BigDecimal balance = BigDecimal.ZERO;
-
-    if (firstExpense.isPresent()) {
-      outputScannerStartPosition = firstExpense.get().getPosition() + 1;
-      balance = getCorrectExpenseBlockBalance(firstExpense.get(), publicKey);
-    }
+    long outputScannerStartPosition = getLastExpenseBlockPosition(publicKey);
     var incomeBlocks = findIncomeBlocks(outputScannerStartPosition, publicKey);
     var incomeTransactions = incomeBlocks.stream().map(Block::getTransactions).flatMap(Collection::stream);
-    balance = balance.add(totalAmount(incomeTransactions, publicKey));
-    return balance;
+    return totalAmount(incomeTransactions, publicKey);
   }
   
-  private Optional<Block> getFirstExpense(String publicKey) {
-    return blockDao.findFirstByTransactionsInputsPublicKeyOrderByPositionDesc(publicKey).stream()
+  private Long getLastExpenseBlockPosition(String publicKey) {
+    Optional<Block> lastExpense = blockDao.findFirstByTransactionsInputsPublicKeyOrderByPositionDesc(publicKey).stream()
         .map(this::mapToBlock).findFirst();
+    return lastExpense.stream().map(Block::getPosition)
+        .findFirst().orElse(0l);
   }
   private List<Block> findIncomeBlocks(long outputScannerStartPosition, String publicKey) {
     return blockDao.findByPositionGreaterThanEqualAndTransactionsOutputsPublicKey(
@@ -131,14 +121,6 @@ public class WalletServiceImpl implements WalletService {
         .filter(output -> StringUtils.equals(output.getPublicKey(), publicKey))
         .map(TransactionOutput::getAmount)
         .reduce(BigDecimal::add).orElse(BigDecimal.ZERO);
-  }
-  
-  private BigDecimal getCorrectExpenseBlockBalance(Block block, String publicKey) {
-    TransactionUtils utils = TransactionUtils.build(publicKey);
-    Optional<Transaction> latestTransaction = block.getTransactions().stream()
-      .filter(utils::containsPubKeyOutput)
-      .reduce(utils::getLatestTransaction);
-    return totalAmount(latestTransaction.stream(), publicKey);
   }
   
   private Block mapToBlock(StoredBlock storedBlock) {
