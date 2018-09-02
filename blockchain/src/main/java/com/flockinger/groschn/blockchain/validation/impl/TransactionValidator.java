@@ -1,5 +1,6 @@
 package com.flockinger.groschn.blockchain.validation.impl;
 
+import org.bouncycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import com.flockinger.groschn.blockchain.blockworks.HashGenerator;
@@ -97,7 +98,7 @@ public class TransactionValidator implements Validator<Transaction> {
   
   //TODO continue here!!
   void verifySignatures(Transaction transaction) {
-   // byte[] outputHash = Hex.
+    byte[] outputHash = hasher.generateListHash(transaction.getOutputs());
     
     for(TransactionInput input: transaction.getInputs()) {
      // signer.isSignatureValid(transactionHash, publicKey, signature)

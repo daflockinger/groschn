@@ -1,11 +1,17 @@
 package com.flockinger.groschn.blockchain.blockworks;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
+import java.util.UUID;
 import org.apache.commons.text.similarity.LevenshteinDistance;
+import org.bouncycastle.util.encoders.Hex;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +23,8 @@ import com.flockinger.groschn.blockchain.config.CryptoConfig;
 import com.flockinger.groschn.blockchain.exception.HashingException;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.model.Hashable;
+import com.flockinger.groschn.blockchain.model.TransactionOutput;
+import com.google.common.collect.ImmutableList;
 
 @ContextConfiguration(classes = {MultiHashGenerator.class})
 @RunWith(SpringRunner.class)
@@ -39,7 +47,6 @@ public class HashGeneratorTest {
     assertEquals("verify correct generated hash", expectedHash, generatedHash);
   }
   
-
   @Test
   public void testGenerateHash_withVerifyThatSlightlyChangesHashesAreVeryDifferent_shouldCreateCorrectly()
       throws InterruptedException {
@@ -59,7 +66,7 @@ public class HashGeneratorTest {
           distance > (generatedHash.length() * 0.75));
     }
   }
-
+  
   @Test
   public void testGenerateHash_withGenerateTwice_shouldCreateSameHash() {
     Hashable hashable = createTestData(123l);
@@ -96,6 +103,44 @@ public class HashGeneratorTest {
     });
     assertNotNull("verify returned hash is not null", generatedHash);
   }
+  
+  @Test
+  public void testGenerateListHash_withValidHashablesData_shouldCreateCorrectly()
+      throws InterruptedException {
+    TransactionOutput out = createTestOutput(12l);
+    TransactionOutput ou3 = createTestOutput(null);
+    TransactionOutput out2 = createTestOutput(14l);
+
+    var outs = new ArrayList<TransactionOutput>();
+    outs.addAll(ImmutableList.of(out, out2, ou3));
+    byte[] generatedHash = hasher.generateListHash(outs);
+    byte[] expectedHash = Hex.decode("3f2db885499fb5cc776bfa846ba6341c1ae7d988943e8629c03758f4711a5fb99e820b76ef9bb379afb477486bf57f71b4d60458066195a231dc3340819944b2");
+    assertNotNull("verify returned hash is not null", generatedHash);
+    assertTrue("verify correct generated hash", Arrays.equals(expectedHash, generatedHash));
+    
+    var outs2 = new ArrayList<TransactionOutput>();
+    outs2.addAll(ImmutableList.of(out2, out, ou3));
+    byte[] switchedHash = hasher.generateListHash(outs2);
+    
+    assertTrue("verify switched hash is still the same", Arrays.equals(generatedHash, switchedHash));
+  }
+  
+  @Test
+  public void testGenerateListHash_withSlightChangeValidHashablesData_shouldCreateCorrectly()
+      throws InterruptedException {
+    TransactionOutput out = createTestOutput(12l);
+    TransactionOutput ou3 = createTestOutput(null);
+    TransactionOutput out2 = createTestOutput(15l);
+
+    var outs = new ArrayList<TransactionOutput>();
+    outs.addAll(ImmutableList.of(out, out2, ou3));
+    byte[] generatedHash = hasher.generateListHash(outs);
+    byte[] expectedHash = Hex.decode("3f2db885499fb5cc776bfa846ba6341c1ae7d988943e8629c03758f4711a5fb99e820b76ef9bb379afb477486bf57f71b4d60458066195a231dc3340819944b2");
+    
+    assertNotNull("verify returned hash is not null", generatedHash);
+    assertNotEquals("verify generated hash is different", expectedHash, generatedHash);
+  }
+  
   
   @Test
   public void testIsHashCorrect_withCorrectHashAndHashable_shouldReturnTrue() {
@@ -151,5 +196,14 @@ public class HashGeneratorTest {
     block.setVersion(1);
 
     return block;
+  }
+  
+  private TransactionOutput createTestOutput(Long sequenceNumber) {
+    TransactionOutput out = new TransactionOutput();
+    out.setAmount(new BigDecimal("123"));
+    out.setPublicKey("master-key");
+    out.setSequenceNumber(sequenceNumber);
+    out.setTimestamp(1234l);
+    return out;
   }
 }

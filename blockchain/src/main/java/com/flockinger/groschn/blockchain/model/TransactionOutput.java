@@ -3,7 +3,7 @@ package com.flockinger.groschn.blockchain.model;
 import java.io.Serializable;
 import java.math.BigDecimal;
 
-public class TransactionOutput implements Serializable {
+public class TransactionOutput implements Serializable, Sequential {
   /**
   * 
   */
