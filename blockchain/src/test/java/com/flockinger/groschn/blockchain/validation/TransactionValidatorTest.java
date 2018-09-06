@@ -28,11 +28,12 @@ import com.flockinger.groschn.blockchain.model.Transaction;
 import com.flockinger.groschn.blockchain.model.TransactionInput;
 import com.flockinger.groschn.blockchain.model.TransactionOutput;
 import com.flockinger.groschn.blockchain.util.sign.Signer;
+import com.flockinger.groschn.blockchain.validation.impl.TransactionValidationHelper;
 import com.flockinger.groschn.blockchain.validation.impl.TransactionValidator;
 import com.flockinger.groschn.blockchain.wallet.WalletService;
 
 @RunWith(SpringRunner.class)
-@ContextConfiguration(classes = {TransactionValidator.class, })
+@ContextConfiguration(classes = {TransactionValidator.class, TransactionValidationHelper.class})
 public class TransactionValidatorTest {
   
   @MockBean
@@ -41,7 +42,6 @@ public class TransactionValidatorTest {
   private Signer signer;
   @MockBean
   private WalletService wallet;
-  
   
   @Autowired
   private TransactionValidator validator;

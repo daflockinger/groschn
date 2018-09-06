@@ -61,7 +61,9 @@ public class TransactionValidator implements Validator<Transaction> {
   @Qualifier("ECDSA_Signer")
   private Signer signer;
   @Autowired
-  protected WalletService wallet;
+  private WalletService wallet;
+  @Autowired
+  protected TransactionValidationHelper helper;
   
   @Override
   public Assessment validate(Transaction value) {
@@ -121,20 +123,8 @@ public class TransactionValidator implements Validator<Transaction> {
   }
   
   protected void verifyTransactionBalance(Transaction transaction) {
-    verifyAssessment(calcualteTransactionBalance(transaction) > 0, 
+    verifyAssessment(helper.calcualteTransactionBalance(transaction) > 0, 
         "Total input amount must be higher than total output amount!");
-  }
-  
-  protected int calcualteTransactionBalance(Transaction transaction, Predicate<TransactionOutput> filter) {
-    var inputAmount = transaction.getInputs().stream().filter(filter).map(TransactionInput::getAmount)
-       .filter(Objects::nonNull).reduce(BigDecimal::add).orElse(BigDecimal.ZERO);
-      var outputAmount = transaction.getOutputs().stream().filter(filter).map(TransactionOutput::getAmount)
-          .filter(Objects::nonNull).reduce(BigDecimal::add).orElse(BigDecimal.ZERO);
-      return inputAmount.compareTo(outputAmount);
-  }
-  
-  protected int calcualteTransactionBalance(Transaction transaction) {
-    return calcualteTransactionBalance(transaction, statement -> true);
   }
   
   private void verifySequenceNumber(long wantedNumber, Long presentNumber) {
@@ -165,16 +155,5 @@ public class TransactionValidator implements Validator<Transaction> {
     if(!isValid) {
       throw new AssessmentFailedException(errorMessage);
     }
-  }
-  
-  /**
-   * Returns true if the Class can validate that kind of transaction.<br>
-   * (mostly used to distinguish between regular and reward transactions)
-   * 
-   * @param transaction
-   * @return
-   */
-  public boolean canValidate(Transaction transaction) {
-    return calcualteTransactionBalance(transaction) > 0;
   }
 }

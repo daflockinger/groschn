@@ -1,8 +1,11 @@
 package com.flockinger.groschn.blockchain.transaction.impl;
 
 import static org.apache.commons.collections4.ListUtils.emptyIfNull;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import com.flockinger.groschn.blockchain.model.Transaction;
 import com.flockinger.groschn.blockchain.model.TransactionInput;
@@ -45,4 +48,6 @@ public class TransactionUtils {
       .reduce((firstStamp, secondStamp) -> (firstStamp > secondStamp)
           ? firstStamp : secondStamp).orElse(0l);
   }
+  
+  
 }
