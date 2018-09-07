@@ -15,7 +15,7 @@ import com.flockinger.groschn.blockchain.model.TransactionInput;
 import com.flockinger.groschn.blockchain.validation.Assessment;
 import com.flockinger.groschn.blockchain.validation.Validator;
 
-@Component
+@Component("BlockTransaction_Validator")
 public class BlockTransactionsValidator implements Validator<List<Transaction>>{
   /*
    Overall checks (regarding all Transactions):
@@ -99,7 +99,7 @@ public class BlockTransactionsValidator implements Validator<List<Transaction>>{
     if(!extract.containsKey(NORMAL)) {
       extract.put(NORMAL, new ArrayList<>());
     }
-    if(extract.containsKey(REWARD) && extract.get(REWARD).size() != 1) {
+    if(!extract.containsKey(REWARD) || extract.get(REWARD).size() != 1) {
       throw new AssessmentFailedException("There can only be one Reward Transaction no more or less!");
     }
     return extract;

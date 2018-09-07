@@ -1,11 +1,17 @@
 package com.flockinger.groschn.blockchain.validation;
 
+import static com.flockinger.groschn.blockchain.TestDataFactory.createBlockTransactions;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import java.math.BigDecimal;
-import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -14,7 +20,9 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import com.flockinger.groschn.blockchain.TestDataFactory;
+import com.flockinger.groschn.blockchain.exception.validation.AssessmentFailedException;
 import com.flockinger.groschn.blockchain.model.Transaction;
+import com.flockinger.groschn.blockchain.model.TransactionInput;
 import com.flockinger.groschn.blockchain.validation.impl.BlockTransactionsValidator;
 import com.flockinger.groschn.blockchain.validation.impl.TransactionValidationHelper;
 
@@ -105,38 +113,151 @@ public class BlockTransactionsValidatorTest {
     assertEquals("verify that to validate reward is correct", "minerKey", reward.getInputs().get(0).getPublicKey());
   }
   
-  
-  /*
-   
   @Test
-  public void testValidate_with_should() {
+  public void testValidate_withMoreOutputThanInputAmount_shouldValidateFalse() {
+    List<Transaction> transactions = createBlockTransactions(false, false);
+    transactions.get(0).getOutputs().get(0).setAmount(new BigDecimal("100"));
+
+    Assessment result = validator.validate(transactions);
     
-  }
-   
-   * */
-  
-  
-  private List<Transaction> createBlockTransactions(boolean rewardRewardStatementsOnly, boolean rewardTxOnly) {
-    List<Transaction> transactions = new ArrayList<>();
-    
-    if(!rewardTxOnly) {
-      transactions.add(TestDataFactory.createValidTransaction("someone1", "someone2", "someone3", "great1"));
-      transactions.add(TestDataFactory.createValidTransaction("great1", "someone4", "someone5", "great1"));
-      transactions.add(TestDataFactory.createValidTransaction("someone6", "someone7", "anotherone3", "someone4"));
-      transactions.add(TestDataFactory.createValidTransaction("anotherone2", "anotherone4", "anotherone1", "someone7"));
-    }
-    transactions.add(TestDataFactory.createRewardTransaction(rewardRewardStatementsOnly));
-    if(!rewardTxOnly) {
-      transactions.add(TestDataFactory.createValidTransaction("some1", "some2", "some3", "great21"));
-      transactions.add(TestDataFactory.createValidTransaction("great21", "some4", "some5", "great21"));
-      transactions.add(TestDataFactory.createValidTransaction("some6", "some7", "another3", "some4"));
-      transactions.add(TestDataFactory.createValidTransaction("another2", "another4", "another1", "some7"));
-      transactions.add(TestDataFactory.createValidTransaction("great31", "someone24", "someone25", "great31"));
-      transactions.add(TestDataFactory.createValidTransaction("some26", "someone27", "anotherone23", "someone24"));
-      transactions.add(TestDataFactory.createValidTransaction("anotherone22", "anotherone24", "anotherone21", "someone25"));
-    }
-    return transactions;
+    assertNotNull("verify result asessment is not null", result);
+    assertEquals("verify that validation resulted correct", false, result.isValid());
+    assertTrue("verify that error message is correct", StringUtils
+        .containsIgnoreCase(result.getReasonOfFailure(), "must equal to"));
   }
   
+  @Test
+  public void testValidate_withMoreInputThanOutputAmount_shouldValidateFalse() {
+    List<Transaction> transactions = createBlockTransactions(false, false);
+    transactions.get(0).getOutputs().get(0).setAmount(new BigDecimal("98"));
+
+    Assessment result = validator.validate(transactions);
+    
+    assertNotNull("verify result asessment is not null", result);
+    assertEquals("verify that validation resulted correct", false, result.isValid());
+    assertTrue("verify that error message is correct", StringUtils
+        .containsIgnoreCase(result.getReasonOfFailure(), "must equal to"));
+  }
   
+  @Test
+  public void testValidate_withOneTransactionValidationFailing_shouldValidateFalse() {
+    List<Transaction> transactions = createBlockTransactions(false, false);
+    when(transactionValidator.validate(any())).thenThrow(AssessmentFailedException.class);
+
+    Assessment result = validator.validate(transactions);
+    
+    assertNotNull("verify result asessment is not null", result);
+    assertEquals("verify that validation resulted correct", false, result.isValid());
+  }
+  
+  @Test
+  public void testValidate_withRewardTransactionValidationFailing_shouldValidateFalse() {
+    List<Transaction> transactions = createBlockTransactions(false, false);
+    when(rewardTransactionValidator.validate(any())).thenThrow(AssessmentFailedException.class);
+
+    Assessment result = validator.validate(transactions);
+    
+    assertNotNull("verify result asessment is not null", result);
+    assertEquals("verify that validation resulted correct", false, result.isValid());
+  }
+  
+  @Test
+  public void testValidate_withMissingRewardTransaction_shouldValidateFalse() {
+    List<Transaction> transactions = createBlockTransactions(false, false);
+    transactions.remove(4);
+    
+    Assessment result = validator.validate(transactions);
+    
+    assertNotNull("verify result asessment is not null", result);
+    assertEquals("verify that validation resulted correct", false, result.isValid());
+    assertTrue("verify that error message is correct", StringUtils
+        .containsIgnoreCase(result.getReasonOfFailure(), "sum must equal"));
+  }
+  
+  @Test
+  public void testValidate_withTooManyRewardTransactions_shouldValidateFalse() {
+    List<Transaction> transactions = createBlockTransactions(false, false);
+    transactions.get(0).getOutputs().get(0).setAmount(new BigDecimal("88"));
+    transactions.add(TestDataFactory.createRewardTransaction(false));
+    
+    Assessment result = validator.validate(transactions);
+    
+    assertNotNull("verify result asessment is not null", result);
+    assertEquals("verify that validation resulted correct", false, result.isValid());
+    assertTrue("verify that error message is correct", StringUtils
+        .containsIgnoreCase(result.getReasonOfFailure(), "only be one Reward Transaction"));
+  }
+  
+  @Test
+  public void testValidate_withDoubleSpendInOneTransaction_shouldValidateFalse() {
+    List<Transaction> transactions = createBlockTransactions(false, false);
+    transactions.get(0).getInputs().get(0).setPublicKey("someone2");
+    
+    Assessment result = validator.validate(transactions);
+    
+    assertNotNull("verify result asessment is not null", result);
+    assertEquals("verify that validation resulted correct", false, result.isValid());
+    assertTrue("verify that error message is correct", StringUtils
+        .containsIgnoreCase(result.getReasonOfFailure(), "transaction-input public-key must be unique for all transactions"));
+  }
+  
+  @Test
+  public void testValidate_withDoubleSpendInTwoTransactions_shouldValidateFalse() {
+    List<Transaction> transactions = createBlockTransactions(false, false);
+    transactions.get(1).getInputs().get(0).setPublicKey("someone2");
+    
+    Assessment result = validator.validate(transactions);
+    
+    assertNotNull("verify result asessment is not null", result);
+    assertEquals("verify that validation resulted correct", false, result.isValid());
+    assertTrue("verify that error message is correct", StringUtils
+        .containsIgnoreCase(result.getReasonOfFailure(), "transaction-input public-key must be unique for all transactions"));
+  }
+  
+  @Test
+  public void testValidate_withDoubleSpendInThreeTransactions_shouldValidateFalse() {
+    List<Transaction> transactions = createBlockTransactions(false, false);
+    transactions.get(1).getInputs().get(0).setPublicKey("someone2");
+    transactions.get(4).getInputs().get(0).setPublicKey("someone2");
+    
+    Assessment result = validator.validate(transactions);
+    
+    assertNotNull("verify result asessment is not null", result);
+    assertEquals("verify that validation resulted correct", false, result.isValid());
+    assertTrue("verify that error message is correct", StringUtils
+        .containsIgnoreCase(result.getReasonOfFailure(), "transaction-input public-key must be unique for all transactions"));
+  }
+  
+  @Test
+  public void testValidate_withDoubleSpendWithAlsoMiningTransaction_shouldValidateFalse() {
+    List<Transaction> transactions = createBlockTransactions(false, false);
+    transactions.get(4).getInputs().get(0).setPublicKey("someone2");
+    
+    Assessment result = validator.validate(transactions);
+    
+    assertNotNull("verify result asessment is not null", result);
+    assertEquals("verify that validation resulted correct", false, result.isValid());
+    assertTrue("verify that error message is correct", StringUtils
+        .containsIgnoreCase(result.getReasonOfFailure(), "transaction-input public-key must be unique for all transactions"));
+  }
+  
+  @Test
+  public void testValidate_withDoubleSpendInOnlyMiningTransaction_shouldValidateTrueCauseItsHandledInRewardValidator() {
+    List<Transaction> transactions = createBlockTransactions(false, false);
+    
+    TransactionInput input4 = new TransactionInput();
+    input4.setAmount(new BigDecimal("100"));
+    input4.setPublicKey("very-secret2");
+    input4.setSequenceNumber(2l);
+    input4.setSignature("x1x1x1");
+    input4.setTimestamp(new Date().getTime() - 100l);
+    
+    transactions.get(4).getInputs().add(input4);
+    transactions.get(4).getOutputs().add(input4);
+    
+    Assessment result = validator.validate(transactions);
+    
+    assertNotNull("verify result asessment is not null", result);
+    assertEquals("verify that validation resulted correct", true, result.isValid());
+  }
 }

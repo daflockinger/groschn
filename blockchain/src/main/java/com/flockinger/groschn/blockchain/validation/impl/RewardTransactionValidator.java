@@ -17,10 +17,7 @@ import com.flockinger.groschn.blockchain.validation.Assessment;
 
 @Component("RewardTransaction_Validator")
 public class RewardTransactionValidator extends TransactionValidator {
-  /*
-   * !! if there's a miners transaction having either exactly the reward amounts in- or output then
-   * the transaction will validate false !!
-   */
+
   @Autowired
   private BlockStorageService blockService;
   @Autowired

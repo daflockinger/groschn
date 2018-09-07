@@ -306,4 +306,26 @@ public class TestDataFactory {
     transaction.setOutputs(outputs);
     return transaction;
   }
+  
+  public static List<Transaction> createBlockTransactions(boolean rewardRewardStatementsOnly, boolean rewardTxOnly) {
+    List<Transaction> transactions = new ArrayList<>();
+    
+    if(!rewardTxOnly) {
+      transactions.add(createValidTransaction("someone1", "someone2", "someone3", "great1"));
+      transactions.add(createValidTransaction("great1", "someone4", "someone5", "great1"));
+      transactions.add(createValidTransaction("someone6", "someone7", "anotherone3", "someone4"));
+      transactions.add(createValidTransaction("anotherone2", "anotherone4", "anotherone1", "someone7"));
+    }
+    transactions.add(createRewardTransaction(rewardRewardStatementsOnly));
+    if(!rewardTxOnly) {
+      transactions.add(createValidTransaction("some1", "some2", "some3", "great21"));
+      transactions.add(createValidTransaction("great21", "some4", "some5", "great21"));
+      transactions.add(createValidTransaction("some6", "some7", "another3", "some4"));
+      transactions.add(createValidTransaction("another2", "another4", "another1", "some7"));
+      transactions.add(createValidTransaction("great31", "someone24", "someone25", "great31"));
+      transactions.add(createValidTransaction("some26", "someone27", "anotherone23", "someone24"));
+      transactions.add(createValidTransaction("anotherone22", "anotherone24", "anotherone21", "someone25"));
+    }
+    return transactions;
+  }
 }

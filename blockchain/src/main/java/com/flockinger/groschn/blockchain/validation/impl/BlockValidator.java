@@ -3,6 +3,7 @@ package com.flockinger.groschn.blockchain.validation.impl;
 import java.util.Date;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import com.flockinger.groschn.blockchain.blockworks.BlockMaker;
 import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
@@ -21,6 +22,7 @@ import com.flockinger.groschn.blockchain.validation.Validator;
 public class BlockValidator implements Validator<Block> {
 
   @Autowired
+  @Qualifier("BlockTransaction_Validator")
   private Validator<List<Transaction>> transactionValidator;
   @Autowired
   private List<ConsentValidator> consensusValidators;
