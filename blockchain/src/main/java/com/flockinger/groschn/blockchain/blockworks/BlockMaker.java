@@ -1,8 +1,8 @@
 package com.flockinger.groschn.blockchain.blockworks;
 
-import com.flockinger.groschn.blockchain.model.Block;
-
 public interface BlockMaker {
 
-  Block produceBlock();
+  final static Integer CURRENT_BLOCK_VERSION = 1;
+  
+  void produceBlock();
 }

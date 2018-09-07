@@ -3,7 +3,7 @@ package com.flockinger.groschn.blockchain;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages= {"com.flockinger.groschn"})
 public class BlockchainApplication {
 
 	public static void main(String[] args) {

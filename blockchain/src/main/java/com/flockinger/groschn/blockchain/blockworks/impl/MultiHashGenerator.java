@@ -1,19 +1,24 @@
 package com.flockinger.groschn.blockchain.blockworks.impl;
 
+import static com.flockinger.groschn.blockchain.config.CryptoConfig.DEFAULT_PROVIDER_NAME;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.Provider;
+import java.util.Collections;
+import java.util.List;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.jcajce.util.MessageDigestUtils;
 import org.bouncycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import com.flockinger.groschn.blockchain.blockworks.HashGenerator;
-import com.flockinger.groschn.blockchain.config.CryptoConfig;
 import com.flockinger.groschn.blockchain.exception.HashingException;
 import com.flockinger.groschn.blockchain.model.Hashable;
+import com.flockinger.groschn.blockchain.model.Sequential;
+import com.flockinger.groschn.blockchain.util.HashUtils;
 
 /**
  * Generates a mixed SHA hash out of a {@link Hashable}. <br>
@@ -35,8 +40,8 @@ public class MultiHashGenerator implements HashGenerator {
   @Autowired
   public MultiHashGenerator(Provider cryptoProvider) {
     try {
-      sha3Digest = MessageDigest.getInstance(SHA3_DIGEST_NAME, CryptoConfig.DEFAULT_PROVIDER_NAME);
-      sha2Digest = MessageDigest.getInstance(SHA2_DIGEST_NAME, CryptoConfig.DEFAULT_PROVIDER_NAME);
+      sha3Digest = MessageDigest.getInstance(SHA3_DIGEST_NAME, DEFAULT_PROVIDER_NAME);
+      sha2Digest = MessageDigest.getInstance(SHA2_DIGEST_NAME, DEFAULT_PROVIDER_NAME);
     } catch (NoSuchAlgorithmException noAlgorithmException) {
       throw new HashingException("Essential hashing Algorithm not available!", noAlgorithmException);
     } catch (NoSuchProviderException noProviderException) {
@@ -46,12 +51,14 @@ public class MultiHashGenerator implements HashGenerator {
   
   @Override
   public String generateHash(Hashable hashable) {
-    final byte[] hashableBytes = hashable.toByteArray();
+    var hashableBytes = hashable.toByteArray();
     assertHashable(hashableBytes);
-    
-    byte[] sha2Hash = hashWithDigest(hashableBytes, sha2Digest);   
-    byte[] doubleHash = hashWithDigest(sha2Hash, sha3Digest);
-    return Hex.toHexString(doubleHash);
+    return Hex.toHexString(doubleHash(hashableBytes));
+  }
+  
+  private byte[] doubleHash(byte[] hashableBytes) {
+    var sha2Hash = hashWithDigest(hashableBytes, sha2Digest);   
+    return hashWithDigest(sha2Hash, sha3Digest);
   }
   
   private void assertHashable(byte[] hashableBytes) {
@@ -63,5 +70,18 @@ public class MultiHashGenerator implements HashGenerator {
   private byte[] hashWithDigest(byte[] hashableMessage, MessageDigest digest) {
     digest.update(hashableMessage);
     return digest.digest();
+  }
+
+  @Override
+  public boolean isHashCorrect(String hash, Hashable hashable) {
+    return StringUtils.equalsIgnoreCase(hash, generateHash(hashable));
+  }
+
+  @Override
+  public <T extends Sequential> byte[] generateListHash(List<T> sortables) throws HashingException {
+    Collections.sort(sortables);
+    var hashableBytes = HashUtils.toByteArray(sortables);
+    assertHashable(hashableBytes);  
+    return doubleHash(hashableBytes);
   }
 }

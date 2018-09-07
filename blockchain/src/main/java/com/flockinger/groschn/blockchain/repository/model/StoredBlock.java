@@ -1,11 +1,20 @@
 package com.flockinger.groschn.blockchain.repository.model;
 
+import java.util.List;
 import javax.validation.constraints.NotNull;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
+import com.flockinger.groschn.blockchain.consensus.model.Consent;
 
 @Document(collection="blockchain")
+@CompoundIndexes({
+  @CompoundIndex(name="idx_transaction_hash", def= "{'transactions.transactionHash': 1}", background=true),
+  @CompoundIndex(name="idx_tx_input_addr_pos_sorted", def= "{'transactions.inputs.publicKey': 1, 'position': -1}", background=true),
+  @CompoundIndex(name="idx_tx_output_addr_pos_sorted", def= "{'transactions.outputs.publicKey': 1, 'position': -1}", background=true),
+})
 public class StoredBlock {
 
   @Id
@@ -26,11 +35,29 @@ public class StoredBlock {
   @NotNull
   private Long timestamp;
   
+  private String transactionMerkleRoot;
+  
   private Integer version;
   
-  //TODO 
-  // added fixed version of Consents and Transactions
-  // add all the indexes I need for every query (but not too much)
+  private List<StoredTransaction> transactions;
+  
+  private Consent consent;
+
+  public Consent getConsent() {
+    return consent;
+  }
+
+  public void setConsent(Consent consent) {
+    this.consent = consent;
+  }
+
+  public List<StoredTransaction> getTransactions() {
+    return transactions;
+  }
+
+  public void setTransactions(List<StoredTransaction> transactions) {
+    this.transactions = transactions;
+  }
 
   public String getId() {
     return id;
@@ -78,5 +105,13 @@ public class StoredBlock {
 
   public void setVersion(Integer version) {
     this.version = version;
+  }
+
+  public String getTransactionMerkleRoot() {
+    return transactionMerkleRoot;
+  }
+
+  public void setTransactionMerkleRoot(String transactionMerkleRoot) {
+    this.transactionMerkleRoot = transactionMerkleRoot;
   }
 }
