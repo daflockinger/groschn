@@ -33,12 +33,26 @@ public class PowConsensusValidatorTest {
   @Test
   public void testValidate_withValidBlock_shouldReturnValid() {
     Block block = createValidBlock();
-    when(mockService.getLatestProofOfWorkBlock()).thenReturn(createValidBlock());
+    Block lastBlock = createValidBlock();
+    when(mockService.getLatestProofOfWorkBlock()).thenReturn(lastBlock);
 
     Assessment result = validator.validate(block);
-
     assertNotNull("verify result is not null", result);
     assertEquals("verify valid block asserted true", true, result.isValid());
+    
+    lastBlock.getConsent().setMilliSecondsSpentMining(213l);
+    block.getConsent().setDifficulty(5);
+    block.setHash("00000cff71b99932db819f909cd56bc01c24b5ce");
+    Assessment result2 = validator.validate(block);
+    assertNotNull("verify result is not null", result2);
+    assertEquals("verify valid block with last block fast asserted true", true, result2.isValid());
+    
+    lastBlock.getConsent().setMilliSecondsSpentMining(MINING_RATE_MILLISECONDS + 200l);
+    block.getConsent().setDifficulty(3);
+    block.setHash("000cff71b99932db819f909cd56bc01c24b5ce");
+    Assessment result3 = validator.validate(block);
+    assertNotNull("verify result is not null", result3);
+    assertEquals("verify valid block with last block slow asserted true", true, result3.isValid());
   }
 
   @Test

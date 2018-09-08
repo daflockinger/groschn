@@ -18,10 +18,11 @@ import com.flockinger.groschn.blockchain.config.CryptoConfig;
 import com.flockinger.groschn.blockchain.exception.HashingException;
 import com.flockinger.groschn.blockchain.model.Transaction;
 import com.flockinger.groschn.blockchain.model.TransactionInput;
+import com.flockinger.groschn.blockchain.util.serialize.impl.FstSerializer;
 import com.google.common.collect.ImmutableList;
 
 @RunWith(SpringRunner.class)
-@ContextConfiguration(classes = {MerkleRootCalculator.class, MultiHashGenerator.class})
+@ContextConfiguration(classes = {MerkleRootCalculator.class, MultiHashGenerator.class, FstSerializer.class})
 @Import(CryptoConfig.class)
 public class MerkleRootCalculatorTest {
   
@@ -33,7 +34,7 @@ public class MerkleRootCalculatorTest {
     String rootHash = calc.calculateMerkleRootHash(fakeTransactions(9,false));
     
     assertNotNull("verify root hash is not null", rootHash);
-    assertEquals("verify that root hash is correct", "0b1fc0b715863bd080af09be0bfffc7d196db47cb534fb6afe2c36044826ab55206d65c3f2949074e1259332b5c0117af8fb77a7595abb26552ad08e32bf9935",
+    assertEquals("verify that root hash is correct", "c36896c8ab5f5a133146c00157723c9025bab6ba2c3194d1407ae21b3591285c68d4f19e5613de9da4963906245131093f2de7b2c13fc0ca63d57cb6af2b9703",
         rootHash);
     
     String rootHashOneTransactionLess = calc.calculateMerkleRootHash(fakeTransactions(8, false));
@@ -110,7 +111,9 @@ public class MerkleRootCalculatorTest {
     List<Transaction> transactions = new ArrayList<>();
     transactions.addAll(ImmutableList.of(tra1, tra2, tra3, tra4, tra5));
     transactions.addAll(ImmutableList.of(tra6, tra7, tra8, tra9));
-    return transactions.subList(0, size);
+    List<Transaction> minList = new ArrayList<>();
+    minList.addAll(transactions.subList(0, size));
+    return minList;
   }
   
   public static TransactionInput fakeInput(long amount) {

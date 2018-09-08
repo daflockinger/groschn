@@ -8,7 +8,6 @@ public class TransactionInput extends TransactionOutput {
 
   private String signature;
 
-  private TransactionPointCut previousOutputTransaction;
 
   public String getSignature() {
     return signature;
@@ -16,13 +15,5 @@ public class TransactionInput extends TransactionOutput {
 
   public void setSignature(String signature) {
     this.signature = signature;
-  }
-
-  public TransactionPointCut getPreviousOutputTransaction() {
-    return previousOutputTransaction;
-  }
-
-  public void setPreviousOutputTransaction(TransactionPointCut previousOutputTransaction) {
-    this.previousOutputTransaction = previousOutputTransaction;
   }
 }

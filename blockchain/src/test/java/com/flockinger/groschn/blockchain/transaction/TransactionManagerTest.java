@@ -14,7 +14,6 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import org.apache.commons.lang3.RandomUtils;
 import org.junit.Before;
@@ -28,11 +27,10 @@ import com.flockinger.groschn.blockchain.dto.TransactionDto;
 import com.flockinger.groschn.blockchain.dto.TransactionStatementDto;
 import com.flockinger.groschn.blockchain.exception.HashingException;
 import com.flockinger.groschn.blockchain.exception.crypto.CantConfigureSigningAlgorithmException;
-import com.flockinger.groschn.blockchain.exception.validation.transaction.TransactionInputMissingOutputBalanceException;
+import com.flockinger.groschn.blockchain.exception.validation.AssessmentFailedException;
 import com.flockinger.groschn.blockchain.model.Transaction;
 import com.flockinger.groschn.blockchain.model.TransactionInput;
 import com.flockinger.groschn.blockchain.model.TransactionOutput;
-import com.flockinger.groschn.blockchain.model.TransactionPointCut;
 import com.flockinger.groschn.blockchain.repository.BlockchainRepository;
 import com.flockinger.groschn.blockchain.repository.TransactionPoolRepository;
 import com.flockinger.groschn.blockchain.repository.model.StoredBlock;
@@ -43,13 +41,15 @@ import com.flockinger.groschn.blockchain.repository.model.TransactionStatus;
 import com.flockinger.groschn.blockchain.transaction.impl.TransactionManagerImpl;
 import com.flockinger.groschn.blockchain.transaction.impl.TransactionPoolListener;
 import com.flockinger.groschn.blockchain.util.CompressionUtils;
+import com.flockinger.groschn.blockchain.util.serialize.impl.FstSerializer;
 import com.flockinger.groschn.blockchain.util.sign.Signer;
+import com.flockinger.groschn.blockchain.validation.Validator;
 import com.flockinger.groschn.blockchain.wallet.WalletService;
 import com.flockinger.groschn.messaging.distribution.DistributedCollectionBuilder;
 import com.google.common.collect.ImmutableList;
 
 @ContextConfiguration(classes = {TransactionManagerImpl.class, TransactionPoolRepository.class, 
-    BlockchainRepository.class, CompressionUtils.class})
+    BlockchainRepository.class, CompressionUtils.class, FstSerializer.class})
 public class TransactionManagerTest extends BaseDbTest {
 
   @Autowired
@@ -65,6 +65,8 @@ public class TransactionManagerTest extends BaseDbTest {
   private WalletService walletMock;
   @MockBean
   private HashGenerator hasher;
+  @MockBean(name = "Transaction_Validator")
+  private Validator<Transaction> validator;
   
   @Autowired
   private BlockchainRepository blockDao;
@@ -82,97 +84,6 @@ public class TransactionManagerTest extends BaseDbTest {
     poolDao.deleteAll();
     blockDao.deleteAll();
   }
-  
-  @Test
-  public void testFindTransactionFromPointCut_withExistingPointCut_shouldFindAndReturnCorrect() {
-    StoredTransactionOutput output = new StoredTransactionOutput();
-    output.setAmount(new BigDecimal("2000.2"));
-    output.setPublicKey("masterkey");
-    output.setSequenceNumber(2l);
-    output.setTimestamp(2000l);
-    blockDao.saveAll(fakeBlocks(output, "bestHashEver"));
-    TransactionPointCut pointcut = new TransactionPointCut();
-    pointcut.setSequenceNumber(2l);
-    pointcut.setTransactionHash("bestHashEver");
-    
-    Optional<TransactionOutput> pointOutput = manager.findTransactionFromPointCut(pointcut);
-    
-    assertTrue("verify that point cut output is present/found", pointOutput.isPresent());
-    assertTrue("verify correct output amount", pointOutput.get().getAmount().compareTo(output.getAmount()) == 0);
-    assertEquals("verify correct output pub key", output.getPublicKey(), pointOutput.get().getPublicKey());
-    assertEquals("verify correct output timestamp", output.getTimestamp(),pointOutput.get().getTimestamp());
-    assertEquals("verify correct output sequence number", 2l, pointOutput.get().getSequenceNumber().longValue());
-  }
-  
-  @Test
-  public void testFindTransactionFromPointCut_withNonExistingTransactionHash_shouldReturnEmpty() {
-    StoredTransactionOutput output = new StoredTransactionOutput();
-    output.setAmount(new BigDecimal("2000.2"));
-    output.setPublicKey("masterkey");
-    output.setSequenceNumber(2l);
-    output.setTimestamp(2000l);
-    blockDao.saveAll(fakeBlocks(output, "bestHashEver"));
-    TransactionPointCut pointcut = new TransactionPointCut();
-    pointcut.setSequenceNumber(2l);
-    pointcut.setTransactionHash("bestHaschEver");
-    
-    Optional<TransactionOutput> pointOutput = manager.findTransactionFromPointCut(pointcut);
-    
-    assertFalse("verify that point cut output is not present", pointOutput.isPresent());
-  }
-  
-  @Test
-  public void testFindTransactionFromPointCut_withNonExistingSequenceNumber_shouldReturnEmpty() {
-    StoredTransactionOutput output = new StoredTransactionOutput();
-    output.setAmount(new BigDecimal("2000.2"));
-    output.setPublicKey("masterkey");
-    output.setSequenceNumber(2l);
-    output.setTimestamp(2000l);
-    blockDao.saveAll(fakeBlocks(output, "bestHashEver"));
-    TransactionPointCut pointcut = new TransactionPointCut();
-    pointcut.setSequenceNumber(22l);
-    pointcut.setTransactionHash("bestHashEver");
-    
-    Optional<TransactionOutput> pointOutput = manager.findTransactionFromPointCut(pointcut);
-    
-    assertFalse("verify that point cut output is not present", pointOutput.isPresent());
-  }
-  
-  
-  @Test
-  public void testFindTransactionFromPointCut_withSequenceNumberNull_shouldReturnEmpty() {
-    StoredTransactionOutput output = new StoredTransactionOutput();
-    output.setAmount(new BigDecimal("2000.2"));
-    output.setPublicKey("masterkey");
-    output.setSequenceNumber(2l);
-    output.setTimestamp(2000l);
-    blockDao.saveAll(fakeBlocks(output, "bestHashEver"));
-    TransactionPointCut pointcut = new TransactionPointCut();
-    pointcut.setSequenceNumber(null);
-    pointcut.setTransactionHash("bestHashEver");
-    
-    Optional<TransactionOutput> pointOutput = manager.findTransactionFromPointCut(pointcut);
-    
-    assertFalse("verify that point cut output is not present", pointOutput.isPresent());
-  }
-  
-  @Test
-  public void testFindTransactionFromPointCut_withTransactionHashNull_shouldReturnEmpty() {
-    StoredTransactionOutput output = new StoredTransactionOutput();
-    output.setAmount(new BigDecimal("2000.2"));
-    output.setPublicKey("masterkey");
-    output.setSequenceNumber(2l);
-    output.setTimestamp(2000l);
-    blockDao.saveAll(fakeBlocks(output, "bestHashEver"));
-    TransactionPointCut pointcut = new TransactionPointCut();
-    pointcut.setSequenceNumber(2l);
-    pointcut.setTransactionHash(null);
-    
-    Optional<TransactionOutput> pointOutput = manager.findTransactionFromPointCut(pointcut);
-    
-    assertFalse("verify that point cut output is not present", pointOutput.isPresent());
-  }
-  
   
   @Test
   public void testFetchTransactionsFromPool_withSomeByteSize_shouldReturnCorrect() {
@@ -251,8 +162,10 @@ public class TransactionManagerTest extends BaseDbTest {
     return statement;
   }
   
-  @Test(expected=TransactionInputMissingOutputBalanceException.class)
+  @Test(expected=AssessmentFailedException.class)
   public void testCreateSignedTransaction_withNoOutputBalanceFound_shouldThrowException() {   
+    when(validator.validate(any())).thenThrow(AssessmentFailedException.class);
+    
     TransactionDto request = new TransactionDto();
     TransactionStatementDto input  = new TransactionStatementDto();
     input.setAmount(999d);

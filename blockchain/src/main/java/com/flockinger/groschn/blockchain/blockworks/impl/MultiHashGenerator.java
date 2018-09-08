@@ -18,7 +18,7 @@ import com.flockinger.groschn.blockchain.blockworks.HashGenerator;
 import com.flockinger.groschn.blockchain.exception.HashingException;
 import com.flockinger.groschn.blockchain.model.Hashable;
 import com.flockinger.groschn.blockchain.model.Sequential;
-import com.flockinger.groschn.blockchain.util.HashUtils;
+import com.flockinger.groschn.blockchain.util.serialize.BlockSerializer;
 
 /**
  * Generates a mixed SHA hash out of a {@link Hashable}. <br>
@@ -36,6 +36,9 @@ public class MultiHashGenerator implements HashGenerator {
   private final MessageDigest sha3Digest;
   private final MessageDigest sha2Digest;
   
+  @Autowired
+  private BlockSerializer serializer;
+  
   
   @Autowired
   public MultiHashGenerator(Provider cryptoProvider) {
@@ -51,7 +54,7 @@ public class MultiHashGenerator implements HashGenerator {
   
   @Override
   public String generateHash(Hashable hashable) {
-    var hashableBytes = hashable.toByteArray();
+    var hashableBytes = serializer.serialize(hashable);
     assertHashable(hashableBytes);
     return Hex.toHexString(doubleHash(hashableBytes));
   }
@@ -73,14 +76,14 @@ public class MultiHashGenerator implements HashGenerator {
   }
 
   @Override
-  public boolean isHashCorrect(String hash, Hashable hashable) {
+  public boolean isHashCorrect(String hash, Hashable hashable) {    
     return StringUtils.equalsIgnoreCase(hash, generateHash(hashable));
   }
 
   @Override
   public <T extends Sequential> byte[] generateListHash(List<T> sortables) throws HashingException {
     Collections.sort(sortables);
-    var hashableBytes = HashUtils.toByteArray(sortables);
+    var hashableBytes = serializer.serialize(sortables);
     assertHashable(hashableBytes);  
     return doubleHash(hashableBytes);
   }

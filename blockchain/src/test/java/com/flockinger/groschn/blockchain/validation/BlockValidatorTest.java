@@ -37,6 +37,7 @@ import com.flockinger.groschn.blockchain.util.CompressedEntity;
 import com.flockinger.groschn.blockchain.util.CompressionUtils;
 import com.flockinger.groschn.blockchain.util.MerkleRootCalculator;
 import com.flockinger.groschn.blockchain.util.crypto.impl.KeyAESCipher;
+import com.flockinger.groschn.blockchain.util.serialize.impl.FstSerializer;
 import com.flockinger.groschn.blockchain.util.sign.impl.EcdsaSecpSigner;
 import com.flockinger.groschn.blockchain.validation.impl.BlockTransactionsValidator;
 import com.flockinger.groschn.blockchain.validation.impl.BlockValidator;
@@ -52,7 +53,7 @@ import com.flockinger.groschn.messaging.outbound.Broadcaster;
 @ContextConfiguration(classes = {BlockValidator.class, BlockchainRepository.class, 
     MultiHashGenerator.class, MerkleRootCalculator.class, 
     BlockTransactionsValidator.class, TransactionValidator.class, RewardTransactionValidator.class, 
-    TransactionValidationHelper.class, PowConsensusValidator.class,
+    TransactionValidationHelper.class, PowConsensusValidator.class, FstSerializer.class,
     // those are all needed to create a somewhat real block to verify:
     BlockMakerImpl.class,
     ConsensusFactory.class, ProofOfWorkAlgorithm.class, ProofOfMajorityAlgorithm.class,
@@ -62,6 +63,8 @@ import com.flockinger.groschn.messaging.outbound.Broadcaster;
 @TestPropertySource(locations="classpath:application.yml")
 public class BlockValidatorTest extends BaseDbTest {
 
+  //TODO make it faster!!
+  
   @MockBean
   private CompressionUtils compressor;
   
