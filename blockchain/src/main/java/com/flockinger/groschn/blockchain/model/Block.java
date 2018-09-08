@@ -40,7 +40,7 @@ public class Block implements Hashable {
     Block genesisBlock = new Block();
     genesisBlock.setLastHash("Wer den Groschen nicht ehrt, ist den Schilling nicht wert!");
     genesisBlock.setHash(
-        "0000cff71b99932db819f909cd56bc01c24b5ceefea2405a4d118fa18a208598c321a6e74b6ec75343318d18a253d866caa66a7a83cb7f241d295e3451115938");
+        "00001b789b2d74adaa9c5e7e82e7f584fa30e6c52aa66683d6b44a456d1e9f9b9ac1f41ccbc76cc89503208e98735789356560e9389fd38664fabdd0bf2c543a");
     genesisBlock.setTimestamp(484696800000l);
     genesisBlock.setTransactions(new ArrayList<>());
     genesisBlock.setPosition(1l);
@@ -48,9 +48,9 @@ public class Block implements Hashable {
     Consent powConsent = new Consent();
     powConsent.setType(ConsensusType.PROOF_OF_WORK);
     powConsent.setDifficulty(ProofOfWorkAlgorithm.DEFAULT_DIFFICULTY);
-    powConsent.setMilliSecondsSpentMining(ProofOfWorkAlgorithm.MINING_RATE_MILLISECONDS);
-    powConsent.setTimestamp(1533821027289l);
-    powConsent.setNonce(7727l);
+    powConsent.setMilliSecondsSpentMining(439l);
+    powConsent.setTimestamp(1536407028239l);
+    powConsent.setNonce(69532l);
     genesisBlock.setConsent(powConsent);
     return genesisBlock;
   }

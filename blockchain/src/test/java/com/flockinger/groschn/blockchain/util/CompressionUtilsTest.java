@@ -13,9 +13,10 @@ import org.springframework.test.context.junit4.SpringRunner;
 import com.flockinger.groschn.blockchain.TestDataFactory;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.model.Transaction;
+import com.flockinger.groschn.blockchain.util.serialize.impl.FstSerializer;
 
 @RunWith(SpringRunner.class)
-@ContextConfiguration(classes = {CompressionUtils.class})
+@ContextConfiguration(classes = {CompressionUtils.class, FstSerializer.class})
 public class CompressionUtilsTest {
 
   @Autowired
@@ -29,8 +30,8 @@ public class CompressionUtilsTest {
     CompressedEntity entity = utils.compress(fakeBlock);
     
     assertNotNull("verify compressedEntity is returned not null", entity);
-    assertEquals("verify correct original size", 1505l, entity.getOriginalSize());
-    assertEquals("verify correct compressed size", 582l, entity.getEntity().length);
+    assertEquals("verify correct original size", 636l, entity.getOriginalSize());
+    assertEquals("verify correct compressed size", 395l, entity.getEntity().length);
     
     // decompress
     Optional<Block> uncompressedBlock = utils.decompress(entity.getEntity(), entity.getOriginalSize(), Block.class);
@@ -55,12 +56,6 @@ public class CompressionUtilsTest {
         , firstUncompressedTr.getInputs().size());
     assertEquals("verify correct block first transaction input amount", firstTransaction.getInputs().get(0).getAmount(), 
         firstUncompressedTr.getInputs().get(0).getAmount());
-    assertEquals("verify correct block first transaction input previous output sequence number", 
-        firstTransaction.getInputs().get(0).getPreviousOutputTransaction().getSequenceNumber(), 
-        firstUncompressedTr.getInputs().get(0).getPreviousOutputTransaction().getSequenceNumber());
-    assertEquals("verify correct block first transaction input previous output hash", 
-        firstTransaction.getInputs().get(0).getPreviousOutputTransaction().getTransactionHash(), 
-        firstUncompressedTr.getInputs().get(0).getPreviousOutputTransaction().getTransactionHash());
     assertEquals("verify correct block first transaction input pub key", firstTransaction.getInputs().get(0).getPublicKey(), 
         firstUncompressedTr.getInputs().get(0).getPublicKey());
     assertEquals("verify correct block first transaction input squence number", firstTransaction.getInputs().get(0).getSequenceNumber(), 
@@ -84,7 +79,7 @@ public class CompressionUtilsTest {
   @Test
   public void testCompressedByteSize_withSomeTransactions_shouldReturnCorrect() {
     int byteSize = utils.compressedByteSize(TestDataFactory.fakeTransactions());
-    assertEquals("verify correct compressed size of entities", 274, byteSize);
+    assertEquals("verify correct compressed size of entities", 205, byteSize);
   }
   
   @Test
@@ -101,8 +96,8 @@ public class CompressionUtilsTest {
     CompressedEntity entity = utils.compress(fakeBlock);
     
     assertNotNull("verify compressedEntity is returned not null", entity);
-    assertEquals("verify correct original size", 2l, entity.getOriginalSize());
-    assertEquals("verify correct compressed size", 3l, entity.getEntity().length);
+    assertEquals("verify correct original size", 11l, entity.getOriginalSize());
+    assertEquals("verify correct compressed size", 12l, entity.getEntity().length);
     
     // decompress
     Optional<Block> uncompressedBlock = utils.decompress(entity.getEntity(), entity.getOriginalSize(), Block.class);
@@ -119,8 +114,8 @@ public class CompressionUtilsTest {
     CompressedEntity entity = utils.compress(fakeBlock);
     
     assertNotNull("verify compressedEntity is returned not null", entity);
-    assertEquals("verify correct original size", 1505l, entity.getOriginalSize());
-    assertEquals("verify correct compressed size", 582l, entity.getEntity().length);
+    assertEquals("verify correct original size", 636l, entity.getOriginalSize());
+    assertEquals("verify correct compressed size", 395l, entity.getEntity().length);
     
     // decompress
     utils.decompress(entity.getEntity(), entity.getOriginalSize(), Block.class);
@@ -134,13 +129,10 @@ public class CompressionUtilsTest {
     CompressedEntity entity = utils.compress(fakeBlock);
     
     assertNotNull("verify compressedEntity is returned not null", entity);
-    assertEquals("verify correct original size", 1505l, entity.getOriginalSize());
-    assertEquals("verify correct compressed size", 582l, entity.getEntity().length);
+    assertEquals("verify correct original size", 636l, entity.getOriginalSize());
+    assertEquals("verify correct compressed size", 395l, entity.getEntity().length);
     
     // decompress
     utils.decompress(entity.getEntity(), entity.getOriginalSize(), Transaction.class);
   }
-  
-  
-  
 }

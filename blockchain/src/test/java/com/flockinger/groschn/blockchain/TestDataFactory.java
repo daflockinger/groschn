@@ -13,7 +13,6 @@ import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.model.Transaction;
 import com.flockinger.groschn.blockchain.model.TransactionInput;
 import com.flockinger.groschn.blockchain.model.TransactionOutput;
-import com.flockinger.groschn.blockchain.model.TransactionPointCut;
 import com.flockinger.groschn.blockchain.repository.model.StoredTransaction;
 import com.flockinger.groschn.blockchain.repository.model.StoredTransactionInput;
 import com.flockinger.groschn.blockchain.repository.model.StoredTransactionOutput;
@@ -69,10 +68,6 @@ public class TestDataFactory {
     input.setTimestamp(1234567l);
     input.setSignature("xxx");
     input.setSequenceNumber(3l);
-    TransactionPointCut pointcut = new TransactionPointCut();
-    pointcut.setSequenceNumber(23423435l);
-    pointcut.setTransactionHash("467547");
-    input.setPreviousOutputTransaction(pointcut);
     
     return input;
   }

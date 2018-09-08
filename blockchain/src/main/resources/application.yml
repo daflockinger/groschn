@@ -18,7 +18,11 @@ blockchain:
     initial-delay: 20000
     punch-rate: 15000
     process-timeout-seconds: 45
-    
+  messaging:
+   id-cache:
+     expire-after-milliseconds: 600000
+     initial-capacity: 1000
+     max-capacity: 50000
     
 # message protocol configuration
 atomix:

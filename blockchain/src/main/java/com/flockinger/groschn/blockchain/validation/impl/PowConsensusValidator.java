@@ -57,15 +57,16 @@ public class PowConsensusValidator implements ConsentValidator {
   private void wasLastDifficultyAdjustmentCorrect(Consent consent, Consent lastConsent) {
     String errorMessage = null;
     var lastMiningRate = lastConsent.getMilliSecondsSpentMining();
-    var difficultyTrend = consent.getDifficulty() - lastConsent.getDifficulty();
+    var lastDifficulty = lastConsent.getDifficulty();
+    var difficulty = consent.getDifficulty();
     
-    if (Math.abs(difficultyTrend) > 1) {
+    if (Math.abs(difficulty - lastDifficulty) > 1) {
       errorMessage = "Mining rate cannot increase/decrease by more than one per block-mining!";
-    } else if(lastMiningRate > MINING_RATE_MILLISECONDS && difficultyTrend != -1) {
+    } else if(lastMiningRate > MINING_RATE_MILLISECONDS && difficulty >= lastDifficulty) {
       errorMessage = "Mining difficulty didn't decrease when last mining rate was too slow!";
-    } else if(lastMiningRate < MINING_RATE_MILLISECONDS && difficultyTrend != 1) {
+    } else if(lastMiningRate < MINING_RATE_MILLISECONDS  && difficulty <= lastDifficulty) {
       errorMessage = "Mining difficulty didn't increase when last mining rate was too fast!";
-    } else if (difficultyTrend != 0) {
+    } else if (lastMiningRate == MINING_RATE_MILLISECONDS && difficulty != lastDifficulty) {
       errorMessage = "Mining rate must stay the same when mining rate is exact!";
     }
     if(errorMessage != null) {

@@ -84,12 +84,6 @@ public class BlockStorageServiceTest extends BaseDbTest {
         , firstUncompressedTr.getInputs().size());
     assertEquals("verify correct block first transaction input amount", firstTransaction.getInputs().get(0).getAmount(), 
         firstUncompressedTr.getInputs().get(0).getAmount());
-    assertEquals("verify correct block first transaction input previous output sequence number", 
-        firstTransaction.getInputs().get(0).getPreviousOutputTransaction().getSequenceNumber(), 
-        firstUncompressedTr.getInputs().get(0).getPreviousOutputTransaction().getSequenceNumber());
-    assertEquals("verify correct block first transaction input previous output hash", 
-        firstTransaction.getInputs().get(0).getPreviousOutputTransaction().getTransactionHash(), 
-        firstUncompressedTr.getInputs().get(0).getPreviousOutputTransaction().getTransactionHash());
     assertEquals("verify correct block first transaction input pub key", firstTransaction.getInputs().get(0).getPublicKey(), 
         firstUncompressedTr.getInputs().get(0).getPublicKey());
     assertEquals("verify correct block first transaction input squence number", firstTransaction.getInputs().get(0).getSequenceNumber(), 

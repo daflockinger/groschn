@@ -6,6 +6,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 import org.awaitility.Awaitility;
 import org.awaitility.Duration;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.reflect.Whitebox;
@@ -23,10 +24,11 @@ import com.flockinger.groschn.blockchain.consensus.model.Consent;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.util.MerkleRootCalculator;
 import com.flockinger.groschn.blockchain.util.MerkleRootCalculatorTest;
+import com.flockinger.groschn.blockchain.util.serialize.impl.FstSerializer;
 
 
 @RunWith(SpringRunner.class)
-@ContextConfiguration(classes = { ProofOfWorkAlgorithm.class, MultiHashGenerator.class, MerkleRootCalculator.class})
+@ContextConfiguration(classes = { ProofOfWorkAlgorithm.class, MultiHashGenerator.class, MerkleRootCalculator.class, FstSerializer.class})
 @Import(CryptoConfig.class)
 public class ProofOfWorkAlgorithmTest {
   
@@ -36,6 +38,11 @@ public class ProofOfWorkAlgorithmTest {
   @MockBean
   private BlockStorageService mockStorage;
 
+  @Before 
+  public void setup() {
+    Whitebox.setInternalState((ProofOfWorkAlgorithm)powAlgo, "STARTING_NONCE", 1l);
+  }
+  
   @Test
   public void testReachConsensus_withOldGenerationTimeTooFast_shouldReturnCorrect() {
     when(mockStorage.getLatestProofOfWorkBlock()).thenReturn(fakeBlock(29999l,0));

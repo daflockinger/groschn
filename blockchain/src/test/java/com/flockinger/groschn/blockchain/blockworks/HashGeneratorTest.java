@@ -22,9 +22,10 @@ import com.flockinger.groschn.blockchain.exception.HashingException;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.model.Hashable;
 import com.flockinger.groschn.blockchain.model.TransactionOutput;
+import com.flockinger.groschn.blockchain.util.serialize.impl.FstSerializer;
 import com.google.common.collect.ImmutableList;
 
-@ContextConfiguration(classes = {MultiHashGenerator.class})
+@ContextConfiguration(classes = {MultiHashGenerator.class, FstSerializer.class})
 @RunWith(SpringRunner.class)
 @Import(CryptoConfig.class)
 public class HashGeneratorTest {
@@ -39,7 +40,7 @@ public class HashGeneratorTest {
 
     String generatedHash = hasher.generateHash(hashable);
     String expectedHash =
-        "ead4bf68adc722df1dfadd5bf833b26579150e23bf865a1cc72ed39c394a3b26e22158877a7fa79f54a4614c65d3a502e71537f697f5987145f0d137a3e21e49";
+        "6211819ca669ddd865cc64763a79121407517c0e1c4ad9a6613180f5a587963d63a255d018036f58600cb43c296c6826c133487037dc06bfeaa0aa8374828bd3";
 
     assertNotNull("verify returned hash is not null", generatedHash);
     assertEquals("verify correct generated hash", expectedHash, generatedHash);
@@ -81,26 +82,6 @@ public class HashGeneratorTest {
 
     assertNotNull("verify returned hash is not null", generatedHash);
   }
-
-  @Test(expected = HashingException.class)
-  public void testGenerateHash_withHashableToByteArrayReturnsNull_shouldThrowException() {
-    String generatedHash = hasher.generateHash(new Hashable() {
-      public byte[] toByteArray() {
-        return null;
-      }
-    });
-    assertNotNull("verify returned hash is not null", generatedHash);
-  }
-
-  @Test(expected = HashingException.class)
-  public void testGenerateHash_withHashableToByteArrayReturnsEmpty_shouldThrowException() {
-    String generatedHash = hasher.generateHash(new Hashable() {
-      public byte[] toByteArray() {
-        return new byte[0];
-      }
-    });
-    assertNotNull("verify returned hash is not null", generatedHash);
-  }
   
   @Test
   public void testGenerateListHash_withValidHashablesData_shouldCreateCorrectly()
@@ -112,7 +93,7 @@ public class HashGeneratorTest {
     var outs = new ArrayList<TransactionOutput>();
     outs.addAll(ImmutableList.of(out, out2, ou3));
     byte[] generatedHash = hasher.generateListHash(outs);
-    byte[] expectedHash = Hex.decode("3f2db885499fb5cc776bfa846ba6341c1ae7d988943e8629c03758f4711a5fb99e820b76ef9bb379afb477486bf57f71b4d60458066195a231dc3340819944b2");
+    byte[] expectedHash = Hex.decode("0d103325df20dcf7c2b1d869c7f3d5dbe73806bffe802bf3a5eaedbdf79f069ccd134bcf03834ae3a8772cde141fa8a7d46365be3ef786347662fc2e761a859b");
     assertNotNull("verify returned hash is not null", generatedHash);
     assertTrue("verify correct generated hash", Arrays.equals(expectedHash, generatedHash));
     
@@ -139,11 +120,20 @@ public class HashGeneratorTest {
     assertNotEquals("verify generated hash is different", expectedHash, generatedHash);
   }
   
+  @Test
+  public void testIsHashCorrect_withGenesisBlock_shouldReturnTrue() {
+    Block genesis = Block.GENESIS_BLOCK();
+    genesis.setHash(null);
+
+    assertEquals("verify that correct hash for hashable returns true", true, 
+        hasher.isHashCorrect(Block.GENESIS_BLOCK().getHash(), genesis));
+  }
   
   @Test
   public void testIsHashCorrect_withCorrectHashAndHashable_shouldReturnTrue() {
     Hashable hashable = createTestData(123l);
-    String hash = "ead4bf68adc722df1dfadd5bf833b26579150e23bf865a1cc72ed39c394a3b26e22158877a7fa79f54a4614c65d3a502e71537f697f5987145f0d137a3e21e49";
+    String hash = "6211819ca669ddd865cc64763a79121407517c0e1c4ad9a6613180f5a587963d63a255d018036f58600cb43c296c6826c133487037dc06bfeaa0aa8374828bd3";
+    System.out.println((hasher.generateHash(hashable)));
 
     assertEquals("verify that correct hash for hashable returns true", true, 
         hasher.isHashCorrect(hash, hashable));
@@ -152,7 +142,7 @@ public class HashGeneratorTest {
   @Test
   public void testIsHashCorrect_withCorrectHashAndHashableSomeUpperCase_shouldReturnTrue() {
     Hashable hashable = createTestData(123l);
-    String hash = "EAD4BF68ADC722DF1DFADD5bf833b26579150e23bf865a1cc72ed39c394a3b26e22158877a7fa79f54a4614c65d3a502e71537f697f5987145f0d137a3e21e49";
+    String hash = "6211819CA669DDD865CC64763A79121407517C0E1C4AD9A6613180f5A587963D63A255D018036F58600CB43C296C6826C133487037DC06BFEAA0AA8374828BD3";
 
     assertEquals("verify that correct hash for hashable returns true", true, 
         hasher.isHashCorrect(hash, hashable));
