@@ -13,7 +13,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import com.flockinger.groschn.blockchain.TestDataFactory;
 import com.flockinger.groschn.blockchain.consensus.model.ConsensusType;
-import com.flockinger.groschn.blockchain.dto.BlockMessage;
+import com.flockinger.groschn.blockchain.dto.MessagePayload;
 import com.flockinger.groschn.blockchain.exception.SerializationException;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.model.Transaction;
@@ -148,13 +148,13 @@ public class FstSerializerTest {
   
   @Test
   public void testSerializeDeserialize_withNotRegisteredType_shouldWorkWell() {
-    BlockMessage message = new BlockMessage();
+    MessagePayload message = new MessagePayload();
    
     byte[] serializedBlock = fstSerializer.serialize(message);
     assertNotNull("verify serialized block is not null", serializedBlock);
     assertTrue("verify serialized block has some size to it", serializedBlock.length > 0);
     
-    BlockMessage messageRsult = fstSerializer.deserialize(serializedBlock, BlockMessage.class);
+    MessagePayload messageRsult = fstSerializer.deserialize(serializedBlock, MessagePayload.class);
     assertNotNull("verify that deserialized list is not null", messageRsult);
   }
 }

@@ -3,7 +3,6 @@ package com.flockinger.groschn.blockchain.transaction.impl;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import javax.annotation.PostConstruct;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -22,8 +21,6 @@ import com.flockinger.groschn.blockchain.util.serialize.BlockSerializer;
 import com.flockinger.groschn.blockchain.util.sign.Signer;
 import com.flockinger.groschn.blockchain.validation.Validator;
 import com.flockinger.groschn.blockchain.wallet.WalletService;
-import com.flockinger.groschn.messaging.distribution.DistributedCollectionBuilder;
-import com.flockinger.groschn.messaging.distribution.DistributedExternalSet;
 import com.google.common.collect.ImmutableList;
 
 @Component
@@ -33,10 +30,6 @@ public class TransactionManagerImpl implements TransactionManager {
   private TransactionPoolRepository transactionDao;
   @Autowired
   private ModelMapper mapper;
-  @Autowired
-  private DistributedCollectionBuilder distributedCollectionBuilder;
-  @Autowired
-  private TransactionPoolListener transactionListener;
   @Autowired
   @Qualifier("ECDSA_Signer")
   private Signer signer;
@@ -51,15 +44,6 @@ public class TransactionManagerImpl implements TransactionManager {
   private Validator<Transaction> validator;
   @Autowired
   private BlockSerializer serializer;
-
-  private DistributedExternalSet<Transaction> externalTransactions;
-
-  @PostConstruct
-  public void initDistributedTransactions() {
-    externalTransactions =
-        distributedCollectionBuilder.createSetWithListener(transactionListener, "transactionPool");
-  }
-
 
   @Override
   public List<Transaction> fetchTransactionsFromPool(long maxByteSize) {

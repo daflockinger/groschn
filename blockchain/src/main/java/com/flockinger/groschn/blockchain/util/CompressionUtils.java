@@ -1,17 +1,15 @@
 package com.flockinger.groschn.blockchain.util;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import org.apache.commons.collections4.ListUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.flockinger.groschn.blockchain.exception.SerializationException;
 import com.flockinger.groschn.blockchain.model.Hashable;
+import com.flockinger.groschn.blockchain.util.serialize.BlockSerializer;
 import net.jpountz.lz4.LZ4Compressor;
 import net.jpountz.lz4.LZ4Factory;
 import net.jpountz.lz4.LZ4FastDecompressor;
@@ -21,39 +19,26 @@ public class CompressionUtils {
   private final LZ4Factory compressorFactory = LZ4Factory.fastestJavaInstance();
   private final LZ4Compressor compressor = compressorFactory.fastCompressor();
   private final LZ4FastDecompressor decompressor = compressorFactory.fastDecompressor();
-  private final ObjectMapper mapper;
   private static final Logger LOGGER = LoggerFactory.getLogger(CompressionUtils.class);
-
-  public CompressionUtils() {
-    mapper = new ObjectMapper();
-    mapper.setDefaultPropertyInclusion(Include.NON_NULL);
-    mapper.configure(DeserializationFeature.FAIL_ON_MISSING_CREATOR_PROPERTIES, false);
-  }
+  
+  @Autowired
+  private BlockSerializer serializer;
 
 
   public <T extends Hashable> CompressedEntity compress(T entity) {
-    byte[] originalEntity = toByteArray(entity);
+    byte[] originalEntity = serializer.serialize(entity);
     byte[] compressedEntity = compressor.compress(originalEntity);
     return CompressedEntity.build().originalSize(originalEntity.length).entity(compressedEntity);
   }
 
-  private byte[] toByteArray(Object hashable) {
-    byte[] hashableBytes = new byte[0];
-    try {
-      hashableBytes = mapper.writeValueAsBytes(hashable);
-    } catch (JsonProcessingException e) {
-      LOGGER.error("Can't convert object to byteArray Json!", e);
-    }
-    return hashableBytes;
-  }
 
   public <T extends Hashable> Optional<T> decompress(byte[] compressedEntity, int uncompressedSize,
       Class<T> type) {
     byte[] uncompressedEntityBytes = decompressor.decompress(compressedEntity, uncompressedSize);
     try {
-      return Optional.ofNullable(mapper.readValue(uncompressedEntityBytes, type));
-    } catch (IOException e) {
-      LOGGER.error("Can't convert byteArray Json to original Object back!", e);
+      return Optional.ofNullable(serializer.deserialize(uncompressedEntityBytes, type));
+    } catch (SerializationException e) {
+      LOGGER.error("Can't deserialize entity back to original!", e);
     }
     return Optional.empty();
   }
@@ -62,7 +47,7 @@ public class CompressionUtils {
     if(ListUtils.emptyIfNull(entities).isEmpty()) {
       return 0;
     }
-    byte[] entityBytes = toByteArray(entities);
+    byte[] entityBytes = serializer.serialize(entities);
     return compressor.compress(entityBytes, new byte[entityBytes.length]);
   }
 }

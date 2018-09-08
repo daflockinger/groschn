@@ -55,10 +55,6 @@ public class TransactionManagerTest extends BaseDbTest {
   @Autowired
   private TransactionManager manager;
   
-  @MockBean
-  private DistributedCollectionBuilder distributedCollectionBuilder;
-  @MockBean
-  private TransactionPoolListener transactionListener;
   @MockBean(name="ECDSA_Signer")
   private Signer signer;
   @MockBean
@@ -79,7 +75,6 @@ public class TransactionManagerTest extends BaseDbTest {
   
   @Before
   public void setup() {
-    when(distributedCollectionBuilder.createSetWithListener(any(), anyString())).thenReturn(null);
     when(walletMock.getNodePublicKey()).thenReturn("masta-key");
     poolDao.deleteAll();
     blockDao.deleteAll();

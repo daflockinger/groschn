@@ -1,30 +1,21 @@
 package com.flockinger.groschn.blockchain.transaction.impl;
 
 import org.springframework.stereotype.Component;
-import com.flockinger.groschn.blockchain.model.Transaction;
-import com.flockinger.groschn.messaging.distribution.SetEventListener;
+import com.flockinger.groschn.blockchain.dto.MessagePayload;
+import com.flockinger.groschn.messaging.config.MainTopics;
+import com.flockinger.groschn.messaging.inbound.MessageListener;
+import com.flockinger.groschn.messaging.model.Message;
 
 @Component
-public class TransactionPoolListener implements SetEventListener<Transaction> {
+public class TransactionPoolListener implements MessageListener<MessagePayload> {
 
   @Override
-  public void addedItem(Transaction newItem) {
-    // TODO Auto-generated method stub
-    
+  public void receiveMessage(Message<MessagePayload> message) {
+    //TODO implement
   }
-
-  @Override
-  public void removedItem(Transaction removedItem) {
-    // TODO Auto-generated method stub
-    
-  }
-
-  @Override
-  public void updatedItem(Transaction updatedItem) {
-    // TODO Auto-generated method stub
-    
-  }
-
   
-
+  @Override
+  public String getSubscribedTopic() {
+    return MainTopics.FRESH_TRANSACTION.name();
+  }
 }

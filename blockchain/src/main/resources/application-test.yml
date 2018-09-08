@@ -14,3 +14,8 @@ blockchain:
     initial-delay: 20000
     punch-rate: 15000
     process-timeout-seconds: 21
+  messaging:
+   id-cache:
+     expire-after-milliseconds: 600000
+     initial-capacity: 10
+     max-capacity: 20
