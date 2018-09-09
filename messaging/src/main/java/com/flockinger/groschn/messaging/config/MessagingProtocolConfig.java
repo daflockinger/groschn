@@ -51,7 +51,9 @@ public class MessagingProtocolConfig {
             .withNumPartitions(config.getPartitionGroup().getNumberPartitions())
             .build())
         .withShutdownHookEnabled()
-        .build();
+        .build();    
+    
+   //TODO use that for request/response atomix.getMessagingService().
     return atomix;
   }
   

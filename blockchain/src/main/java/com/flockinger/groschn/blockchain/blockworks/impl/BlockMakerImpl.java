@@ -28,6 +28,7 @@ import com.flockinger.groschn.blockchain.transaction.impl.TransactionUtils;
 import com.flockinger.groschn.blockchain.util.CompressedEntity;
 import com.flockinger.groschn.blockchain.util.CompressionUtils;
 import com.flockinger.groschn.blockchain.wallet.WalletService;
+import com.flockinger.groschn.messaging.config.MainTopics;
 import com.flockinger.groschn.messaging.model.Message;
 import com.flockinger.groschn.messaging.outbound.Broadcaster;
 
@@ -76,7 +77,7 @@ public class BlockMakerImpl implements BlockMaker {
     message.setId(UUID.randomUUID().toString());
     message.setTimestamp(new Date().getTime());
     message.setPayload(block);
-    broadcaster.broadcast(message);
+    broadcaster.broadcast(message, MainTopics.FRESH_BLOCK);
   }
 
   private void addRewardTransaction(List<Transaction> transactions) {

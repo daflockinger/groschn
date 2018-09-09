@@ -2,8 +2,10 @@ package com.flockinger.groschn.blockchain.messaging;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import java.util.Optional;
 import java.util.UUID;
@@ -19,6 +21,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
 import com.flockinger.groschn.blockchain.dto.MessagePayload;
 import com.flockinger.groschn.blockchain.exception.messaging.ReceivedMessageInvalidException;
+import com.flockinger.groschn.blockchain.messaging.dto.SyncRequest;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.util.CompressedEntity;
 import com.flockinger.groschn.blockchain.util.CompressionUtils;
@@ -131,6 +134,29 @@ public class MessageReceiverUtilsTest {
     Optional<Block> extractedBlock = utils.extractPayload(validMessage(), Block.class);
     assertFalse("verify extracted block exists", extractedBlock.isPresent());
   }
+  
+  @Test
+  public void testPackageMessage_withValidThing_shouldPackageCorrectly() {
+    SyncRequest request = new SyncRequest();
+    when(compressor.compress(any())).thenReturn(CompressedEntity.build().entity(new byte[10]).originalSize(2));
+    
+    Message<MessagePayload> message = utils.packageMessage(request, "Spock");
+    
+    assertNotNull("verify received message is not null", message);
+    assertNotNull("verify message has an id", message.getId());
+    assertNotNull("verify message has a timestamp", message.getTimestamp());
+    assertNotNull("verify message has a payload", message.getPayload());
+    assertNotNull("verify message has a senderId", message.getPayload().getSenderId());
+    assertNotNull("verify message has a compressed entity", message.getPayload().getEntity());
+    assertNotNull("verify message has a compressed entity data", message.getPayload().getEntity().getEntity());
+    assertTrue("verify message has some compressed entity size", message.getPayload().getEntity().getOriginalSize() > 0);
+    
+    verify(compressor).compress(any());
+  }
+
+  
+  
+  
     
   private Message<MessagePayload> validMessage() {
     Message<MessagePayload> message = new Message<>();

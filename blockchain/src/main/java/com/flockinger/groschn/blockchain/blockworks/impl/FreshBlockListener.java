@@ -62,7 +62,7 @@ public class FreshBlockListener implements MessageListener<MessagePayload> {
   }
   
   @Override
-  public String getSubscribedTopic() {
-    return MainTopics.FRESH_BLOCK.name();
+  public MainTopics getSubscribedTopic() {
+    return MainTopics.FRESH_BLOCK;
   }
 }

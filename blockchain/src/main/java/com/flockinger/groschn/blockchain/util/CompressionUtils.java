@@ -11,6 +11,7 @@ import com.flockinger.groschn.blockchain.exception.SerializationException;
 import com.flockinger.groschn.blockchain.model.Hashable;
 import com.flockinger.groschn.blockchain.util.serialize.BlockSerializer;
 import net.jpountz.lz4.LZ4Compressor;
+import net.jpountz.lz4.LZ4Exception;
 import net.jpountz.lz4.LZ4Factory;
 import net.jpountz.lz4.LZ4FastDecompressor;
 
@@ -34,11 +35,13 @@ public class CompressionUtils {
 
   public <T extends Hashable> Optional<T> decompress(byte[] compressedEntity, int uncompressedSize,
       Class<T> type) {
-    byte[] uncompressedEntityBytes = decompressor.decompress(compressedEntity, uncompressedSize);
     try {
+      byte[] uncompressedEntityBytes = decompressor.decompress(compressedEntity, uncompressedSize);
       return Optional.ofNullable(serializer.deserialize(uncompressedEntityBytes, type));
     } catch (SerializationException e) {
       LOGGER.error("Can't deserialize entity back to original!", e);
+    } catch (LZ4Exception e) {
+      LOGGER.error("Cannot decompress invalid entity!",e);
     }
     return Optional.empty();
   }

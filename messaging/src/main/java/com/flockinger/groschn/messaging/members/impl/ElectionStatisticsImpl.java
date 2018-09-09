@@ -12,7 +12,7 @@ public class ElectionStatisticsImpl implements ElectionStatistics {
   private Atomix atomix;
   
   @Override
-  public Long currentActiveVoterCount() {
+  public Long currentActiveVoterCount() {    
     return Long.valueOf(atomix.getMembershipService().getReachableMembers().size());
   }
 

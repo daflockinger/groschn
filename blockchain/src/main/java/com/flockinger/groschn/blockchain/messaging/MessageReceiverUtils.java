@@ -1,6 +1,8 @@
 package com.flockinger.groschn.blockchain.messaging;
 
+import java.util.Date;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import javax.validation.ConstraintViolation;
 import javax.validation.Validation;
@@ -67,5 +69,16 @@ public class MessageReceiverUtils {
   
   private <T extends Hashable> Optional<T> decompressEntity(CompressedEntity compressedBlock, Class<T> type) {
     return compressor.decompress(compressedBlock.getEntity(), compressedBlock.getOriginalSize(), type);
+  }
+  
+  public <T extends Hashable> Message<MessagePayload> packageMessage(T uncompressedEntity, String senderId) {
+    Message<MessagePayload> message = new Message<>();
+    message.setId(UUID.randomUUID().toString());
+    message.setTimestamp(new Date().getTime());
+    MessagePayload payload = new MessagePayload();
+    payload.setSenderId(senderId);
+    payload.setEntity(compressor.compress(uncompressedEntity));
+    message.setPayload(payload);
+    return message;
   }
 }

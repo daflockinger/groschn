@@ -27,6 +27,7 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.ConfigFileApplicationContextInitializer;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ContextConfiguration;
@@ -49,7 +50,8 @@ import com.flockinger.groschn.blockchain.wallet.WalletService;
 import com.flockinger.groschn.messaging.outbound.Broadcaster;
 
 @RunWith(SpringRunner.class)
-@ContextConfiguration(classes = {BlockMakerImpl.class})
+@ContextConfiguration(classes = {BlockMakerImpl.class}, 
+initializers=ConfigFileApplicationContextInitializer.class)
 @Import(TestConfig.class)
 public class BlockMakerTest {
 
@@ -296,7 +298,7 @@ public class BlockMakerTest {
     assertEquals("verify reward transaction request contains a valid public key", MASTER_KEY,
         request.getPublicKey());
     verify(compressor, times(1)).compress(any());
-    verify(broadcaster, times(1)).broadcast(any());
+    verify(broadcaster, times(1)).broadcast(any(),any());
     verify(storageService).saveInBlockchain(any());
     verify(storageService).saveInBlockchain(any());
   }

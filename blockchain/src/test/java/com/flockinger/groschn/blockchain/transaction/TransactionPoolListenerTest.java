@@ -1,5 +1,6 @@
 package com.flockinger.groschn.blockchain.transaction;
 
+import static com.flockinger.groschn.blockchain.TestDataFactory.validMessage;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
@@ -11,45 +12,28 @@ import java.util.Optional;
 import java.util.UUID;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.test.context.ConfigFileApplicationContextInitializer;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.MockReset;
-import org.springframework.boot.test.mock.mockito.MockitoTestExecutionListener;
-import org.springframework.boot.test.mock.mockito.ResetMocksTestExecutionListener;
-import org.springframework.context.annotation.Import;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.TestExecutionListeners;
-import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
+import com.flockinger.groschn.blockchain.BaseCachingTest;
 import com.flockinger.groschn.blockchain.TestDataFactory;
-import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
-import com.flockinger.groschn.blockchain.config.CacheConfig;
 import com.flockinger.groschn.blockchain.dto.MessagePayload;
 import com.flockinger.groschn.blockchain.exception.messaging.ReceivedMessageInvalidException;
 import com.flockinger.groschn.blockchain.exception.validation.AssessmentFailedException;
 import com.flockinger.groschn.blockchain.messaging.MessageReceiverUtils;
-import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.model.Transaction;
 import com.flockinger.groschn.blockchain.transaction.impl.TransactionPoolListener;
-import com.flockinger.groschn.blockchain.util.CompressedEntity;
 import com.flockinger.groschn.blockchain.util.CompressionUtils;
 import com.flockinger.groschn.messaging.config.MainTopics;
 import com.flockinger.groschn.messaging.inbound.SubscriptionService;
 import com.flockinger.groschn.messaging.model.Message;
 import com.github.benmanes.caffeine.cache.Cache;
 
-@ActiveProfiles("test")
-@RunWith(SpringRunner.class)
-@ContextConfiguration(classes = {TransactionPoolListener.class}, 
-  initializers=ConfigFileApplicationContextInitializer.class)
-@Import(CacheConfig.class)
-@TestExecutionListeners({DependencyInjectionTestExecutionListener.class, MockitoTestExecutionListener.class, ResetMocksTestExecutionListener.class})
-public class TransactionPoolListenerTest {
+@ContextConfiguration(classes = {TransactionPoolListener.class})
+public class TransactionPoolListenerTest extends BaseCachingTest {
 
   @MockBean
   private MessageReceiverUtils mockUtils;
@@ -149,18 +133,6 @@ public class TransactionPoolListenerTest {
   @Test
   public void testGetSubscribedTopic_shouldBeForTransactions() {
     assertEquals("verify that the fresh transaction topic is selected", 
-        MainTopics.FRESH_TRANSACTION.name(), listener.getSubscribedTopic());
-  }
-  
-  private Message<MessagePayload> validMessage() {
-    Message<MessagePayload> message = new Message<>();
-    message.setId(UUID.randomUUID().toString());
-    message.setTimestamp(1000l);
-    MessagePayload txMessage = new MessagePayload();
-    CompressedEntity entity = CompressedEntity.build().originalSize(123).entity(new byte[10]);
-    txMessage.setEntity(entity);
-    txMessage.setSenderId(UUID.randomUUID().toString());
-    message.setPayload(txMessage);
-    return message;
+        MainTopics.FRESH_TRANSACTION, listener.getSubscribedTopic());
   }
 }

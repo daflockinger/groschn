@@ -1,6 +1,7 @@
 package com.flockinger.groschn.blockchain.util;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import java.util.ArrayList;
@@ -107,7 +108,7 @@ public class CompressionUtilsTest {
   }
   
   @Test
-  public void testUncompress_withWrongBlockSize_shouldThrowException() {
+  public void testUncompress_withWrongBlockSize_shouldReturnEmpty() {
     Block fakeBlock = TestDataFactory.getFakeBlock();
     
     // compress
@@ -118,11 +119,12 @@ public class CompressionUtilsTest {
     assertEquals("verify correct compressed size", 395l, entity.getEntity().length);
     
     // decompress
-    utils.decompress(entity.getEntity(), entity.getOriginalSize(), Block.class);
+    var decompressedResult = utils.decompress(entity.getEntity(), entity.getOriginalSize() + 2, Block.class);
+    assertFalse("verify that returned entity of wrong type is empty", decompressedResult.isPresent());
   }
   
   @Test
-  public void testUncompress_withWrongType_shouldThrowException() {
+  public void testUncompress_withWrongCompressedEntity_shouldReturnEmpty() {
     Block fakeBlock = TestDataFactory.getFakeBlock();
     
     // compress
@@ -133,6 +135,24 @@ public class CompressionUtilsTest {
     assertEquals("verify correct compressed size", 395l, entity.getEntity().length);
     
     // decompress
-    utils.decompress(entity.getEntity(), entity.getOriginalSize(), Transaction.class);
+    var decompressedResult = utils.decompress(new byte[10], entity.getOriginalSize(), Block.class);
+    assertFalse("verify that returned entity of wrong type is empty", decompressedResult.isPresent());
+  }
+  
+  @Test
+  public void testUncompress_withWrongType_shouldReturnEmpty() {
+    Block fakeBlock = TestDataFactory.getFakeBlock();
+    
+    // compress
+    CompressedEntity entity = utils.compress(fakeBlock);
+    
+    assertNotNull("verify compressedEntity is returned not null", entity);
+    assertEquals("verify correct original size", 636l, entity.getOriginalSize());
+    assertEquals("verify correct compressed size", 395l, entity.getEntity().length);
+    
+    // decompress
+    var decompressedResult = utils.decompress(entity.getEntity(), entity.getOriginalSize(), Transaction.class);
+    
+    assertFalse("verify that returned entity of wrong type is empty", decompressedResult.isPresent());
   }
 }

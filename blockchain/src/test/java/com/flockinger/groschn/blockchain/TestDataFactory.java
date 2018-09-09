@@ -9,6 +9,7 @@ import org.apache.commons.lang3.RandomUtils;
 import org.modelmapper.ModelMapper;
 import com.flockinger.groschn.blockchain.consensus.model.ConsensusType;
 import com.flockinger.groschn.blockchain.consensus.model.Consent;
+import com.flockinger.groschn.blockchain.dto.MessagePayload;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.model.Transaction;
 import com.flockinger.groschn.blockchain.model.TransactionInput;
@@ -16,7 +17,9 @@ import com.flockinger.groschn.blockchain.model.TransactionOutput;
 import com.flockinger.groschn.blockchain.repository.model.StoredTransaction;
 import com.flockinger.groschn.blockchain.repository.model.StoredTransactionInput;
 import com.flockinger.groschn.blockchain.repository.model.StoredTransactionOutput;
+import com.flockinger.groschn.blockchain.util.CompressedEntity;
 import com.flockinger.groschn.blockchain.validation.Assessment;
+import com.flockinger.groschn.messaging.model.Message;
 import com.google.common.collect.ImmutableList;
 
 public class TestDataFactory {
@@ -317,5 +320,17 @@ public class TestDataFactory {
       transactions.add(createValidTransaction("anotherone22", "anotherone24", "anotherone21", "someone25"));
     }
     return transactions;
+  }
+  
+  public static Message<MessagePayload> validMessage() {
+    Message<MessagePayload> message = new Message<>();
+    message.setId(UUID.randomUUID().toString());
+    message.setTimestamp(1000l);
+    MessagePayload txMessage = new MessagePayload();
+    CompressedEntity entity = CompressedEntity.build().originalSize(123).entity(new byte[10]);
+    txMessage.setEntity(entity);
+    txMessage.setSenderId(UUID.randomUUID().toString());
+    message.setPayload(txMessage);
+    return message;
   }
 }

@@ -55,7 +55,7 @@ public class TransactionPoolListener implements MessageListener<MessagePayload> 
   }
   
   @Override
-  public String getSubscribedTopic() {
-    return MainTopics.FRESH_TRANSACTION.name();
+  public MainTopics getSubscribedTopic() {
+    return MainTopics.FRESH_TRANSACTION;
   }
 }

@@ -10,12 +10,16 @@ spring:
 
       
 blockchain:
+  node:
+    id: ${NODE_ID:groschn-master-123}
   punch-timer:
     initial-delay: 20000
     punch-rate: 15000
     process-timeout-seconds: 21
   messaging:
-   id-cache:
-     expire-after-milliseconds: 600000
-     initial-capacity: 10
-     max-capacity: 20
+    thread-pool:
+      size: 10
+    id-cache:
+      expire-after-milliseconds: 600000
+      initial-capacity: 10
+      max-capacity: 20

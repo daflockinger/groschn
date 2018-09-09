@@ -62,7 +62,7 @@ public class TransactionManagerImpl implements TransactionManager {
   public TransactionManagerImpl(MongoDbFactory factory) {
     template = new MongoTemplate(factory);
   }
-  
+
   @Override
   public List<Transaction> fetchTransactionsFromPool(long maxByteSize) {
     var transactionIterator =
@@ -106,14 +106,14 @@ public class TransactionManagerImpl implements TransactionManager {
     input.setSignature(signature);
   }
 
-  
+
   @Override
   public void storeTransaction(Transaction transaction) {
     Assessment assessment = validator.validate(transaction);
-    if(!assessment.isValid()) {
+    if (!assessment.isValid()) {
       throw new AssessmentFailedException(assessment.getReasonOfFailure());
     }
-    if(transactionDao.existsByTransactionHash(transaction.getTransactionHash())) {
+    if (transactionDao.existsByTransactionHash(transaction.getTransactionHash())) {
       throw new TransactionAlreadyClearedException("Transaction already exists in pool!");
     }
     StoredPoolTransaction toStoreTransaction = mapToPoolTransaction(transaction);
@@ -121,16 +121,18 @@ public class TransactionManagerImpl implements TransactionManager {
     toStoreTransaction.setStatus(TransactionStatus.RAW);
     transactionDao.save(toStoreTransaction);
   }
-  
+
   private StoredPoolTransaction mapToPoolTransaction(Transaction transaction) {
     return mapper.map(transaction, StoredPoolTransaction.class);
   }
 
   @Override
   public void updateTransactionStatuses(List<Transaction> transactions, TransactionStatus status) {
-    List<String> transactionHashes = transactions.stream().map(Transaction::getTransactionHash).filter(Objects::nonNull).collect(Collectors.toList());
+    List<String> transactionHashes = transactions.stream().map(Transaction::getTransactionHash)
+        .filter(Objects::nonNull).collect(Collectors.toList());
     Query whereTransactionHashesIn = new Query();
-    whereTransactionHashesIn.addCriteria(Criteria.where(StoredPoolTransaction.TX_HASH_NAME).in(transactionHashes));
+    whereTransactionHashesIn
+        .addCriteria(Criteria.where(StoredPoolTransaction.TX_HASH_NAME).in(transactionHashes));
     Update updatedStatus = Update.update(StoredPoolTransaction.STATUS_NAME, status);
     template.updateMulti(whereTransactionHashesIn, updatedStatus, StoredPoolTransaction.class);
   }
