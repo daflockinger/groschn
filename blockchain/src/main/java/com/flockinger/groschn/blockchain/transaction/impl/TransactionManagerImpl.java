@@ -1,14 +1,24 @@
 package com.flockinger.groschn.blockchain.transaction.impl;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.stereotype.Component;
+import org.springframework.data.mongodb.MongoDbFactory;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.stereotype.Service;
 import com.flockinger.groschn.blockchain.blockworks.HashGenerator;
 import com.flockinger.groschn.blockchain.dto.TransactionDto;
+import com.flockinger.groschn.blockchain.exception.TransactionAlreadyClearedException;
+import com.flockinger.groschn.blockchain.exception.validation.AssessmentFailedException;
 import com.flockinger.groschn.blockchain.model.Transaction;
 import com.flockinger.groschn.blockchain.model.TransactionInput;
 import com.flockinger.groschn.blockchain.model.TransactionOutput;
@@ -19,15 +29,18 @@ import com.flockinger.groschn.blockchain.transaction.TransactionManager;
 import com.flockinger.groschn.blockchain.util.CompressionUtils;
 import com.flockinger.groschn.blockchain.util.serialize.BlockSerializer;
 import com.flockinger.groschn.blockchain.util.sign.Signer;
+import com.flockinger.groschn.blockchain.validation.Assessment;
 import com.flockinger.groschn.blockchain.validation.Validator;
 import com.flockinger.groschn.blockchain.wallet.WalletService;
 import com.google.common.collect.ImmutableList;
+import com.mongodb.Mongo;
 
-@Component
+@Service
 public class TransactionManagerImpl implements TransactionManager {
 
   @Autowired
   private TransactionPoolRepository transactionDao;
+  private final MongoTemplate template;
   @Autowired
   private ModelMapper mapper;
   @Autowired
@@ -45,6 +58,11 @@ public class TransactionManagerImpl implements TransactionManager {
   @Autowired
   private BlockSerializer serializer;
 
+  @Autowired
+  public TransactionManagerImpl(MongoDbFactory factory) {
+    template = new MongoTemplate(factory);
+  }
+  
   @Override
   public List<Transaction> fetchTransactionsFromPool(long maxByteSize) {
     var transactionIterator =
@@ -68,11 +86,6 @@ public class TransactionManagerImpl implements TransactionManager {
   }
 
 
-  /*
-   * TODO maybe check if a Transaction from the same input publicKey is already in the pool, 
-   * but not yet added to the chain that the new one is revoked until the old one is processed, 
-   * to ensure that the new one is not kicked later one (cause the input amount value is wrong).
-   */
   @Override
   public Transaction createSignedTransaction(TransactionDto transactionSigningRequest) {
     var transaction = mapper.map(transactionSigningRequest, Transaction.class);
@@ -91,5 +104,34 @@ public class TransactionManagerImpl implements TransactionManager {
       byte[] privateKey) {
     String signature = signer.sign(serializer.serialize(outputs), privateKey);
     input.setSignature(signature);
+  }
+
+  
+  @Override
+  public void storeTransaction(Transaction transaction) {
+    Assessment assessment = validator.validate(transaction);
+    if(!assessment.isValid()) {
+      throw new AssessmentFailedException(assessment.getReasonOfFailure());
+    }
+    if(transactionDao.existsByTransactionHash(transaction.getTransactionHash())) {
+      throw new TransactionAlreadyClearedException("Transaction already exists in pool!");
+    }
+    StoredPoolTransaction toStoreTransaction = mapToPoolTransaction(transaction);
+    toStoreTransaction.setCreatedAt(new Date());
+    toStoreTransaction.setStatus(TransactionStatus.RAW);
+    transactionDao.save(toStoreTransaction);
+  }
+  
+  private StoredPoolTransaction mapToPoolTransaction(Transaction transaction) {
+    return mapper.map(transaction, StoredPoolTransaction.class);
+  }
+
+  @Override
+  public void updateTransactionStatuses(List<Transaction> transactions, TransactionStatus status) {
+    List<String> transactionHashes = transactions.stream().map(Transaction::getTransactionHash).filter(Objects::nonNull).collect(Collectors.toList());
+    Query whereTransactionHashesIn = new Query();
+    whereTransactionHashesIn.addCriteria(Criteria.where(StoredPoolTransaction.TX_HASH_NAME).in(transactionHashes));
+    Update updatedStatus = Update.update(StoredPoolTransaction.STATUS_NAME, status);
+    template.updateMulti(whereTransactionHashesIn, updatedStatus, StoredPoolTransaction.class);
   }
 }

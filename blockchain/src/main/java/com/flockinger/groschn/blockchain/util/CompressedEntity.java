@@ -1,6 +1,9 @@
 package com.flockinger.groschn.blockchain.util;
 
 import java.io.Serializable;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 
 public class CompressedEntity implements Serializable {
   /**
@@ -8,7 +11,10 @@ public class CompressedEntity implements Serializable {
    */
   private static final long serialVersionUID = 8539218059879786960L;
   
+  @Min(1)
   private int originalSize;
+  @Size(min=1)
+  @NotNull
   private byte[] entity;
   
   public int getOriginalSize() {

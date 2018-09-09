@@ -5,27 +5,33 @@ import static com.flockinger.groschn.blockchain.TestDataFactory.createRandomTran
 import static com.flockinger.groschn.blockchain.TestDataFactory.createRandomTransactionWith;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.RandomUtils;
 import org.junit.Before;
 import org.junit.Test;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.mongodb.MongoDbFactory;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.test.context.ContextConfiguration;
 import com.flockinger.groschn.blockchain.BaseDbTest;
+import com.flockinger.groschn.blockchain.TestDataFactory;
 import com.flockinger.groschn.blockchain.blockworks.HashGenerator;
 import com.flockinger.groschn.blockchain.dto.TransactionDto;
 import com.flockinger.groschn.blockchain.dto.TransactionStatementDto;
 import com.flockinger.groschn.blockchain.exception.HashingException;
+import com.flockinger.groschn.blockchain.exception.TransactionAlreadyClearedException;
 import com.flockinger.groschn.blockchain.exception.crypto.CantConfigureSigningAlgorithmException;
 import com.flockinger.groschn.blockchain.exception.validation.AssessmentFailedException;
 import com.flockinger.groschn.blockchain.model.Transaction;
@@ -36,19 +42,19 @@ import com.flockinger.groschn.blockchain.repository.TransactionPoolRepository;
 import com.flockinger.groschn.blockchain.repository.model.StoredBlock;
 import com.flockinger.groschn.blockchain.repository.model.StoredPoolTransaction;
 import com.flockinger.groschn.blockchain.repository.model.StoredTransaction;
+import com.flockinger.groschn.blockchain.repository.model.StoredTransactionInput;
 import com.flockinger.groschn.blockchain.repository.model.StoredTransactionOutput;
 import com.flockinger.groschn.blockchain.repository.model.TransactionStatus;
 import com.flockinger.groschn.blockchain.transaction.impl.TransactionManagerImpl;
-import com.flockinger.groschn.blockchain.transaction.impl.TransactionPoolListener;
 import com.flockinger.groschn.blockchain.util.CompressionUtils;
 import com.flockinger.groschn.blockchain.util.serialize.impl.FstSerializer;
 import com.flockinger.groschn.blockchain.util.sign.Signer;
+import com.flockinger.groschn.blockchain.validation.Assessment;
 import com.flockinger.groschn.blockchain.validation.Validator;
 import com.flockinger.groschn.blockchain.wallet.WalletService;
-import com.flockinger.groschn.messaging.distribution.DistributedCollectionBuilder;
 import com.google.common.collect.ImmutableList;
 
-@ContextConfiguration(classes = {TransactionManagerImpl.class, TransactionPoolRepository.class, 
+@ContextConfiguration(classes = {TransactionManagerImpl.class, TransactionPoolRepository.class, MongoDbFactory.class,
     BlockchainRepository.class, CompressionUtils.class, FstSerializer.class})
 public class TransactionManagerTest extends BaseDbTest {
 
@@ -72,6 +78,10 @@ public class TransactionManagerTest extends BaseDbTest {
   private CompressionUtils compressor;
   
   private List<StoredPoolTransaction> fakePoolTransactions = createFakePooledTransactions();
+  
+  @Autowired 
+  private ModelMapper mapper;
+  
   
   @Before
   public void setup() {
@@ -241,6 +251,103 @@ public class TransactionManagerTest extends BaseDbTest {
   }
     
   
+  @Test
+  public void testUpdateTransactionStatuses_withSomeExistingSomeNot_shouldUpdateExistingOnesCorrectly() {
+    List<StoredPoolTransaction> storedTx = new ArrayList<>();
+    storedTx.addAll(fakePoolTransactions);
+    storedTx.forEach(tx -> tx.setStatus(TransactionStatus.RAW));
+    poolDao.saveAll(storedTx);
+    long before = poolDao.findAll().stream()
+        .filter(tx -> TransactionStatus.RAW.equals(tx.getStatus())).count();
+    assertEquals("verify all are unmodified before", 10l, before);
+    
+    List<Transaction> freshTranasctions = storedTx.stream()
+        .map(pooledTx -> mapper.map(pooledTx, Transaction.class)).collect(Collectors.toList()).subList(2, 8);
+    freshTranasctions.get(2).setTransactionHash("nonExistante1");
+    freshTranasctions.get(4).setTransactionHash("nonExistante2");
+    
+    manager.updateTransactionStatuses(freshTranasctions, TransactionStatus.EMBEDDED_IN_BLOCK);
+    
+    List<StoredPoolTransaction> allTx = poolDao.findAll();
+    long modifiedTransactions = allTx.stream()
+        .filter(tx -> TransactionStatus.EMBEDDED_IN_BLOCK.equals(tx.getStatus())).count();
+    long unmodifiedTransactions = allTx.stream()
+        .filter(tx -> TransactionStatus.RAW.equals(tx.getStatus())).count();
+    assertEquals("verify correct amount of transactions was updated to EMBEDDED_IN_BLOCK", 4l, modifiedTransactions);
+    assertEquals("verify correct rest of the transactions was untouched", 6l, unmodifiedTransactions);
+  }
+  
+  @Test
+  public void testUpdateTransactionStatuses_withNoneExisting_shouldDoNothing() {
+    List<StoredPoolTransaction> storedTx = new ArrayList<>();
+    storedTx.addAll(fakePoolTransactions);
+    storedTx.forEach(tx -> tx.setStatus(TransactionStatus.RAW));
+    poolDao.saveAll(storedTx);
+    
+    List<Transaction> freshTranasctions = storedTx.stream()
+        .map(pooledTx -> mapper.map(pooledTx, Transaction.class)).collect(Collectors.toList()).subList(2, 8);
+    freshTranasctions.forEach(tx -> tx.setTransactionHash("muiPicante" + UUID.randomUUID().toString()));
+    
+    manager.updateTransactionStatuses(freshTranasctions, TransactionStatus.EMBEDDED_IN_BLOCK);
+    
+    List<StoredPoolTransaction> allTx = poolDao.findAll();
+    long modifiedTransactions = allTx.stream()
+        .filter(tx -> TransactionStatus.EMBEDDED_IN_BLOCK.equals(tx.getStatus())).count();
+    long unmodifiedTransactions = allTx.stream()
+        .filter(tx -> TransactionStatus.RAW.equals(tx.getStatus())).count();
+    assertEquals("verify correct amount of transactions was updated to EMBEDDED_IN_BLOCK", 0l, modifiedTransactions);
+    assertEquals("verify correct rest of the transactions was untouched", 10l, unmodifiedTransactions);
+  }
+  
+  
+  @Test
+  public void testStoreTransaction_withValidTransaction_shouldStore() {
+    Transaction transaction = TestDataFactory.createValidTransaction("ex1", "ex2", "ex3", "in1");
+    when(validator.validate(any())).thenReturn(Assessment.build().valid(true));
+    
+    manager.storeTransaction(transaction);
+    
+    Optional<StoredPoolTransaction> storedTx = poolDao.findAll().stream().findFirst();
+    assertTrue("verify stored transaction exists", storedTx.isPresent());
+    assertEquals("verify correct status", TransactionStatus.RAW, storedTx.get().getStatus());
+    assertNotNull("verify it has a createdAt date", storedTx.get().getCreatedAt());
+    assertEquals("verify transaction hash", transaction.getTransactionHash(), storedTx.get().getTransactionHash());
+    assertEquals("verify transaction input count", transaction.getInputs().size(), storedTx.get().getInputs().size());
+    TransactionInput input = transaction.getInputs().get(0);
+    StoredTransactionInput storedInput = storedTx.get().getInputs().get(0);
+    assertEquals("verify transaction input amount", input.getAmount(), storedInput.getAmount());
+    assertEquals("verify transaction input pub key", input.getPublicKey(), storedInput.getPublicKey());
+    assertEquals("verify transaction input seq number", input.getSequenceNumber(), storedInput.getSequenceNumber());
+    assertEquals("verify transaction input signature", input.getSignature(), storedInput.getSignature());
+    assertEquals("verify transaction input timestamp", input.getTimestamp(), storedInput.getTimestamp());
+    assertEquals("verify transaction output count", transaction.getOutputs().size(), storedTx.get().getOutputs().size());
+    TransactionOutput output = transaction.getOutputs().get(0);
+    StoredTransactionOutput storedOutput = storedTx.get().getOutputs().get(0);
+    assertEquals("verify transaction output amount", output.getAmount(), storedOutput.getAmount());
+    assertEquals("verify transaction output pub key", output.getPublicKey(), storedOutput.getPublicKey());
+    assertEquals("verify transaction output seq number", output.getSequenceNumber(), storedOutput.getSequenceNumber());
+    assertEquals("verify transaction output timestamp", output.getTimestamp(), storedOutput.getTimestamp());
+  }
+  
+  
+  @Test(expected=AssessmentFailedException.class)
+  public void testStoreTransaction_withInvalidTransaction_shouldThrowException() {
+    Transaction transaction = TestDataFactory.createValidTransaction("ex1", "ex2", "ex3", "in1");
+    when(validator.validate(any())).thenReturn(Assessment.build().valid(false).reason("cause, reasons..."));
+    
+    manager.storeTransaction(transaction);
+  }
+  
+  @Test(expected=TransactionAlreadyClearedException.class)
+  public void testStoreTransaction_withTransactionExistsAlready_shouldThrowException() {
+    Transaction transaction = TestDataFactory.createValidTransaction("ex1", "ex2", "ex3", "in1");
+    when(validator.validate(any())).thenReturn(Assessment.build().valid(true));
+    
+    manager.storeTransaction(transaction);
+    manager.storeTransaction(transaction);
+  }
+  
+  
   private List<StoredPoolTransaction> createFakePooledTransactions() {
     List<StoredPoolTransaction> poolTransactions = new ArrayList<>();
     for(int i=0; i < 10; i++) {
@@ -264,7 +371,7 @@ public class TransactionManagerTest extends BaseDbTest {
     tr.setInputs(ImmutableList.of(createRandomTransactionInputWith(1),createRandomTransactionInputWith(2),
         createRandomTransactionInputWith(3)));
     tr.setStatus(status);
-    tr.setTransactionId(UUID.randomUUID().toString());
+    tr.setTransactionHash(UUID.randomUUID().toString());
     return tr;
   }
   

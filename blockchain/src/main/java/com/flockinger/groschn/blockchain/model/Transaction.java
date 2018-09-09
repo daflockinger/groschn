@@ -7,6 +7,7 @@ public class Transaction implements Hashable {
   * 
   */
   private static final long serialVersionUID = -3848087917482658536L;
+  
 
   private String id;
 

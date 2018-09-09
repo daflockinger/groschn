@@ -11,6 +11,8 @@ import com.flockinger.groschn.blockchain.exception.validation.ValidationExceptio
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.repository.BlockchainRepository;
 import com.flockinger.groschn.blockchain.repository.model.StoredBlock;
+import com.flockinger.groschn.blockchain.repository.model.TransactionStatus;
+import com.flockinger.groschn.blockchain.transaction.TransactionManager;
 import com.flockinger.groschn.blockchain.validation.Assessment;
 import com.flockinger.groschn.blockchain.validation.impl.BlockValidator;
 
@@ -23,6 +25,8 @@ public class BlockStorageServiceImpl implements BlockStorageService {
   private BlockchainRepository dao;
   @Autowired
   private ModelMapper mapper;
+  @Autowired
+  private TransactionManager transactionManager;
 
   @PostConstruct
   public void initBlockchain() {
@@ -35,6 +39,7 @@ public class BlockStorageServiceImpl implements BlockStorageService {
   @Override
   public StoredBlock saveInBlockchain(Block block) throws ValidationException {
     validateBlock(block);
+    transactionManager.updateTransactionStatuses(block.getTransactions(), TransactionStatus.EMBEDDED_IN_BLOCK);
     StoredBlock storedBlock = mapToStoredBlock(block);
     storedBlock = dao.save(storedBlock);
     return storedBlock;

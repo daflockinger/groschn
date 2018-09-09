@@ -14,22 +14,12 @@ public class StoredTransactionInput {
   
   private String signature;
   
-  private StoredTransactionPointCut previousOutputTransaction;
-
   public String getSignature() {
       return signature;
   }
 
   public void setSignature(String signature) {
       this.signature = signature;
-  }
-
-  public StoredTransactionPointCut getPreviousOutputTransaction() {
-      return previousOutputTransaction;
-  }
-
-  public void setPreviousOutputTransaction(StoredTransactionPointCut previousOutputTransaction) {
-      this.previousOutputTransaction = previousOutputTransaction;
   }
 
   public BigDecimal getAmount() {

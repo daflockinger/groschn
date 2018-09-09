@@ -16,7 +16,6 @@ import com.flockinger.groschn.blockchain.model.TransactionOutput;
 import com.flockinger.groschn.blockchain.repository.model.StoredTransaction;
 import com.flockinger.groschn.blockchain.repository.model.StoredTransactionInput;
 import com.flockinger.groschn.blockchain.repository.model.StoredTransactionOutput;
-import com.flockinger.groschn.blockchain.repository.model.StoredTransactionPointCut;
 import com.flockinger.groschn.blockchain.validation.Assessment;
 import com.google.common.collect.ImmutableList;
 
@@ -130,10 +129,6 @@ public class TestDataFactory {
     input.setPublicKey(pubKey);
     input.setSequenceNumber(sequenceNumber);
     input.setTimestamp(timestamp);
-    StoredTransactionPointCut pointcut = new StoredTransactionPointCut();
-    pointcut.setSequenceNumber(RandomUtils.nextLong(1, 10));
-    pointcut.setTransactionHash(UUID.randomUUID().toString());
-    input.setPreviousOutputTransaction(pointcut);
     input.setSignature(UUID.randomUUID().toString());
     return input;
   }

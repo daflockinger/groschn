@@ -1,4 +1,4 @@
-package com.flockinger.groschn.blockchain.blockworks;
+package com.flockinger.groschn.blockchain.transaction;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -27,13 +27,15 @@ import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
 import com.flockinger.groschn.blockchain.TestDataFactory;
-import com.flockinger.groschn.blockchain.blockworks.impl.FreshBlockListener;
+import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
 import com.flockinger.groschn.blockchain.config.CacheConfig;
 import com.flockinger.groschn.blockchain.dto.MessagePayload;
 import com.flockinger.groschn.blockchain.exception.messaging.ReceivedMessageInvalidException;
 import com.flockinger.groschn.blockchain.exception.validation.AssessmentFailedException;
 import com.flockinger.groschn.blockchain.messaging.MessageReceiverUtils;
 import com.flockinger.groschn.blockchain.model.Block;
+import com.flockinger.groschn.blockchain.model.Transaction;
+import com.flockinger.groschn.blockchain.transaction.impl.TransactionPoolListener;
 import com.flockinger.groschn.blockchain.util.CompressedEntity;
 import com.flockinger.groschn.blockchain.util.CompressionUtils;
 import com.flockinger.groschn.messaging.config.MainTopics;
@@ -43,11 +45,11 @@ import com.github.benmanes.caffeine.cache.Cache;
 
 @ActiveProfiles("test")
 @RunWith(SpringRunner.class)
-@ContextConfiguration(classes = {FreshBlockListener.class}, 
+@ContextConfiguration(classes = {TransactionPoolListener.class}, 
   initializers=ConfigFileApplicationContextInitializer.class)
 @Import(CacheConfig.class)
 @TestExecutionListeners({DependencyInjectionTestExecutionListener.class, MockitoTestExecutionListener.class, ResetMocksTestExecutionListener.class})
-public class FreshBlockListenerTest {
+public class TransactionPoolListenerTest {
 
   @MockBean
   private MessageReceiverUtils mockUtils;
@@ -56,36 +58,36 @@ public class FreshBlockListenerTest {
   @MockBean
   private SubscriptionService<MessagePayload> subscriptionService;
   @MockBean(reset=MockReset.BEFORE)
-  private BlockStorageService blockService;
+  private TransactionManager transactionManager;
   
   @Autowired
-  @Qualifier("BlockId_Cache")
-  private Cache<String, String> blockIdCache;
+  @Qualifier("TransactionId_Cache")
+  private Cache<String, String> transactionIdCache;
   
   @Autowired
-  private FreshBlockListener listener;
+  private TransactionPoolListener listener;
   
-  private Block freshBlock;
+  private Transaction freshTransaction;
   
   @Before
   public void setup() {
-    blockIdCache.cleanUp();
-    freshBlock = TestDataFactory.getFakeBlock();
-    when(mockUtils.extractPayload(any(), any())).thenReturn(Optional.ofNullable(freshBlock));
+    transactionIdCache.cleanUp();
+    freshTransaction = TestDataFactory.createValidTransaction("ex1", "ex2", "ex3", "ex1");
+    when(mockUtils.extractPayload(any(), any())).thenReturn(Optional.ofNullable(freshTransaction));
   }
     
   @Test
   public void testReceiveMessage_withValidBlockAndData_shouldStore() {
-    when(compressor.decompress(any(), any(Integer.class), any())).thenReturn(Optional.ofNullable(freshBlock));
+    when(compressor.decompress(any(), any(Integer.class), any())).thenReturn(Optional.ofNullable(freshTransaction));
     Message<MessagePayload> message = validMessage();
     
     listener.receiveMessage(message);
     
-    ArgumentCaptor<Block> blockCaptor = ArgumentCaptor.forClass(Block.class);
-    verify(blockService).saveInBlockchain(blockCaptor.capture());
-    Block toStoreBlock = blockCaptor.getValue();
-    assertNotNull("verify that to store block is not null", toStoreBlock);
-    assertEquals("verify that the to stored block is exactly the decompressed one", freshBlock, toStoreBlock);
+    ArgumentCaptor<Transaction> txCaptor = ArgumentCaptor.forClass(Transaction.class);
+    verify(transactionManager).storeTransaction(txCaptor.capture());
+    Transaction transactionToStore = txCaptor.getValue();
+    assertNotNull("verify that to store transaction is not null", transactionToStore);
+    assertEquals("verify that the to stored transaction is exactly the decompressed one", freshTransaction, transactionToStore);
   }
   
   @Test
@@ -95,29 +97,29 @@ public class FreshBlockListenerTest {
     
     listener.receiveMessage(message);
     
-    verify(blockService,times(0)).saveInBlockchain(any());
+    verify(transactionManager,times(0)).storeTransaction(any());
   }
   
   
   @Test
   public void testReceiveMessage_withFillingUpCacheTooMuch_shouldStillWork() {
-    when(compressor.decompress(any(), any(Integer.class), any())).thenReturn(Optional.ofNullable(freshBlock));
+    when(compressor.decompress(any(), any(Integer.class), any())).thenReturn(Optional.ofNullable(freshTransaction));
     Message<MessagePayload> message = validMessage();
     
     for(int i=0; i < 30; i++) {
       message.setId(UUID.randomUUID().toString());
       listener.receiveMessage(message);
     }
-    ArgumentCaptor<Block> blockCaptor = ArgumentCaptor.forClass(Block.class);
-    verify(blockService,times(30)).saveInBlockchain(blockCaptor.capture());
-    Block toStoreBlock = blockCaptor.getValue();
-    assertNotNull("verify that to store block is not null", toStoreBlock);
-    assertEquals("verify that the to stored block is exactly the decompressed one", freshBlock, toStoreBlock);
+    ArgumentCaptor<Transaction> txCaptor = ArgumentCaptor.forClass(Transaction.class);
+    verify(transactionManager,times(30)).storeTransaction(txCaptor.capture());
+    Transaction toStoreTransaction = txCaptor.getValue();
+    assertNotNull("verify that to store transaction is not null", toStoreTransaction);
+    assertEquals("verify that the to stored transaction is exactly the decompressed one", freshTransaction, toStoreTransaction);
   }
   
   @Test
   public void testReceiveMessage_withSendSameMessageTripple_shouldStoreOnlyOnce() {
-    when(compressor.decompress(any(), any(Integer.class), any())).thenReturn(Optional.ofNullable(freshBlock));
+    when(compressor.decompress(any(), any(Integer.class), any())).thenReturn(Optional.ofNullable(freshTransaction));
     Message<MessagePayload> message = validMessage();
     
     message.setId("masterID");
@@ -131,35 +133,34 @@ public class FreshBlockListenerTest {
     message.setId("masterID");
     listener.receiveMessage(message);
     
-    ArgumentCaptor<Block> blockCaptor = ArgumentCaptor.forClass(Block.class);
-    verify(blockService,times(16)).saveInBlockchain(blockCaptor.capture());
+    verify(transactionManager,times(16)).storeTransaction(any());
   }
   
   
   @Test
   public void testReceiveMessage_withStorageValidationFailed_shouldDoNothing() {
-    when(compressor.decompress(any(), any(Integer.class), any())).thenReturn(Optional.of(freshBlock));
+    when(compressor.decompress(any(), any(Integer.class), any())).thenReturn(Optional.of(freshTransaction));
     Message<MessagePayload> message = validMessage();
-    when(blockService.saveInBlockchain(any())).thenThrow(AssessmentFailedException.class);
+    doThrow(AssessmentFailedException.class).when(transactionManager).storeTransaction(any());
     
     listener.receiveMessage(message);
   }
   
   @Test
-  public void testGetSubscribedTopic_shouldBeForBlocks() {
-    assertEquals("verify that the fresh block topic is selected", 
-        MainTopics.FRESH_BLOCK.name(), listener.getSubscribedTopic());
+  public void testGetSubscribedTopic_shouldBeForTransactions() {
+    assertEquals("verify that the fresh transaction topic is selected", 
+        MainTopics.FRESH_TRANSACTION.name(), listener.getSubscribedTopic());
   }
   
   private Message<MessagePayload> validMessage() {
     Message<MessagePayload> message = new Message<>();
     message.setId(UUID.randomUUID().toString());
     message.setTimestamp(1000l);
-    MessagePayload blockMessage = new MessagePayload();
+    MessagePayload txMessage = new MessagePayload();
     CompressedEntity entity = CompressedEntity.build().originalSize(123).entity(new byte[10]);
-    blockMessage.setEntity(entity);
-    blockMessage.setSenderId(UUID.randomUUID().toString());
-    message.setPayload(blockMessage);
+    txMessage.setEntity(entity);
+    txMessage.setSenderId(UUID.randomUUID().toString());
+    message.setPayload(txMessage);
     return message;
   }
 }

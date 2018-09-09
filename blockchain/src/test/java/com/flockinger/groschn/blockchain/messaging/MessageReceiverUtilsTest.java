@@ -1,0 +1,146 @@
+package com.flockinger.groschn.blockchain.messaging;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+import java.util.Optional;
+import java.util.UUID;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.mock.mockito.MockitoTestExecutionListener;
+import org.springframework.boot.test.mock.mockito.ResetMocksTestExecutionListener;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.TestExecutionListeners;
+import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
+import com.flockinger.groschn.blockchain.dto.MessagePayload;
+import com.flockinger.groschn.blockchain.exception.messaging.ReceivedMessageInvalidException;
+import com.flockinger.groschn.blockchain.model.Block;
+import com.flockinger.groschn.blockchain.util.CompressedEntity;
+import com.flockinger.groschn.blockchain.util.CompressionUtils;
+import com.flockinger.groschn.messaging.model.Message;
+
+@RunWith(SpringRunner.class)
+@ContextConfiguration(classes = {MessageReceiverUtils.class})
+@TestExecutionListeners({DependencyInjectionTestExecutionListener.class, 
+  MockitoTestExecutionListener.class, ResetMocksTestExecutionListener.class})
+public class MessageReceiverUtilsTest {
+
+  @MockBean
+  private CompressionUtils compressor;
+  
+  @Autowired
+  private MessageReceiverUtils utils;
+  
+ 
+  @Test
+  public void testAssertMessage_withValidBlockAndData_shouldDoNothing() {
+    Message<MessagePayload> message = validMessage();
+    
+    utils.assertMessage(message);
+  }
+
+  
+  @Test(expected=ReceivedMessageInvalidException.class)
+  public void testAssertMessage_withNullId_shouldThrowException() {
+    Message<MessagePayload> message = validMessage();
+    message.setId(null);
+    
+    utils.assertMessage(message);
+  }
+  
+  @Test(expected=ReceivedMessageInvalidException.class)
+  public void testAssertMessage_withNullTimestamp_shouldThrowException() {
+    Message<MessagePayload> message = validMessage();
+    message.setTimestamp(null);
+    
+    utils.assertMessage(message);
+  }  
+  
+  @Test(expected=ReceivedMessageInvalidException.class)
+  public void testAssertMessage_withNullPayload_shouldThrowException() {
+    Message<MessagePayload> message = validMessage();
+    message.setPayload(null);
+    
+    utils.assertMessage(message);
+  }
+  
+  @Test(expected=ReceivedMessageInvalidException.class)
+  public void testAssertMessage_withNullBlockMessageEntity_shouldThrowException() {
+    Message<MessagePayload> message = validMessage();
+    MessagePayload bm = message.getPayload();
+    bm.setEntity(null);
+    message.setPayload(bm);
+    
+    utils.assertMessage(message);
+  }
+  
+  @Test(expected=ReceivedMessageInvalidException.class)
+  public void testAssertMessage_withNullBlockMessageSenderId_shouldThrowException() {
+    Message<MessagePayload> message = validMessage();
+    MessagePayload bm = message.getPayload();
+    bm.setSenderId(null);
+    message.setPayload(bm);
+    
+    utils.assertMessage(message);;
+  }
+  
+  @Test(expected=ReceivedMessageInvalidException.class)
+  public void testAssertMessage_withZeroCompressedOriginalSize_shouldThrowException() {
+    Message<MessagePayload> message = validMessage();
+    message.getPayload().getEntity().originalSize(0);
+    
+    utils.assertMessage(message);
+  }
+  
+  @Test(expected=ReceivedMessageInvalidException.class)
+  public void testAssertMessage_withEmptyCompressedEntity_shouldThrowException() {
+    Message<MessagePayload> message = validMessage();
+    message.getPayload().getEntity().entity(new byte[0]);
+    
+    utils.assertMessage(message);
+  }
+  
+  @Test(expected=ReceivedMessageInvalidException.class)
+  public void testAssertMessage_withNullCompressedEntity_shouldThrowException() {
+    Message<MessagePayload> message = validMessage();
+    message.getPayload().getEntity().entity(null);
+    
+    utils.assertMessage(message);
+  }
+  
+  
+  @Test
+  public void testExtractPayload_withValidPayload_shouldExtract() {
+    Block freshBlock = new Block();
+    when(compressor.decompress(any(), any(Integer.class), any())).thenReturn(Optional.ofNullable(freshBlock));
+    
+    Optional<Block> extractedBlock = utils.extractPayload(validMessage(), Block.class);
+    assertTrue("verify extracted block exists", extractedBlock.isPresent());
+    assertEquals("verify extracted block is correct", freshBlock, extractedBlock.get());
+  }
+  
+  @Test
+  public void testExtractPayload_withDecompressionFailed_shouldExtract() {
+    when(compressor.decompress(any(), any(Integer.class), any())).thenReturn(Optional.empty());
+    
+    Optional<Block> extractedBlock = utils.extractPayload(validMessage(), Block.class);
+    assertFalse("verify extracted block exists", extractedBlock.isPresent());
+  }
+    
+  private Message<MessagePayload> validMessage() {
+    Message<MessagePayload> message = new Message<>();
+    message.setId(UUID.randomUUID().toString());
+    message.setTimestamp(1000l);
+    MessagePayload blockMessage = new MessagePayload();
+    CompressedEntity entity = CompressedEntity.build().originalSize(123).entity(new byte[10]);
+    blockMessage.setEntity(entity);
+    blockMessage.setSenderId(UUID.randomUUID().toString());
+    message.setPayload(blockMessage);
+    return message;
+  }
+}

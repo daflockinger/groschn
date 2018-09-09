@@ -4,11 +4,13 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 import java.util.List;
 import java.util.Optional;
 import org.junit.After;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -24,6 +26,8 @@ import com.flockinger.groschn.blockchain.model.Transaction;
 import com.flockinger.groschn.blockchain.repository.BlockchainRepository;
 import com.flockinger.groschn.blockchain.repository.model.StoredBlock;
 import com.flockinger.groschn.blockchain.repository.model.StoredTransaction;
+import com.flockinger.groschn.blockchain.repository.model.TransactionStatus;
+import com.flockinger.groschn.blockchain.transaction.TransactionManager;
 import com.flockinger.groschn.blockchain.validation.impl.BlockValidator;
 import com.google.common.collect.ImmutableList;
 
@@ -39,6 +43,8 @@ public class BlockStorageServiceTest extends BaseDbTest {
   
   @MockBean
   private BlockValidator validator;
+  @MockBean
+  private TransactionManager transactionManager;
   
   
   @After
@@ -103,6 +109,10 @@ public class BlockStorageServiceTest extends BaseDbTest {
     assertEquals("verify correct block first transaction locktime", firstTransaction.getLockTime().longValue(), 
         firstUncompressedTr.getLockTime().getTime());
     assertEquals("verify correct block ", freshBlock.getVersion(), storedBlock.get().getVersion());
+    
+    ArgumentCaptor<TransactionStatus> statusCaptor = ArgumentCaptor.forClass(TransactionStatus.class);
+    verify(transactionManager).updateTransactionStatuses(anyList(), statusCaptor.capture());
+    assertEquals("verify transactions will be updated with correct status", TransactionStatus.EMBEDDED_IN_BLOCK, statusCaptor.getValue());
   }
   
   @Test(expected=BlockValidationException.class)
