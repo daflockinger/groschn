@@ -40,7 +40,7 @@ public class FreshBlockListener implements MessageListener<MessagePayload> {
   @Override
   public void receiveMessage(Message<MessagePayload> message) {
     try {
-      messageUtils.assertMessage(message);
+      messageUtils.assertEntity(message);
       assertMessageIsNew(message.getId());
       Optional<Block> block = messageUtils.extractPayload(message, Block.class);
       if (block.isPresent()) {

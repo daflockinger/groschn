@@ -39,14 +39,14 @@ public class BlockFullSyncResponder implements MessageResponder<MessagePayload>{
   @Value("${blockchain.node.id}")
   private String nodeId;
   
-  private final static Logger LOG = LoggerFactory.getLogger(BlockFullSyncronizer.class);
+  private final static Logger LOG = LoggerFactory.getLogger(BlockFullSynchronizer.class);
   private final static Long BLOCK_REQUEST_PACKAGE_SIZE = 10l;
 
   @Override
   public Optional<Message<MessagePayload>> respond(Message<MessagePayload> request) {
     Optional<Message<MessagePayload>> response = Optional.empty();
     try {
-      messageUtils.assertMessage(request);
+      messageUtils.assertEntity(request);
       isMessageFromALegitSender(request.getPayload().getSenderId());
       assertMessageIsNew(request.getId());
       Optional<SyncRequest> syncRequest = messageUtils.extractPayload(request, SyncRequest.class);

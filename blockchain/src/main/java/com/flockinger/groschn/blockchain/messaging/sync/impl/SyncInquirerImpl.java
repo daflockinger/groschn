@@ -1,5 +1,7 @@
 package com.flockinger.groschn.blockchain.messaging.sync.impl;
 
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toList;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -10,84 +12,61 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import static java.util.stream.Collectors.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
 import com.flockinger.groschn.blockchain.dto.MessagePayload;
 import com.flockinger.groschn.blockchain.messaging.MessageReceiverUtils;
+import com.flockinger.groschn.blockchain.messaging.dto.SyncBatchRequest;
 import com.flockinger.groschn.blockchain.messaging.dto.SyncRequest;
 import com.flockinger.groschn.blockchain.messaging.dto.SyncResponse;
-import com.flockinger.groschn.blockchain.messaging.sync.SyncKeeper;
-import com.flockinger.groschn.blockchain.model.Block;
+import com.flockinger.groschn.blockchain.messaging.sync.SyncInquirer;
+import com.flockinger.groschn.blockchain.model.Hashable;
 import com.flockinger.groschn.blockchain.util.MerkleRootCalculator;
 import com.flockinger.groschn.messaging.config.MainTopics;
 import com.flockinger.groschn.messaging.members.NetworkStatistics;
 import com.flockinger.groschn.messaging.model.Message;
 import com.flockinger.groschn.messaging.outbound.Broadcaster;
-import com.github.benmanes.caffeine.cache.Cache;
 
 @Service
-public class BlockFullSyncronizer implements SyncKeeper {
-
+public class SyncInquirerImpl implements SyncInquirer {
+  
   @Autowired
   private Broadcaster<MessagePayload> broadcaster;
   @Autowired
   private NetworkStatistics networkStatistics;
   @Autowired
-  private BlockStorageService blockService;
-  @Autowired
   private MessageReceiverUtils messageUtils;
-  @Autowired
-  @Qualifier("SyncBlockId_Cache")
-  private Cache<String, String> syncBlockIdCache;
   @Autowired
   private MerkleRootCalculator merkleCalculator;
   
   @Value("${blockchain.node.id}")
   private String nodeId;
   
-  private final static Logger LOG = LoggerFactory.getLogger(BlockFullSyncronizer.class);
- 
-  private final static Long BLOCK_REQUEST_PACKAGE_SIZE = 10l;
-  public final static Long IDEAL_RECEIVE_NODE_COUNT = 3l;
-  private final static Long RANDOM_SELECTION_SIZE = IDEAL_RECEIVE_NODE_COUNT * 2;
-  
-  private final static Integer BLOCK_FETCH_MAX_RETRIES = 3;
-  
+  private final static Logger LOG = LoggerFactory.getLogger(BlockFullSynchronizer.class);
   public SecureRandom randomizer = new SecureRandom();
-  
+
   @Override
-  public void syncronize(Long fromPosition) {
-    
-    
-    
-    Optional<List<Block>> blocks = findBlocks(fromPosition);
-    //TODO continue
-    //TODO don't forget the isDone flag!!
-    
-  }
-  
-  private Optional<List<Block>> findBlocks(Long fromPosition) {
-    Optional<List<Block>> blocks = Optional.empty();
-    for(int retryCount=0; retryCount < BLOCK_FETCH_MAX_RETRIES && !blocks.isPresent(); retryCount ++) {
-      List<Message<MessagePayload>> messageBatch = fetchMessages(fromPosition);
-      blocks = findMostLikelyValidBlocks(messageBatch);
+  public <T extends Hashable> Optional<SyncResponse<T>> fetchNextBatch(SyncBatchRequest request,
+      Class<T> responseType) {
+    messageUtils.assertEntity(request);
+    Optional<SyncResponse<T>> response = Optional.empty();
+    for(int retryCount=0; retryCount < request.getMaxFetchRetries() && !response.isPresent(); retryCount ++) {
+      List<Message<MessagePayload>> messageBatch = fetchMessages(request);
+      response = findMostLikelyValidResponse(messageBatch, responseType);
     }
-    return blocks;
+    return response;
   }
   
-  private List<Message<MessagePayload>> fetchMessages(Long fromPosition) {
-    var syncPartners = getSyncPartners();
-    var minResultsNeeded = (syncPartners.size() >= 3) ? 3 : 1; 
-    MessagePayload payload = createPayload(fromPosition);
+  private List<Message<MessagePayload>> fetchMessages(SyncBatchRequest request) {
+    var syncPartners = getSyncPartners(request.getIdealReceiveNodeCount() * 2);
+    var idealNodeCount = request.getIdealReceiveNodeCount();
+    var minResultsNeeded = (syncPartners.size() >= idealNodeCount) ? idealNodeCount : 1; 
+    MessagePayload payload = createPayload(request.getFromPosition());
     var runningSyncRequests = syncPartners.stream()
-        .map(id -> sendMessageAsync(id, payload)).collect(toList());
+        .map(id -> sendMessageAsync(id, payload, request.getTopic())).collect(toList());
     var arrivedMessages = new ArrayList<Message<MessagePayload>>();
     runningSyncRequests.forEach(completableRequest -> completableRequest
         .thenApply(arrivedMessages::add)            
@@ -100,10 +79,9 @@ public class BlockFullSyncronizer implements SyncKeeper {
     return arrivedMessages.stream().filter(Objects::nonNull).collect(toList());
   }
   
-  
   private void blockUntilDoneAndLogErrors(List<CompletableFuture<Message<MessagePayload>>> requests) {
     requests.stream().map(request -> request.handle((req,exception) -> {
-      LOG.error("Requesting block sync package failed(probably timeout or offline node): ",exception); 
+      LOG.error("Requesting sync package failed(probably timeout or offline node): ",exception); 
       return req;})).forEach(CompletableFuture::join);
   }
     
@@ -114,20 +92,19 @@ public class BlockFullSyncronizer implements SyncKeeper {
     return !(future.isDone() || future.isCompletedExceptionally() || future.isCancelled());
   }
   
-  private List<String> getSyncPartners() {
+  private List<String> getSyncPartners(int randomSelectionSize) {
     var nodeIds = networkStatistics.activeNodeIds().stream()
         .filter(id -> !id.equals(nodeId)).collect(toList());;
-    if(networkStatistics.activeNodeCount() < RANDOM_SELECTION_SIZE) {
+    if(networkStatistics.activeNodeCount() < randomSelectionSize) {
       return nodeIds;
     } else {
-      return selectRandomNodes(nodeIds);
+      return selectRandomNodes(nodeIds, randomSelectionSize);
     }
   }
   
-  private List<String> selectRandomNodes(List<String> activeNodes) {
+  private List<String> selectRandomNodes(List<String> activeNodes, int randomSelectionSize) {
     List<String> selectedNodes = new ArrayList<>();
-    
-    for(int selectCount=0; selectCount < RANDOM_SELECTION_SIZE; selectCount++) {
+    for(int selectCount=0; selectCount < randomSelectionSize; selectCount++) {
       var selectedNode = activeNodes.remove(randomizer.nextInt(activeNodes.size()));
       selectedNodes.add(selectedNode);
     }
@@ -137,40 +114,34 @@ public class BlockFullSyncronizer implements SyncKeeper {
   private MessagePayload createPayload(Long startingPosition) {
     SyncRequest request = new SyncRequest();
     request.setStartingPosition(startingPosition);
-    return messageUtils.packageMessage(null, nodeId).getPayload();
+    return messageUtils.packageMessage(request, nodeId).getPayload();
   }
   
-  private CompletableFuture<Message<MessagePayload>> sendMessageAsync(String receiverId, MessagePayload payload) {
+  private CompletableFuture<Message<MessagePayload>> sendMessageAsync(String receiverId, MessagePayload payload, MainTopics topic) {
     Message<MessagePayload> message = new Message<>();
     message.setPayload(payload);
     message.setId(UUID.randomUUID().toString());
     message.setTimestamp(new Date().getTime());
-    return broadcaster.sendRequest(message, receiverId, MainTopics.SYNC_BLOCKCHAIN);
+    return broadcaster.sendRequest(message, receiverId, topic);
   }
   
   
-  private Optional<List<Block>> findMostLikelyValidBlocks(List<Message<MessagePayload>> messages) {
+  private <T extends Hashable> Optional<SyncResponse<T>> findMostLikelyValidResponse(List<Message<MessagePayload>> messages, Class<T> payloadType) {
     return messages.stream()
         .map(message -> messageUtils.extractPayload(message, SyncResponse.class))
-        .filter(Optional::isPresent).map(Optional::get).map(response -> (SyncResponse<Block>)response)
-        .filter(this::areHashesCorrect).collect(
-            groupingBy(this::merkleRootOfBlockHashes, mapping(SyncResponse::getEntities, toList())))
+        .filter(Optional::isPresent).map(Optional::get).map(response -> (SyncResponse<T>)response)
+        .collect(groupingBy(this::merkleRootOfPayloadHashes, toList()))
             .entrySet().stream().map(Entry::getValue)
-            .reduce(this::findMajorlyAcceptedBlockBatch).stream()
+            .reduce(this::findMajorlyAcceptedBatch).stream()
             .flatMap(Collection::stream).findFirst();
   }
   
-  private boolean areHashesCorrect(SyncResponse<Block> response) {
-    //TODO implement
-    return true;
-  }
-  
-  private String merkleRootOfBlockHashes(SyncResponse<Block> response) {
+  private <T extends Hashable> String merkleRootOfPayloadHashes(SyncResponse<T> response) {
     return merkleCalculator.calculateMerkleRootHash(response.getEntities());
   }
   
-  private List<List<Block>> findMajorlyAcceptedBlockBatch(List<List<Block>> firstBatch, 
-      List<List<Block>> secondBatch) {
-    return (firstBatch.size() > secondBatch.size()) ? firstBatch : secondBatch;
+  private <T extends Hashable> List<SyncResponse<T>> findMajorlyAcceptedBatch(
+      List<SyncResponse<T>> first, List<SyncResponse<T>> second){
+    return (first.size() > second.size()) ? first : second;
   }
 }

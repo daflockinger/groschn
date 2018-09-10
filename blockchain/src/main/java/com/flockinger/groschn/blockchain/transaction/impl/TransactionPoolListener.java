@@ -33,7 +33,7 @@ public class TransactionPoolListener implements MessageListener<MessagePayload> 
   @Override
   public void receiveMessage(Message<MessagePayload> message) {
     try {
-      messageUtils.assertMessage(message);
+      messageUtils.assertEntity(message);
       assertMessageIsNew(message.getId());
       Optional<Transaction> transaction = messageUtils.extractPayload(message, Transaction.class);
       if (transaction.isPresent()) {

@@ -32,8 +32,8 @@ public class MessageReceiverUtils {
     validator = factory.getValidator();
   }
   
-  public void assertMessage(Message<MessagePayload> message) {
-    var possibleErrors = validator.validate(message);
+  public <T> void assertEntity(T entity) {
+    var possibleErrors = validator.validate(entity);
     if(!possibleErrors.isEmpty()) {
       var errorMessage = possibleErrors.stream()
           .map(this::errorToString).collect(Collectors.joining("\n"));
@@ -41,7 +41,7 @@ public class MessageReceiverUtils {
     }
   }
   
-  private String errorToString(ConstraintViolation<Message<MessagePayload>> error) {
+  private <T> String errorToString(ConstraintViolation<T> error) {
     StringBuilder errorMessage = new StringBuilder();
     errorMessage.append(error.getPropertyPath() + " " + error.getMessage());
     

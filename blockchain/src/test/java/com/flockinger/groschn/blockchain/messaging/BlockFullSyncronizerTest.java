@@ -1,17 +1,10 @@
 package com.flockinger.groschn.blockchain.messaging;
 
-import static java.util.concurrent.CompletableFuture.supplyAsync;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.log;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import org.junit.Test;
-import com.google.common.base.Stopwatch;
-import com.google.common.collect.ImmutableList;
 
 public class BlockFullSyncronizerTest {
 

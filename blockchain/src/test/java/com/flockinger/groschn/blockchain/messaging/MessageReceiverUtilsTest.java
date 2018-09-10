@@ -44,7 +44,7 @@ public class MessageReceiverUtilsTest {
   public void testAssertMessage_withValidBlockAndData_shouldDoNothing() {
     Message<MessagePayload> message = validMessage();
     
-    utils.assertMessage(message);
+    utils.assertEntity(message);
   }
 
   
@@ -53,7 +53,7 @@ public class MessageReceiverUtilsTest {
     Message<MessagePayload> message = validMessage();
     message.setId(null);
     
-    utils.assertMessage(message);
+    utils.assertEntity(message);
   }
   
   @Test(expected=ReceivedMessageInvalidException.class)
@@ -61,7 +61,7 @@ public class MessageReceiverUtilsTest {
     Message<MessagePayload> message = validMessage();
     message.setTimestamp(null);
     
-    utils.assertMessage(message);
+    utils.assertEntity(message);
   }  
   
   @Test(expected=ReceivedMessageInvalidException.class)
@@ -69,7 +69,7 @@ public class MessageReceiverUtilsTest {
     Message<MessagePayload> message = validMessage();
     message.setPayload(null);
     
-    utils.assertMessage(message);
+    utils.assertEntity(message);
   }
   
   @Test(expected=ReceivedMessageInvalidException.class)
@@ -79,7 +79,7 @@ public class MessageReceiverUtilsTest {
     bm.setEntity(null);
     message.setPayload(bm);
     
-    utils.assertMessage(message);
+    utils.assertEntity(message);
   }
   
   @Test(expected=ReceivedMessageInvalidException.class)
@@ -89,7 +89,7 @@ public class MessageReceiverUtilsTest {
     bm.setSenderId(null);
     message.setPayload(bm);
     
-    utils.assertMessage(message);;
+    utils.assertEntity(message);;
   }
   
   @Test(expected=ReceivedMessageInvalidException.class)
@@ -97,7 +97,7 @@ public class MessageReceiverUtilsTest {
     Message<MessagePayload> message = validMessage();
     message.getPayload().getEntity().originalSize(0);
     
-    utils.assertMessage(message);
+    utils.assertEntity(message);
   }
   
   @Test(expected=ReceivedMessageInvalidException.class)
@@ -105,7 +105,7 @@ public class MessageReceiverUtilsTest {
     Message<MessagePayload> message = validMessage();
     message.getPayload().getEntity().entity(new byte[0]);
     
-    utils.assertMessage(message);
+    utils.assertEntity(message);
   }
   
   @Test(expected=ReceivedMessageInvalidException.class)
@@ -113,7 +113,7 @@ public class MessageReceiverUtilsTest {
     Message<MessagePayload> message = validMessage();
     message.getPayload().getEntity().entity(null);
     
-    utils.assertMessage(message);
+    utils.assertEntity(message);
   }
   
   

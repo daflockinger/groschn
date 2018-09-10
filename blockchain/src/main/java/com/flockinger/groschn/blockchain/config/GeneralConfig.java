@@ -23,11 +23,9 @@ public class GeneralConfig {
     return new ModelMapper();
   }
   
-  
   @Bean
   public ExecutorService executor() {
     ExecutorService executorService = Executors.newFixedThreadPool(threadPoolSize);
     return executorService;
   }
-  
 }

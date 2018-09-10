@@ -76,7 +76,7 @@ public class TransactionPoolListenerTest extends BaseCachingTest {
   
   @Test
   public void testReceiveMessage_withInvalidMessage_shouldDoNothing() {
-    doThrow(ReceivedMessageInvalidException.class).when(mockUtils).assertMessage(any());
+    doThrow(ReceivedMessageInvalidException.class).when(mockUtils).assertEntity(any());
     Message<MessagePayload> message = validMessage();
     
     listener.receiveMessage(message);

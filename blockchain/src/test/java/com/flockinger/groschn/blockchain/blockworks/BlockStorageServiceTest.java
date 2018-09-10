@@ -31,7 +31,7 @@ import com.flockinger.groschn.blockchain.transaction.TransactionManager;
 import com.flockinger.groschn.blockchain.validation.impl.BlockValidator;
 import com.google.common.collect.ImmutableList;
 
-@ContextConfiguration(classes = {BlockchainRepository.class, BlockStorageServiceImpl.class, })
+@ContextConfiguration(classes = {BlockchainRepository.class, BlockStorageServiceImpl.class})
 public class BlockStorageServiceTest extends BaseDbTest {
 
   @Autowired
