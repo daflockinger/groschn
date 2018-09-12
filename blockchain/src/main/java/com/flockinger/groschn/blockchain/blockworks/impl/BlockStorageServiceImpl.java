@@ -1,6 +1,7 @@
 package com.flockinger.groschn.blockchain.blockworks.impl;
 
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -74,12 +75,12 @@ public class BlockStorageServiceImpl implements BlockStorageService {
         .stream().map(this::mapToBlock)
         .findFirst().get();
   }
-
   
   @Override
   public List<Block> findBlocks(long fromPosition, long quantity) {
-    // TODO implement
-    return null;
+    var from = Math.max(fromPosition, 1);
+    var until = Math.max(from + quantity, 0);
+    return dao.findByPositionBetween(from-1, until).stream()
+        .map(this::mapToBlock).collect(Collectors.toList());
   }
-  
 }

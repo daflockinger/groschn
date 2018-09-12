@@ -4,10 +4,12 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.when;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.junit.After;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -134,7 +136,7 @@ public class BlockStorageServiceTest extends BaseDbTest {
   
   @Test
   public void testGetLatestProofOfWorkBlock_filledChain_shouldReturnCorrect() {
-    dao.saveAll(fakeBlocks());
+    dao.saveAll(fakeBlocks(23l,50l,54l,98l,101l));
     
     Block lastBlock = service.getLatestProofOfWorkBlock();
     assertNotNull("verify last block is not null", lastBlock);
@@ -156,23 +158,75 @@ public class BlockStorageServiceTest extends BaseDbTest {
         ConsensusType.PROOF_OF_WORK, lastBlock.getConsent().getType());
   }
   
+  @Test
+  public void testFindBlocks_withValidPositionAndQuandity_shouldWork() {
+    dao.saveAll(fakeBlocks(3l,2l,1l,4l,5l));
+    
+    List<Block> blocks = service.findBlocks(2, 3);
+    assertNotNull("verify received blocks are not null", blocks);
+    assertEquals("verify correct response amount", 3, blocks.size());
+    assertTrue("verify correct blocks are received", blocks.stream().map(Block::getPosition)
+        .collect(Collectors.toList()).containsAll(ImmutableList.of(2l,3l,4l)));
+    
+    List<Block> blocks3 = service.findBlocks(1, 2);
+    assertNotNull("verify received blocks are not null", blocks3);
+    assertEquals("verify correct response amount", 2, blocks3.size());
+    assertTrue("verify correct blocks are received", blocks3.stream().map(Block::getPosition)
+        .collect(Collectors.toList()).containsAll(ImmutableList.of(1l,2l)));
+    
+    List<Block> blocks2 = service.findBlocks(3, 5);
+    assertNotNull("verify received blocks are not null", blocks2);
+    assertEquals("verify correct response amount", 3, blocks2.size());
+    assertTrue("verify correct blocks are received", blocks2.stream().map(Block::getPosition)
+        .collect(Collectors.toList()).containsAll(ImmutableList.of(3l,4l,5l)));
+  }
   
-  private List<StoredBlock> fakeBlocks() {
+  @Test
+  public void testFindBlocks_withZeroQuantity_shouldWork() {
+    dao.saveAll(fakeBlocks(3l,2l,1l,4l,5l));
+    
+    List<Block> blocks = service.findBlocks(2, 0);
+    assertNotNull("verify received blocks are not null", blocks);
+    assertEquals("verify correct response amount", 0, blocks.size());
+  }
+  
+  @Test
+  public void testFindBlocks_withNegativeStartingPoint_shouldWork() {
+    dao.saveAll(fakeBlocks(3l,2l,1l,4l,5l));
+    
+    List<Block> blocks = service.findBlocks(-3, 3);
+    assertNotNull("verify received blocks are not null", blocks);
+    assertEquals("verify correct response amount", 3, blocks.size());
+    assertTrue("verify correct blocks are received", blocks.stream().map(Block::getPosition)
+        .collect(Collectors.toList()).containsAll(ImmutableList.of(1l,2l,3l)));
+  }
+  
+  @Test
+  public void testFindBlocks_withBothNegative_shouldWork() {
+    dao.saveAll(fakeBlocks(3l,2l,1l,4l,5l));
+    
+    List<Block> blocks = service.findBlocks(-3, -3);
+    assertNotNull("verify received blocks are not null", blocks);
+    assertEquals("verify correct response amount", 0, blocks.size());
+  }
+  
+  
+  private List<StoredBlock> fakeBlocks(long pos1, long pos2, long pos3, long pos4, long pos5) {
     Block block1 = TestDataFactory.getFakeBlock();
     block1.setConsent(fakeConsent(ConsensusType.PROOF_OF_WORK));
-    block1.setPosition(23l);
+    block1.setPosition(pos1);
     Block block2 = TestDataFactory.getFakeBlock();
     block2.setConsent(fakeConsent(ConsensusType.PROOF_OF_MAJORITY));
-    block2.setPosition(50l);
+    block2.setPosition(pos2);
     Block block3 = TestDataFactory.getFakeBlock();
     block3.setConsent(fakeConsent(ConsensusType.PROOF_OF_WORK));
-    block3.setPosition(54l);
+    block3.setPosition(pos3);
     Block block4 = TestDataFactory.getFakeBlock();
     block4.setConsent(fakeConsent(ConsensusType.PROOF_OF_WORK));
-    block4.setPosition(98l);
+    block4.setPosition(pos4);
     Block block7 = TestDataFactory.getFakeBlock();
     block7.setConsent(fakeConsent(ConsensusType.PROOF_OF_MAJORITY));
-    block7.setPosition(101l);
+    block7.setPosition(pos5);
     return ImmutableList.of(map(block1), map(block7), map(block3), map(block4), map(block2));
   }
   
