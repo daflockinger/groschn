@@ -20,14 +20,14 @@ import com.flockinger.groschn.messaging.model.Message;
 
 
 @Component
-public class MessageReceiverUtils {
+public class MessagingUtils {
   
   @Autowired
   private CompressionUtils compressor;
   
   private final Validator validator;
   
-  public MessageReceiverUtils() {
+  public MessagingUtils() {
     final ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
     validator = factory.getValidator();
   }

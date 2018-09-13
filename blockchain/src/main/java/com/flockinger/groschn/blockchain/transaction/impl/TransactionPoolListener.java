@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 import com.flockinger.groschn.blockchain.dto.MessagePayload;
 import com.flockinger.groschn.blockchain.exception.BlockchainException;
 import com.flockinger.groschn.blockchain.exception.messaging.ReceivedMessageInvalidException;
-import com.flockinger.groschn.blockchain.messaging.MessageReceiverUtils;
+import com.flockinger.groschn.blockchain.messaging.MessagingUtils;
 import com.flockinger.groschn.blockchain.model.Transaction;
 import com.flockinger.groschn.blockchain.transaction.TransactionManager;
 import com.flockinger.groschn.messaging.config.MainTopics;
@@ -21,7 +21,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 public class TransactionPoolListener implements MessageListener<MessagePayload> {
 
   @Autowired
-  private MessageReceiverUtils messageUtils;
+  private MessagingUtils messageUtils;
   @Autowired
   private TransactionManager transactionManager;
   @Autowired

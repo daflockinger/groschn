@@ -18,7 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import com.flockinger.groschn.blockchain.dto.MessagePayload;
-import com.flockinger.groschn.blockchain.messaging.MessageReceiverUtils;
+import com.flockinger.groschn.blockchain.messaging.MessagingUtils;
 import com.flockinger.groschn.blockchain.messaging.dto.SyncBatchRequest;
 import com.flockinger.groschn.blockchain.messaging.dto.SyncRequest;
 import com.flockinger.groschn.blockchain.messaging.dto.SyncResponse;
@@ -38,7 +38,7 @@ public class SyncInquirerImpl implements SyncInquirer {
   @Autowired
   private NetworkStatistics networkStatistics;
   @Autowired
-  private MessageReceiverUtils messageUtils;
+  private MessagingUtils messageUtils;
   @Autowired
   private MerkleRootCalculator merkleCalculator;
   

@@ -28,16 +28,16 @@ import com.flockinger.groschn.blockchain.util.CompressionUtils;
 import com.flockinger.groschn.messaging.model.Message;
 
 @RunWith(SpringRunner.class)
-@ContextConfiguration(classes = {MessageReceiverUtils.class})
+@ContextConfiguration(classes = {MessagingUtils.class})
 @TestExecutionListeners({DependencyInjectionTestExecutionListener.class, 
   MockitoTestExecutionListener.class, ResetMocksTestExecutionListener.class})
-public class MessageReceiverUtilsTest {
+public class MessagingUtilsTest {
 
   @MockBean
   private CompressionUtils compressor;
   
   @Autowired
-  private MessageReceiverUtils utils;
+  private MessagingUtils utils;
   
  
   @Test

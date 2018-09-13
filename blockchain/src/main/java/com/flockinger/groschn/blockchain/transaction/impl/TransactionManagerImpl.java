@@ -107,6 +107,7 @@ public class TransactionManagerImpl implements TransactionManager {
   }
 
 
+  //TODO add sequence number for transactions and keep them well!
   @Override
   public void storeTransaction(Transaction transaction) {
     Assessment assessment = validator.validate(transaction);

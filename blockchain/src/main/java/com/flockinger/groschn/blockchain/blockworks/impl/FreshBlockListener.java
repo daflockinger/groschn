@@ -10,7 +10,7 @@ import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
 import com.flockinger.groschn.blockchain.dto.MessagePayload;
 import com.flockinger.groschn.blockchain.exception.BlockchainException;
 import com.flockinger.groschn.blockchain.exception.messaging.ReceivedMessageInvalidException;
-import com.flockinger.groschn.blockchain.messaging.MessageReceiverUtils;
+import com.flockinger.groschn.blockchain.messaging.MessagingUtils;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.messaging.config.MainTopics;
 import com.flockinger.groschn.messaging.inbound.MessageListener;
@@ -24,7 +24,7 @@ public class FreshBlockListener implements MessageListener<MessagePayload> {
   @Autowired
   private BlockStorageService blockService;
   @Autowired
-  private MessageReceiverUtils messageUtils;
+  private MessagingUtils messageUtils;
   
   @Autowired
   @Qualifier("BlockId_Cache")

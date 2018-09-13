@@ -44,7 +44,7 @@ import com.flockinger.groschn.messaging.members.NetworkStatistics;
 import com.flockinger.groschn.messaging.model.Message;
 import com.flockinger.groschn.messaging.outbound.Broadcaster;
 
-@ContextConfiguration(classes = {SyncInquirerImpl.class, MessageReceiverUtils.class, CompressionUtils.class, FstSerializer.class})
+@ContextConfiguration(classes = {SyncInquirerImpl.class, MessagingUtils.class, CompressionUtils.class, FstSerializer.class})
 public class SyncInquirerTest extends BaseCachingTest{
 
   @MockBean(reset=MockReset.BEFORE)
@@ -54,7 +54,7 @@ public class SyncInquirerTest extends BaseCachingTest{
   @MockBean(reset=MockReset.BEFORE)
   private MerkleRootCalculator merkleCalculator;
   @Autowired
-  private MessageReceiverUtils utils;
+  private MessagingUtils utils;
   
   @Autowired
   private SyncInquirer inquirer;

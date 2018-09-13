@@ -30,7 +30,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.google.common.collect.ImmutableList;
 
 
-@ContextConfiguration(classes = {BlockFullSyncResponder.class, CompressionUtils.class, MessageReceiverUtils.class, FstSerializer.class})
+@ContextConfiguration(classes = {BlockFullSyncResponder.class, CompressionUtils.class, MessagingUtils.class, FstSerializer.class})
 public class BlockFullSyncResponderTest extends BaseCachingTest {
   
   @Autowired

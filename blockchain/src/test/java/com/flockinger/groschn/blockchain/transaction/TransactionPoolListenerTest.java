@@ -23,7 +23,7 @@ import com.flockinger.groschn.blockchain.TestDataFactory;
 import com.flockinger.groschn.blockchain.dto.MessagePayload;
 import com.flockinger.groschn.blockchain.exception.messaging.ReceivedMessageInvalidException;
 import com.flockinger.groschn.blockchain.exception.validation.AssessmentFailedException;
-import com.flockinger.groschn.blockchain.messaging.MessageReceiverUtils;
+import com.flockinger.groschn.blockchain.messaging.MessagingUtils;
 import com.flockinger.groschn.blockchain.model.Transaction;
 import com.flockinger.groschn.blockchain.transaction.impl.TransactionPoolListener;
 import com.flockinger.groschn.blockchain.util.CompressionUtils;
@@ -36,7 +36,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 public class TransactionPoolListenerTest extends BaseCachingTest {
 
   @MockBean
-  private MessageReceiverUtils mockUtils;
+  private MessagingUtils mockUtils;
   @MockBean
   private CompressionUtils compressor;
   @MockBean

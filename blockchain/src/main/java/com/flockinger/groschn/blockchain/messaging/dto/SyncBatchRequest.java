@@ -21,6 +21,14 @@ public class SyncBatchRequest {
     return new SyncBatchRequest();
   }
   
+  public static SyncBatchRequest build(SyncBatchRequest oldRequest) {
+    var request = new SyncBatchRequest();  
+    return request.batchSize(oldRequest.getBatchSize())
+        .idealReceiveNodeCount(oldRequest.getIdealReceiveNodeCount())
+        .maxFetchRetries(oldRequest.getMaxFetchRetries())
+        .topic(oldRequest.getTopic());
+  }
+  
   public long getFromPosition() {
     return fromPosition;
   }
