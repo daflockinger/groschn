@@ -14,7 +14,6 @@ import com.flockinger.groschn.blockchain.messaging.MessagingUtils;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.messaging.config.MainTopics;
 import com.flockinger.groschn.messaging.inbound.MessageListener;
-import com.flockinger.groschn.messaging.inbound.SubscriptionService;
 import com.flockinger.groschn.messaging.model.Message;
 import com.github.benmanes.caffeine.cache.Cache;
 
@@ -31,11 +30,6 @@ public class FreshBlockListener implements MessageListener<MessagePayload> {
   private Cache<String, String> blockIdCache;
   
   private final static Logger LOG = LoggerFactory.getLogger(FreshBlockListener.class);
-  
-  @Autowired
-  public FreshBlockListener(SubscriptionService<MessagePayload> subscriptionService) {
-    subscriptionService.subscribe(this);
-  }
   
   @Override
   public void receiveMessage(Message<MessagePayload> message) {

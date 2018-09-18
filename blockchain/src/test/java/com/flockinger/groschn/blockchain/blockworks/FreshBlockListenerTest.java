@@ -28,7 +28,6 @@ import com.flockinger.groschn.blockchain.messaging.MessagingUtils;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.util.CompressionUtils;
 import com.flockinger.groschn.messaging.config.MainTopics;
-import com.flockinger.groschn.messaging.inbound.SubscriptionService;
 import com.flockinger.groschn.messaging.model.Message;
 import com.github.benmanes.caffeine.cache.Cache;
 
@@ -40,8 +39,6 @@ public class FreshBlockListenerTest extends BaseCachingTest{
   private MessagingUtils mockUtils;
   @MockBean
   private CompressionUtils compressor;
-  @MockBean
-  private SubscriptionService<MessagePayload> subscriptionService;
   @MockBean(reset=MockReset.BEFORE)
   private BlockStorageService blockService;
   

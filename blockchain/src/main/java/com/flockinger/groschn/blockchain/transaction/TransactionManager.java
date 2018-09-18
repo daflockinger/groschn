@@ -7,7 +7,9 @@ import com.flockinger.groschn.blockchain.repository.model.TransactionStatus;
 
 public interface TransactionManager {
 
-  List<Transaction> fetchTransactionsFromPool(long maxByteSize);
+  List<Transaction> fetchTransactionsBySize(long maxByteSize);
+  
+  List<Transaction> fetchTransactionsPaginated(int page, int size);
   
   Transaction createSignedTransaction(TransactionDto transactionSigningRequest); 
   

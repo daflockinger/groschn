@@ -92,7 +92,7 @@ public class BlockMakerTest {
   @Test
   public void testProduceBlock_withValidTransactionsWithoutOnesFromTheMiner_shouldCreateStoreAndRewardBlock() {
     var transactions = createRandomTransactions(Optional.empty(), Optional.empty(), true);
-    when(transactionManager.fetchTransactionsFromPool(anyLong())).thenReturn(transactions);
+    when(transactionManager.fetchTransactionsBySize(anyLong())).thenReturn(transactions);
     mockValid();
 
     maker.produceBlock();
@@ -136,7 +136,7 @@ public class BlockMakerTest {
   @Test
   public void testProduceBlock_withValidTransactionsWithOnlyAnIncomeOneFromTheMiner_shouldCreateStoreAndRewardBlock() {
     var transactions = createRandomTransactions(Optional.of(MASTER_KEY), Optional.of(10l), true);
-    when(transactionManager.fetchTransactionsFromPool(anyLong())).thenReturn(transactions);
+    when(transactionManager.fetchTransactionsBySize(anyLong())).thenReturn(transactions);
     mockValid();
 
     maker.produceBlock();
@@ -186,7 +186,7 @@ public class BlockMakerTest {
   @Test
   public void testProduceBlock_withValidTransactionsWithAlsoAnExpenseOneFromTheMiner_shouldCreateStoreAndAddRewardBlock() {
     var transactions = createRandomTransactions(Optional.of(MASTER_KEY), Optional.of(10l), false);
-    when(transactionManager.fetchTransactionsFromPool(anyLong())).thenReturn(transactions);
+    when(transactionManager.fetchTransactionsBySize(anyLong())).thenReturn(transactions);
     mockValid();
 
     maker.produceBlock();
@@ -238,7 +238,7 @@ public class BlockMakerTest {
 
   @Test
   public void testProduceBlock_withEmptyTransactions_shouldCreateRewardOnlyBlock() {
-    when(transactionManager.fetchTransactionsFromPool(anyLong())).thenReturn(new ArrayList<>());
+    when(transactionManager.fetchTransactionsBySize(anyLong())).thenReturn(new ArrayList<>());
     mockValid();
 
     maker.produceBlock();
@@ -274,7 +274,7 @@ public class BlockMakerTest {
   @Test
   public void testProduceBlock_withStorageServiceThrowingException_shouldDoNothing() {
     when(consensusFactory.reachConsensus(anyList())).thenReturn(new Block());
-    when(transactionManager.fetchTransactionsFromPool(anyLong())).thenReturn(new ArrayList<>());
+    when(transactionManager.fetchTransactionsBySize(anyLong())).thenReturn(new ArrayList<>());
     when(storageService.saveInBlockchain(any())).thenThrow(BlockValidationException.class);
 
     maker.produceBlock();
@@ -284,14 +284,14 @@ public class BlockMakerTest {
   public void testProduceBlock_withConsensusFactoryThrowingException_shouldDoNothing() {
     when(consensusFactory.reachConsensus(anyList()))
         .thenThrow(ReachingConsentFailedException.class);
-    when(transactionManager.fetchTransactionsFromPool(anyLong())).thenReturn(new ArrayList<>());
+    when(transactionManager.fetchTransactionsBySize(anyLong())).thenReturn(new ArrayList<>());
 
     maker.produceBlock();
   }
 
 
   private void verifyRegularMocks() {
-    verify(transactionManager).fetchTransactionsFromPool(anyLong());
+    verify(transactionManager).fetchTransactionsBySize(anyLong());
     ArgumentCaptor<TransactionDto> requestCaptor = ArgumentCaptor.forClass(TransactionDto.class);
     verify(transactionManager).createSignedTransaction(requestCaptor.capture());
     TransactionDto request = requestCaptor.getValue();

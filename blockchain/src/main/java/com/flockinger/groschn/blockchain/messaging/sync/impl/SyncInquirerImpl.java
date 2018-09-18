@@ -45,7 +45,7 @@ public class SyncInquirerImpl implements SyncInquirer {
   @Value("${blockchain.node.id}")
   private String nodeId;
   
-  private final static Logger LOG = LoggerFactory.getLogger(BlockFullSynchronizer.class);
+  private final static Logger LOG = LoggerFactory.getLogger(SyncInquirerImpl.class);
   public SecureRandom randomizer = new SecureRandom();
 
   @Override

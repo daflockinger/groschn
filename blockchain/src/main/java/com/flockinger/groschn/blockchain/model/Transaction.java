@@ -7,9 +7,6 @@ public class Transaction implements Hashable {
   * 
   */
   private static final long serialVersionUID = -3848087917482658536L;
-  
-
-  private String id;
 
   /**
    * Timestamp when the transaction is done
@@ -27,14 +24,6 @@ public class Transaction implements Hashable {
 
   public void setTransactionHash(String transactionHash) {
     this.transactionHash = transactionHash;
-  }
-
-  public String getId() {
-    return id;
-  }
-
-  public void setId(String id) {
-    this.id = id;
   }
 
   public List<TransactionInput> getInputs() {

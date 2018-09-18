@@ -5,7 +5,7 @@ import static com.flockinger.groschn.blockchain.TestDataFactory.createRandomTran
 import static com.flockinger.groschn.blockchain.TestDataFactory.createRandomTransactionWith;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -23,7 +23,6 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.mongodb.MongoDbFactory;
-import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.test.context.ContextConfiguration;
 import com.flockinger.groschn.blockchain.BaseDbTest;
 import com.flockinger.groschn.blockchain.TestDataFactory;
@@ -93,7 +92,7 @@ public class TransactionManagerTest extends BaseDbTest {
   @Test
   public void testFetchTransactionsFromPool_withSomeByteSize_shouldReturnCorrect() {
     poolDao.saveAll(fakePoolTransactions);
-    List<Transaction> transactions = manager.fetchTransactionsFromPool(5000);
+    List<Transaction> transactions = manager.fetchTransactionsBySize(5000);
     long size = transactions.stream()
         .map(compressor::compress)
         .mapToLong(entity -> entity.getEntity().length)
@@ -101,15 +100,54 @@ public class TransactionManagerTest extends BaseDbTest {
     assertNotNull("verify returned transactions are not null", transactions);
     assertFalse("verify returned transactions are not empty", transactions.isEmpty());
     assertTrue("verify that returned transactions are smaller than the limit", size < 5000);
+    assertEquals("verify first returned transaction should be oldest raw one", "993", transactions.get(0).getTransactionHash());
+    assertEquals("verify second returned transaction should be 2nd oldest raw one", "995", transactions.get(1).getTransactionHash());
+    assertEquals("verify third returned transaction should be 3rd oldest raw one", "998", transactions.get(2).getTransactionHash());
+    assertEquals("verify fourth returned transaction should be 4th oldest raw one", "999", transactions.get(3).getTransactionHash());
+    
   }
   
   @Test
   public void testFetchTransactionsFromPool_withByteSizeZero_shouldReturnEmpty() {
     poolDao.saveAll(fakePoolTransactions);
     
-    List<Transaction> transactions = manager.fetchTransactionsFromPool(0);
+    List<Transaction> transactions = manager.fetchTransactionsBySize(0);
     assertNotNull("verify returned transactions are not null", transactions);
     assertTrue("verify returned transactions are empty", transactions.isEmpty());
+  }
+  
+  @Test
+  public void testFetchTransactionsPaginated_withNormalValues_shouldWork() {
+    poolDao.saveAll(fakePoolTransactions);
+    List<Transaction> transactions = manager.fetchTransactionsPaginated(1, 2);
+
+    assertNotNull("verify returned transactions are not null", transactions);
+    assertEquals("verify that returned transaction size is correct", 2, transactions.size());
+    assertEquals("verify third returned transaction should be 3rd oldest raw one", "998", transactions.get(0).getTransactionHash());
+    assertEquals("verify fourth returned transaction should be 4th oldest raw one", "999", transactions.get(1).getTransactionHash());
+    
+    List<Transaction> transactions2 = manager.fetchTransactionsPaginated(1, 3);
+    assertNotNull("verify returned transactions are not null", transactions2);
+    assertEquals("verify that returned transaction size is correct", 1, transactions2.size());
+    assertEquals("verify fourth returned transaction should be 4th oldest raw one", "999", transactions2.get(0).getTransactionHash());
+  }
+  
+  @Test
+  public void testFetchTransactionsPaginated_withZeroValues_shouldAtLeastONe() {
+    poolDao.saveAll(fakePoolTransactions);
+    
+    List<Transaction> transactions = manager.fetchTransactionsPaginated(0, 0);
+    assertNotNull("verify returned transactions are not null", transactions);
+    assertEquals("verify that returned transaction size is correct", 1, transactions.size());
+  }
+  
+  @Test
+  public void testFetchTransactionsPaginated_withTooHighValues_shouldReturnEmpty() {
+    poolDao.saveAll(fakePoolTransactions);
+    
+    List<Transaction> transactions = manager.fetchTransactionsPaginated(10, 100);
+    assertNotNull("verify returned transactions are not null", transactions);
+    assertEquals("verify that returned transaction size is correct", 0, transactions.size());
   }
   
   
@@ -124,7 +162,7 @@ public class TransactionManagerTest extends BaseDbTest {
     requestOutput.setSequenceNumber(2l);
     requestOutput.setTimestamp(2000l);
     blockDao.saveAll(fakeBlocks(requestOutput, "bestHashEver"));
-    // given
+    // given124l
     TransactionDto request = new TransactionDto();
     TransactionStatementDto requestInput  = new TransactionStatementDto();
     requestInput.setAmount(999d);
@@ -137,7 +175,6 @@ public class TransactionManagerTest extends BaseDbTest {
     Transaction signedTransaction = manager.createSignedTransaction(request);
     // assert
     assertNotNull("verify signed transaction is not null", signedTransaction);
-    assertNotNull("verify signed transaction has an ID", signedTransaction.getId());
     assertEquals("verify correct transaction hash", "some hash",
         signedTransaction.getTransactionHash());
     assertEquals("verify transaction has one input", 1, signedTransaction.getInputs().size());
@@ -197,7 +234,6 @@ public class TransactionManagerTest extends BaseDbTest {
     Transaction signedTransaction = manager.createSignedTransaction(request);
     // assert
     assertNotNull("verify signed transaction is not null", signedTransaction);
-    assertNotNull("verify signed transaction has an ID", signedTransaction.getId());
   }
   
   @Test(expected = CantConfigureSigningAlgorithmException.class)
@@ -371,7 +407,7 @@ public class TransactionManagerTest extends BaseDbTest {
     tr.setInputs(ImmutableList.of(createRandomTransactionInputWith(1),createRandomTransactionInputWith(2),
         createRandomTransactionInputWith(3)));
     tr.setStatus(status);
-    tr.setTransactionHash(UUID.randomUUID().toString());
+    tr.setTransactionHash(Long.toString(createdAt));
     return tr;
   }
   

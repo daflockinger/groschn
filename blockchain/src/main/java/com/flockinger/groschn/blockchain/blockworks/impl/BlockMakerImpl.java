@@ -57,7 +57,7 @@ public class BlockMakerImpl implements BlockMaker {
   @Override
   public void produceBlock() {
     List<Transaction> transactions =
-        transactionManager.fetchTransactionsFromPool(Block.MAX_TRANSACTION_BYTE_SIZE);
+        transactionManager.fetchTransactionsBySize(Block.MAX_TRANSACTION_BYTE_SIZE);
     try {
       addRewardTransaction(transactions);
       forgeBlockUnsafe(transactions);

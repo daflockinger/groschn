@@ -25,7 +25,7 @@ import com.flockinger.groschn.messaging.config.MainTopics;
 import com.github.benmanes.caffeine.cache.Cache;
 
 @Service
-public class BlockFullSynchronizer implements SyncKeeper {
+public class BlockSynchronizer implements SyncKeeper {
   
   @Autowired
   private BlockStorageService blockService;
@@ -38,7 +38,7 @@ public class BlockFullSynchronizer implements SyncKeeper {
   @Value("${blockchain.node.id}")
   private String nodeId;
   
-  private final static Logger LOG = LoggerFactory.getLogger(BlockFullSynchronizer.class);
+  private final static Logger LOG = LoggerFactory.getLogger(BlockSynchronizer.class);
  
   /**
    * 

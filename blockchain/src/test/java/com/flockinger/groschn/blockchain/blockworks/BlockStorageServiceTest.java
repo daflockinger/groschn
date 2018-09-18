@@ -86,8 +86,6 @@ public class BlockStorageServiceTest extends BaseDbTest {
     assertEquals("verify correct block transaction size", freshBlock.getTransactions().size(), storedBlock.get().getTransactions().size());
     Transaction firstTransaction = freshBlock.getTransactions().get(0);
     StoredTransaction firstUncompressedTr = storedBlock.get().getTransactions().get(0);
-    assertEquals("verify correct block first transaction id", firstTransaction.getId()
-        , firstUncompressedTr.getTransactionId());
     assertEquals("verify correct block first transaction inputs size", firstTransaction.getInputs().size()
         , firstUncompressedTr.getInputs().size());
     assertEquals("verify correct block first transaction input amount", firstTransaction.getInputs().get(0).getAmount(), 

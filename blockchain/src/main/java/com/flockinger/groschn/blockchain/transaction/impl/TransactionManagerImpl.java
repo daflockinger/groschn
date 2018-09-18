@@ -1,14 +1,17 @@
 package com.flockinger.groschn.blockchain.transaction.impl;
 
+import static java.lang.Math.abs;
+import static java.lang.Math.max;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
-import java.util.UUID;
 import java.util.stream.Collectors;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.mongodb.MongoDbFactory;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -33,7 +36,6 @@ import com.flockinger.groschn.blockchain.validation.Assessment;
 import com.flockinger.groschn.blockchain.validation.Validator;
 import com.flockinger.groschn.blockchain.wallet.WalletService;
 import com.google.common.collect.ImmutableList;
-import com.mongodb.Mongo;
 
 @Service
 public class TransactionManagerImpl implements TransactionManager {
@@ -64,9 +66,9 @@ public class TransactionManagerImpl implements TransactionManager {
   }
 
   @Override
-  public List<Transaction> fetchTransactionsFromPool(long maxByteSize) {
+  public List<Transaction> fetchTransactionsBySize(long maxByteSize) {
     var transactionIterator =
-        transactionDao.findByStatusOrderByCreatedAtDesc(TransactionStatus.RAW).iterator();
+        transactionDao.findByStatusOrderByCreatedAtAsc(TransactionStatus.RAW).iterator();
     var transactions = new ArrayList<Transaction>();
     var compressedTransactionsSize = 0l;
 
@@ -95,7 +97,6 @@ public class TransactionManagerImpl implements TransactionManager {
       signTransactionInput(input, transaction.getOutputs(), walletPrivateKey);
     }
     transaction.setTransactionHash(hashGenerator.generateHash(transaction));
-    transaction.setId(UUID.randomUUID().toString());
     validator.validate(transaction);
     return transaction;
   }
@@ -107,7 +108,6 @@ public class TransactionManagerImpl implements TransactionManager {
   }
 
 
-  //TODO add sequence number for transactions and keep them well!
   @Override
   public void storeTransaction(Transaction transaction) {
     Assessment assessment = validator.validate(transaction);
@@ -117,16 +117,16 @@ public class TransactionManagerImpl implements TransactionManager {
     if (transactionDao.existsByTransactionHash(transaction.getTransactionHash())) {
       throw new TransactionAlreadyClearedException("Transaction already exists in pool!");
     }
-    StoredPoolTransaction toStoreTransaction = mapToPoolTransaction(transaction);
+    StoredPoolTransaction toStoreTransaction = mapToStoredPoolTransaction(transaction);
     toStoreTransaction.setCreatedAt(new Date());
     toStoreTransaction.setStatus(TransactionStatus.RAW);
     transactionDao.save(toStoreTransaction);
   }
 
-  private StoredPoolTransaction mapToPoolTransaction(Transaction transaction) {
+  private StoredPoolTransaction mapToStoredPoolTransaction(Transaction transaction) {
     return mapper.map(transaction, StoredPoolTransaction.class);
   }
-
+  
   @Override
   public void updateTransactionStatuses(List<Transaction> transactions, TransactionStatus status) {
     List<String> transactionHashes = transactions.stream().map(Transaction::getTransactionHash)
@@ -136,5 +136,13 @@ public class TransactionManagerImpl implements TransactionManager {
         .addCriteria(Criteria.where(StoredPoolTransaction.TX_HASH_NAME).in(transactionHashes));
     Update updatedStatus = Update.update(StoredPoolTransaction.STATUS_NAME, status);
     template.updateMulti(whereTransactionHashesIn, updatedStatus, StoredPoolTransaction.class);
+  }
+
+  @Override
+  public List<Transaction> fetchTransactionsPaginated(int page, int size) {
+    int perfectSize = max(1, abs(size));
+    Page<StoredPoolTransaction> transactions = transactionDao
+        .findByStatusOrderByCreatedAtAsc(TransactionStatus.RAW, PageRequest.of(abs(page), perfectSize));
+    return transactions.stream().map(this::mapToRegularTransaction).collect(Collectors.toList());
   }
 }

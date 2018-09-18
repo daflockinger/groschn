@@ -50,8 +50,6 @@ public class FstSerializerTest {
     assertEquals("verify correct block transaction size", fakeBlock.getTransactions().size(), deserializedBlock.getTransactions().size());
     Transaction firstTransaction = fakeBlock.getTransactions().get(0);
     Transaction firstUncompressedTr = deserializedBlock.getTransactions().get(0);
-    assertEquals("verify correct block first transaction id", firstTransaction.getId()
-        , firstUncompressedTr.getId());
     assertEquals("verify correct block first transaction inputs size", firstTransaction.getInputs().size()
         , firstUncompressedTr.getInputs().size());
     assertEquals("verify correct block first transaction input amount", firstTransaction.getInputs().get(0).getAmount(), 

@@ -22,15 +22,15 @@ import com.flockinger.groschn.blockchain.messaging.dto.SyncBatchRequest;
 import com.flockinger.groschn.blockchain.messaging.dto.SyncResponse;
 import com.flockinger.groschn.blockchain.messaging.dto.SyncStatus;
 import com.flockinger.groschn.blockchain.messaging.sync.SyncInquirer;
-import com.flockinger.groschn.blockchain.messaging.sync.impl.BlockFullSynchronizer;
+import com.flockinger.groschn.blockchain.messaging.sync.impl.BlockSynchronizer;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.repository.model.StoredBlock;
 import com.flockinger.groschn.messaging.config.MainTopics;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.google.common.collect.ImmutableList;
 
-@ContextConfiguration(classes = {BlockFullSynchronizer.class})
-public class BlockFullSynchronizerTest extends BaseCachingTest {
+@ContextConfiguration(classes = {BlockSynchronizer.class})
+public class BlockSynchronizerTest extends BaseCachingTest {
   
   @MockBean
   private BlockStorageService blockService;
@@ -41,7 +41,7 @@ public class BlockFullSynchronizerTest extends BaseCachingTest {
   private SyncInquirer inquirer;
   
   @Autowired
-  private BlockFullSynchronizer synchronizer;
+  private BlockSynchronizer synchronizer;
   
   @Before
   public void setup() {
@@ -216,14 +216,14 @@ public class BlockFullSynchronizerTest extends BaseCachingTest {
     blocks.addAll(ImmutableList.of(block8, block5, block10, block6, block9));
     return getFakeResponse(isLast, startPos, blocks);
   }
-  
+
   Optional<SyncResponse<Block>> getFakeResponse(boolean isLast, long startPos, List<Block> blocks) {
     var response = new SyncResponse<Block>();
     response.setEntities(blocks);
     response.setLastPositionReached(isLast);
     response.setStartingPosition(startPos);
-  return Optional.ofNullable(response);
-}
+    return Optional.ofNullable(response);
+  }
   
   
 }

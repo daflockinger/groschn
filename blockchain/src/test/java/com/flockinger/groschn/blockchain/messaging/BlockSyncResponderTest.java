@@ -20,7 +20,7 @@ import com.flockinger.groschn.blockchain.BaseCachingTest;
 import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
 import com.flockinger.groschn.blockchain.messaging.dto.SyncRequest;
 import com.flockinger.groschn.blockchain.messaging.dto.SyncResponse;
-import com.flockinger.groschn.blockchain.messaging.sync.impl.BlockFullSyncResponder;
+import com.flockinger.groschn.blockchain.messaging.sync.impl.BlockSyncResponder;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.util.CompressedEntity;
 import com.flockinger.groschn.blockchain.util.CompressionUtils;
@@ -30,8 +30,8 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.google.common.collect.ImmutableList;
 
 
-@ContextConfiguration(classes = {BlockFullSyncResponder.class, CompressionUtils.class, MessagingUtils.class, FstSerializer.class})
-public class BlockFullSyncResponderTest extends BaseCachingTest {
+@ContextConfiguration(classes = {BlockSyncResponder.class, CompressionUtils.class, MessagingUtils.class, FstSerializer.class})
+public class BlockSyncResponderTest extends BaseCachingTest {
   
   @Autowired
   private CompressionUtils compressor;
@@ -44,7 +44,7 @@ public class BlockFullSyncResponderTest extends BaseCachingTest {
   private Cache<String, String> syncBlockIdCache;
   
   @Autowired 
-  private BlockFullSyncResponder responder;
+  private BlockSyncResponder responder;
   
   @Before
   public void setup() {

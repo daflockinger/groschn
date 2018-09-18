@@ -48,7 +48,6 @@ public class TestDataFactory {
   
   public static List<Transaction> fakeTransactions() {
     Transaction tra1 = new Transaction();
-    tra1.setId("2345");
     tra1.setInputs(ImmutableList.of(fakeInput(86l), fakeInput(14l)));
     tra1.setOutputs(ImmutableList.of(fakeOutput(27l), fakeOutput(73l)));
     tra1.setLockTime(934857l);
@@ -192,7 +191,6 @@ public class TestDataFactory {
   
   public static Transaction createRewardTransaction(boolean onlyReward) {
     Transaction transaction = new Transaction();
-    transaction.setId(UUID.randomUUID().toString());
     transaction.setTransactionHash("0FABDD34578");
     List<TransactionInput> inputs = new ArrayList<>();
     TransactionInput input1 = new TransactionInput();
@@ -252,7 +250,6 @@ public class TestDataFactory {
   
   public static Transaction createValidTransaction(String expense1, String expense2, String expense3, String income1) {
     Transaction transaction = new Transaction();
-    transaction.setId(UUID.randomUUID().toString());
     transaction.setTransactionHash("0FABDD34578");
     List<TransactionInput> inputs = new ArrayList<>();
     TransactionInput input1 = new TransactionInput();

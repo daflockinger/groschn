@@ -34,7 +34,7 @@ public class MerkleRootCalculatorTest {
     String rootHash = calc.calculateMerkleRootHash(fakeTransactions(9,false));
     
     assertNotNull("verify root hash is not null", rootHash);
-    assertEquals("verify that root hash is correct", "c36896c8ab5f5a133146c00157723c9025bab6ba2c3194d1407ae21b3591285c68d4f19e5613de9da4963906245131093f2de7b2c13fc0ca63d57cb6af2b9703",
+    assertEquals("verify that root hash is correct", "a84aaa38fb5fc95d4578bbf4e730a3be34ebf444d7c3ccc67e285f6805cb9012ecbb69ea02236e219b44d370b25effb9b74f457eb7a667735b0fb4ed7856c1e5",
         rootHash);
     
     String rootHashOneTransactionLess = calc.calculateMerkleRootHash(fakeTransactions(8, false));
