@@ -8,6 +8,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.junit.Before;
@@ -18,9 +19,10 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ContextConfiguration;
 import com.flockinger.groschn.blockchain.BaseCachingTest;
 import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
+import com.flockinger.groschn.blockchain.messaging.dto.BlockInfo;
 import com.flockinger.groschn.blockchain.messaging.dto.SyncRequest;
 import com.flockinger.groschn.blockchain.messaging.dto.SyncResponse;
-import com.flockinger.groschn.blockchain.messaging.sync.impl.BlockSyncResponder;
+import com.flockinger.groschn.blockchain.messaging.sync.impl.BlockSyncInfoResponder;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.util.CompressedEntity;
 import com.flockinger.groschn.blockchain.util.CompressionUtils;
@@ -29,10 +31,9 @@ import com.flockinger.groschn.messaging.members.NetworkStatistics;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.google.common.collect.ImmutableList;
 
+@ContextConfiguration(classes = {BlockSyncInfoResponder.class, CompressionUtils.class, MessagingUtils.class, FstSerializer.class})
+public class BlockSyncInfoResponderTest extends BaseCachingTest {
 
-@ContextConfiguration(classes = {BlockSyncResponder.class, CompressionUtils.class, MessagingUtils.class, FstSerializer.class})
-public class BlockSyncResponderTest extends BaseCachingTest {
-  
   @Autowired
   private CompressionUtils compressor;
   @MockBean
@@ -40,11 +41,11 @@ public class BlockSyncResponderTest extends BaseCachingTest {
   @MockBean
   private BlockStorageService blockService;
   @Autowired
-  @Qualifier("SyncBlockId_Cache")
+  @Qualifier("SyncBlockInfoId_Cache")
   private Cache<String, String> syncBlockIdCache;
   
   @Autowired 
-  private BlockSyncResponder responder;
+  private BlockSyncInfoResponder responder;
   
   @Before
   public void setup() {
@@ -52,7 +53,7 @@ public class BlockSyncResponderTest extends BaseCachingTest {
   }
   
   @Test
-  public void testRespond_withValidRequestAndEnoughBlocks_shouldRespondNormal() {
+  public void testRespond_withValidRequestAndEnoughBlockInfos_shouldRespondNormal() {
     var message = validMessage();
     message.getPayload().setSenderId("pfennig-master");
     SyncRequest request = new SyncRequest();
@@ -79,13 +80,20 @@ public class BlockSyncResponderTest extends BaseCachingTest {
     assertEquals("verify that response starting position is correct", 123l, 
         response.get().getStartingPosition().longValue());
     assertEquals("verify that response entity size is correct", 12l, response.get().getEntities().size());
-    assertTrue("verify that response entity is correct class", Block.class.isInstance(response.get().getEntities().get(0)));
+    assertTrue("verify that response entity is correct class", BlockInfo.class.isInstance(response.get().getEntities().get(0)));
+    BlockInfo firstInfo = (BlockInfo)response.get().getEntities().get(0);
+    assertTrue("verify correct first response entity hash", firstInfo.getBlockHash().startsWith("0"));
+    assertEquals("verify correct first response entity position", 0, firstInfo.getPosition().longValue());
+    BlockInfo secondInfo = (BlockInfo)response.get().getEntities().get(1);
+    assertTrue("verify correct first response entity hash", secondInfo.getBlockHash().startsWith("1"));
+    assertEquals("verify correct first response entity position", 1, secondInfo.getPosition().longValue());
+   
     assertEquals("verify that response is not the last sync", false, response.get().isLastPositionReached());
   }
   
   
   @Test
-  public void testRespond_withValidRequestAndLastBlocks_shouldRespondEndOfSyncing() {
+  public void testRespond_withValidRequestAndLastBlockInfos_shouldRespondEndOfSyncing() {
     var message = validMessage();
     message.getPayload().setSenderId("pfennig-master");
     SyncRequest request = new SyncRequest();
@@ -192,6 +200,13 @@ public class BlockSyncResponderTest extends BaseCachingTest {
   }
   
   private List<Block> someBlocks(int size) {
-    return IntStream.range(0, size).mapToObj(count -> new Block()).collect(Collectors.toList());
+    return IntStream.range(0, size).mapToObj(this::newBlock).collect(Collectors.toList());
+  }
+  
+  private Block newBlock(int count) {
+    var block = new Block();
+    block.setPosition(Integer.toUnsignedLong(count));
+    block.setHash(count + UUID.randomUUID().toString());
+    return block;
   }
 }

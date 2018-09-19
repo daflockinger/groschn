@@ -39,7 +39,8 @@ public abstract class GeneralMessageResponder implements MessageResponder<Messag
       isMessageFromALegitSender(request.getPayload().getSenderId());
       assertMessageIsNew(request.getId());
       Optional<SyncRequest> syncRequest = messageUtils.extractPayload(request, SyncRequest.class);
-      if (syncRequest.isPresent() && isRequestValid(syncRequest.get())) {
+      if (syncRequest.isPresent()) {
+        messageUtils.assertEntity(syncRequest.get());
         response = Optional.ofNullable(createResponse(syncRequest.get()));
       }
     } catch (BlockchainException e) {
@@ -62,9 +63,5 @@ public abstract class GeneralMessageResponder implements MessageResponder<Messag
     if(!doesSenderExist) {
       throw new ReceivedMessageInvalidException("Sender is not existing in network with ID: " + senderId);
     }
-  }
-  
-  private boolean isRequestValid(SyncRequest request) {
-    return request.getStartingPosition() != null && request.getStartingPosition() > 0;
   }
 }

@@ -64,7 +64,7 @@ public class SyncInquirerImpl implements SyncInquirer {
     var syncPartners = getSyncPartners(request.getIdealReceiveNodeCount() * 2);
     var idealNodeCount = request.getIdealReceiveNodeCount();
     var minResultsNeeded = (syncPartners.size() >= idealNodeCount) ? idealNodeCount : 1; 
-    MessagePayload payload = createPayload(request.getFromPosition());
+    MessagePayload payload = createPayload(request);
     var runningSyncRequests = syncPartners.stream()
         .map(id -> sendMessageAsync(id, payload, request.getTopic())).collect(toList());
     var arrivedMessages = new ArrayList<Message<MessagePayload>>();
@@ -111,9 +111,10 @@ public class SyncInquirerImpl implements SyncInquirer {
     return selectedNodes;
   }
   
-  private MessagePayload createPayload(Long startingPosition) {
+  private MessagePayload createPayload(SyncBatchRequest batchRequest) {
     SyncRequest request = new SyncRequest();
-    request.setStartingPosition(startingPosition);
+    request.setStartingPosition(batchRequest.getFromPosition());
+    request.setRequestPackageSize(Integer.toUnsignedLong(batchRequest.getBatchSize()));
     return messageUtils.packageMessage(request, nodeId).getPayload();
   }
   

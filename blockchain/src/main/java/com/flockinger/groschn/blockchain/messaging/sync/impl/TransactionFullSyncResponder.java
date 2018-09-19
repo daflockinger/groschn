@@ -29,16 +29,13 @@ public class TransactionFullSyncResponder extends GeneralMessageResponder {
   @Value("${blockchain.node.id}")
   private String nodeId;
   
-  private final static int TRANSACTION_REQUEST_PACKAGE_SIZE = 100;
-
-  
   protected Message<MessagePayload> createResponse(SyncRequest request) {
     int page = request.getStartingPosition().intValue() - 1;
-    int size = request.getStartingPosition().intValue() * TRANSACTION_REQUEST_PACKAGE_SIZE;
+    int size = request.getStartingPosition().intValue() * request.getRequestPackageSize().intValue();
     List<Transaction> transactions = transactionManager.fetchTransactionsPaginated(page, size);
     SyncResponse<Transaction> response = new SyncResponse<>();
     response.setEntities(transactions);
-    response.setLastPositionReached(transactions.size() < TRANSACTION_REQUEST_PACKAGE_SIZE);
+    response.setLastPositionReached(transactions.size() < request.getRequestPackageSize());
     response.setStartingPosition(request.getStartingPosition());
     
     return messageUtils.packageMessage(response, nodeId);

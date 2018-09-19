@@ -32,6 +32,7 @@ import com.flockinger.groschn.blockchain.BaseCachingTest;
 import com.flockinger.groschn.blockchain.dto.MessagePayload;
 import com.flockinger.groschn.blockchain.exception.messaging.ReceivedMessageInvalidException;
 import com.flockinger.groschn.blockchain.messaging.dto.SyncBatchRequest;
+import com.flockinger.groschn.blockchain.messaging.dto.SyncRequest;
 import com.flockinger.groschn.blockchain.messaging.dto.SyncResponse;
 import com.flockinger.groschn.blockchain.messaging.sync.SyncInquirer;
 import com.flockinger.groschn.blockchain.messaging.sync.impl.SyncInquirerImpl;
@@ -82,7 +83,7 @@ public class SyncInquirerTest extends BaseCachingTest{
       }});
     
     when(broadcaster.sendRequest(any(), anyString(), any(MainTopics.class)))
-    .thenReturn(fakeFuture(1,2)).thenReturn(fakeFuture(1,9, 15, false)).thenReturn(fakeFuture(1,2))
+    .thenReturn(fakeFuture(1,2)).thenReturn(fakeFuture(1,9, 15, false)).thenReturn(fakeFuture(1,12))
     .thenReturn(fakeFuture(100,13)).thenReturn(fakeFuture(100,15)).thenReturn(fakeFuture(100,19));
     
     
@@ -92,7 +93,17 @@ public class SyncInquirerTest extends BaseCachingTest{
     assertNotNull("verify entities are not null", response.get().getEntities());
     assertEquals("verify correct amount responded entities", 10, response.get().getEntities().size());
     
-    verify(broadcaster,times(6)).sendRequest(any(), anyString(), any(MainTopics.class));
+    var requestCaptor = ArgumentCaptor.forClass(Message.class);
+   
+    verify(broadcaster,times(6)).sendRequest(requestCaptor.capture(), anyString(), any(MainTopics.class));
+    var bla = requestCaptor.getAllValues();
+    Optional<SyncRequest> firstSentSyncReq = utils.extractPayload((Message<MessagePayload>)requestCaptor.getAllValues().get(0), SyncRequest.class);
+    assertTrue("verify non null request is broadcasted", firstSentSyncReq.isPresent());
+    assertEquals("verify non null request has correct start position", 2l, 
+        firstSentSyncReq.get().getStartingPosition().longValue());
+    assertEquals("verify non null request has correct batch size", 10l, 
+        firstSentSyncReq.get().getRequestPackageSize().longValue());
+    
     verify(merkleCalculator, atLeast(3)).calculateMerkleRootHash(anyList());
     verify(networkStatistics, times(1)).activeNodeCount();
     verify(networkStatistics, times(1)).activeNodeIds();

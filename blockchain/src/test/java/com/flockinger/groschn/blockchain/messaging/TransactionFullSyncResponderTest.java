@@ -53,6 +53,7 @@ public class TransactionFullSyncResponderTest extends BaseCachingTest {
     message.getPayload().setSenderId("pfennig-master");
     SyncRequest request = new SyncRequest();
     request.setStartingPosition(1l);
+    request.setRequestPackageSize(100l);
     message.getPayload().setEntity(compressor.compress(request));
     when(transactionManager.fetchTransactionsPaginated(anyInt(), anyInt())).thenReturn(createBlockTransactions(false, false));
     when(networkStatistics.activeNodeIds()).thenReturn(ImmutableList.of("groschn-master-123", "pfennig-master"));
@@ -90,6 +91,23 @@ public class TransactionFullSyncResponderTest extends BaseCachingTest {
     message.getPayload().setSenderId("pfennig-master");
     SyncRequest request = new SyncRequest();
     request.setStartingPosition(null);
+    request.setRequestPackageSize(100l);
+    message.getPayload().setEntity(compressor.compress(request));
+    when(networkStatistics.activeNodeIds()).thenReturn(ImmutableList.of("groschn-master-123", "pfennig-master"));
+    when(transactionManager.fetchTransactionsPaginated(anyInt(), anyInt())).thenReturn(createBlockTransactions(false, false));
+    
+    var responseMessage = responder.respond(message);
+    
+    assertFalse("verify response is empty", responseMessage.isPresent());
+  }
+  
+  @Test
+  public void testRespond_withRequestWithoutPackageSize_shouldRespondEmpty() {
+    var message = validMessage();
+    message.getPayload().setSenderId("pfennig-master");
+    SyncRequest request = new SyncRequest();
+    request.setStartingPosition(2l);
+    request.setRequestPackageSize(null);
     message.getPayload().setEntity(compressor.compress(request));
     when(networkStatistics.activeNodeIds()).thenReturn(ImmutableList.of("groschn-master-123", "pfennig-master"));
     when(transactionManager.fetchTransactionsPaginated(anyInt(), anyInt())).thenReturn(createBlockTransactions(false, false));
@@ -105,6 +123,7 @@ public class TransactionFullSyncResponderTest extends BaseCachingTest {
     message.getPayload().setSenderId("pfennig-master");
     SyncRequest request = new SyncRequest();
     request.setStartingPosition(0l);
+    request.setRequestPackageSize(100l);
     message.getPayload().setEntity(compressor.compress(request));
     when(networkStatistics.activeNodeIds()).thenReturn(ImmutableList.of("groschn-master-123", "pfennig-master"));
     when(transactionManager.fetchTransactionsPaginated(anyInt(), anyInt())).thenReturn(createBlockTransactions(false, false));
