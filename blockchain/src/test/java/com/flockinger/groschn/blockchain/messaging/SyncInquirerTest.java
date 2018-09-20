@@ -66,7 +66,6 @@ public class SyncInquirerTest extends BaseCachingTest{
   ExecutorService exec = Executors.newScheduledThreadPool(10);
   
   
-  //TODO maybe check if I forgot to test something important, but I guess it's fine!
   
   @Test
   public void testFetchNextBatch_withValidRequestNoRetries_shouldFetch() {
@@ -84,7 +83,7 @@ public class SyncInquirerTest extends BaseCachingTest{
     
     when(broadcaster.sendRequest(any(), anyString(), any(MainTopics.class)))
     .thenReturn(fakeFuture(1,2)).thenReturn(fakeFuture(1,9, 15, false)).thenReturn(fakeFuture(1,12))
-    .thenReturn(fakeFuture(100,13)).thenReturn(fakeFuture(100,15)).thenReturn(fakeFuture(100,19));
+    .thenReturn(fakeFuture(200,13)).thenReturn(fakeFuture(200,15)).thenReturn(fakeFuture(200,19));
     
     
     Optional<SyncResponse<Block>> response = inquirer.fetchNextBatch(request, Block.class);

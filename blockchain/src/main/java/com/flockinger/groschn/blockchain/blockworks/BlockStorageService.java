@@ -14,4 +14,6 @@ public interface BlockStorageService {
   Block getLatestProofOfWorkBlock();
   
   List<Block> findBlocks(long fromPosition, long quantity);
+  
+  void removeBlocks(long fromPositionInclusive);
 }

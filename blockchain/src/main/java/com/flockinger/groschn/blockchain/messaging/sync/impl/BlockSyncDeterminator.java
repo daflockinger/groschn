@@ -46,6 +46,7 @@ public class BlockSyncDeterminator implements SyncDeterminator {
       startPosition = determineStartPosition(latestBlock.getPosition(), startPosition);
     }
     if(startPosition > 0) {
+      blockService.removeBlocks(startPosition);
       synchronizer.synchronize(startPosition);
     } else {
       throw new BlockSynchronizationException("Unable to Synchronize blocks with other nodes, "
@@ -73,8 +74,6 @@ public class BlockSyncDeterminator implements SyncDeterminator {
     return StringUtils.equals(block.getHash(), blockInfos.get(block.getPosition()));
   }
   
-  
-  
   private Map<Long, String> getSortedBlockInfosFrom(long fromPosition) {
     var infoResponse = inquirer.fetchNextBatch(SyncBatchRequest
         .build(request).fromPosition(fromPosition), BlockInfo.class);
@@ -84,5 +83,4 @@ public class BlockSyncDeterminator implements SyncDeterminator {
         .sorted().collect(Collectors
             .toMap(BlockInfo::getPosition, BlockInfo::getBlockHash));
   }
-  
 }

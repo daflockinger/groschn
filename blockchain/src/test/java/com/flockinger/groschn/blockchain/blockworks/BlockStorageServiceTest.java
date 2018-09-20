@@ -208,6 +208,39 @@ public class BlockStorageServiceTest extends BaseDbTest {
     assertEquals("verify correct response amount", 0, blocks.size());
   }
   
+  @Test
+  public void testRemoveBlocks_withMiddlePosition_shouldRemoveCorrect() {
+    dao.saveAll(fakeBlocks(3l,2l,1l,4l,5l));
+    
+    service.removeBlocks(3);
+    
+    var existingBlocks = dao.findAll();
+    assertEquals("verify that enough blocks still exist", 2, existingBlocks.size());
+    assertTrue("verify that the first block still exists", existingBlocks.stream().anyMatch(b -> b.getPosition() == 1));
+    assertTrue("verify that the 2nd block still exists", existingBlocks.stream().anyMatch(b -> b.getPosition() == 2));
+  }
+  
+  @Test
+  public void testRemoveBlocks_withZeroPosition_shouldNotRemoveGenesisBlock() {
+    dao.saveAll(fakeBlocks(5l,3l,2l,5l,6l));
+    
+    service.removeBlocks(1);
+    
+    var existingBlocks = dao.findAll();
+    assertEquals("verify that enough blocks still exist", 1, existingBlocks.size());
+    assertTrue("verify that the first block still exists", existingBlocks.stream().anyMatch(b -> b.getPosition() == 1));
+  }
+  
+  @Test
+  public void testRemoveBlocks_withTooHighPosition_shouldDoNothing() {
+    dao.saveAll(fakeBlocks(3l,2l,1l,4l,5l));
+    
+    service.removeBlocks(6);
+    
+    var existingBlocks = dao.findAll();
+    assertEquals("verify that enough blocks still exist", 5, existingBlocks.size());
+  }
+  
   
   private List<StoredBlock> fakeBlocks(long pos1, long pos2, long pos3, long pos4, long pos5) {
     Block block1 = TestDataFactory.getFakeBlock();

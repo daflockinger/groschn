@@ -83,4 +83,9 @@ public class BlockStorageServiceImpl implements BlockStorageService {
     return dao.findByPositionBetween(from-1, until).stream()
         .map(this::mapToBlock).collect(Collectors.toList());
   }
+
+  @Override
+  public void removeBlocks(long fromPositionInclusive) {
+    dao.removeByPositionGreaterThanEqual(Math.max(2l, fromPositionInclusive));
+  }
 }
