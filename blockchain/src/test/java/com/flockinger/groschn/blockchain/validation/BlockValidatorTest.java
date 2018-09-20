@@ -138,6 +138,32 @@ public class BlockValidatorTest extends BaseDbTest {
   }
   
   @Test
+  public void testValidate_withTooHighPosition_shouldValidateFail() {
+    when(compressor.compressedByteSize(anyList())).thenReturn(Block.MAX_TRANSACTION_BYTE_SIZE.intValue() - 1);
+    freshBlock.setPosition(3l);
+    
+    Assessment result = validator.validate(freshBlock);
+    
+    freshBlock.setPosition(2l);
+    assertEquals("verify that block with too high position is NOT valid", false, result.isValid());
+    assertTrue("verify that error message is correct", StringUtils.containsIgnoreCase(result.getReasonOfFailure(),"position"));
+    assertEquals("verify correct AssessmentFailure", AssessmentFailure.BLOCK_POSITION_TOO_HIGH, result.getFailure());
+  }
+  
+  @Test
+  public void testValidate_withWayTooHighPosition_shouldValidateFail() {
+    when(compressor.compressedByteSize(anyList())).thenReturn(Block.MAX_TRANSACTION_BYTE_SIZE.intValue() - 1);
+    freshBlock.setPosition(30l);
+    
+    Assessment result = validator.validate(freshBlock);
+    
+    freshBlock.setPosition(2l);
+    assertEquals("verify that block with too high position is NOT valid", false, result.isValid());
+    assertTrue("verify that error message is correct", StringUtils.containsIgnoreCase(result.getReasonOfFailure(),"position"));
+    assertEquals("verify correct AssessmentFailure", AssessmentFailure.BLOCK_POSITION_TOO_HIGH, result.getFailure());
+  }
+  
+  @Test
   public void testValidate_withWrongLastHash_shouldValidateFail() {
     when(compressor.compressedByteSize(anyList())).thenReturn(Block.MAX_TRANSACTION_BYTE_SIZE.intValue() - 1);
     String lastHash = freshBlock.getLastHash();

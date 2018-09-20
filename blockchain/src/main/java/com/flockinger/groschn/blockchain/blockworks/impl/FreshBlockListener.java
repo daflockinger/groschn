@@ -10,8 +10,12 @@ import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
 import com.flockinger.groschn.blockchain.dto.MessagePayload;
 import com.flockinger.groschn.blockchain.exception.BlockchainException;
 import com.flockinger.groschn.blockchain.exception.messaging.ReceivedMessageInvalidException;
+import com.flockinger.groschn.blockchain.exception.validation.AssessmentFailedException;
 import com.flockinger.groschn.blockchain.messaging.MessagingUtils;
+import com.flockinger.groschn.blockchain.messaging.sync.SyncDeterminator;
 import com.flockinger.groschn.blockchain.model.Block;
+import com.flockinger.groschn.blockchain.validation.AssessmentFailure;
+import static com.flockinger.groschn.blockchain.validation.AssessmentFailure.*;
 import com.flockinger.groschn.messaging.config.MainTopics;
 import com.flockinger.groschn.messaging.inbound.MessageListener;
 import com.flockinger.groschn.messaging.model.Message;
@@ -24,6 +28,8 @@ public class FreshBlockListener implements MessageListener<MessagePayload> {
   private BlockStorageService blockService;
   @Autowired
   private MessagingUtils messageUtils;
+  @Autowired
+  private SyncDeterminator blockSyncDeterminator;
   
   @Autowired
   @Qualifier("BlockId_Cache")
@@ -41,8 +47,15 @@ public class FreshBlockListener implements MessageListener<MessagePayload> {
         LOG.info("Fresh Block received by sender: " + message.getPayload().getSenderId());
         blockService.saveInBlockchain(block.get());
       }
+    } catch (AssessmentFailedException e) {
+      LOG.error("Invalid Block-Message received maybe recoverable: " + e.getMessage(), e);
+      // if the validation failed due to an outdated chain or or some faulty blocks in the chain
+      // try to Resynchronize the Blockchain.
+      if(isSynchronizationRecoverable(e.getFailure())) {
+        blockSyncDeterminator.determineAndSync();
+      }
     } catch (BlockchainException e) {
-      LOG.error("Invalid Block-Message received: " + e.getMessage(), e);
+      LOG.error("Really invalid Block-Message received: " + e.getMessage(), e);
     }
   }
   
@@ -53,6 +66,11 @@ public class FreshBlockListener implements MessageListener<MessagePayload> {
     } else {
       throw new ReceivedMessageInvalidException("Block Message was already received with ID: " + messageId);
     }
+  }
+  
+  private boolean isSynchronizationRecoverable(AssessmentFailure failure) {
+    return failure != null && failure.equals(BLOCK_LAST_HASH_WRONG) || 
+        failure.equals(BLOCK_POSITION_TOO_HIGH);
   }
   
   @Override

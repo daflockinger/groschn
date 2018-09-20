@@ -1,6 +1,7 @@
 package com.flockinger.groschn.blockchain.messaging;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -187,6 +188,24 @@ public class BlockSynchronizerTest extends BaseCachingTest {
     
     verify(blockService, times(0)).saveInBlockchain(any());
     verify(inquirer, times(0)).fetchNextBatch(any(), any(Class.class));
+  }
+  
+  @Test
+  public void testSyncStatus_withSetStatus_shouldReturnCorrect() {
+    syncBlockIdCache.put(SyncStatus.SYNC_STATUS_CACHE_KEY, SyncStatus.IN_PROGRESS.name());
+    
+    String status = synchronizer.syncStatus();
+    
+    assertNotNull("verify status is not null", status);
+    assertEquals("verify status is correct", SyncStatus.IN_PROGRESS.name(), status);
+  }
+  
+  @Test
+  public void testSyncStatus_withNotSetStatus_shouldReturnDefault() {    
+    syncBlockIdCache.cleanUp();
+    String status = synchronizer.syncStatus();
+    assertNotNull("verify status is not null", status);
+    assertEquals("verify status is correct", SyncStatus.DONE.name(), status);
   }
  
   

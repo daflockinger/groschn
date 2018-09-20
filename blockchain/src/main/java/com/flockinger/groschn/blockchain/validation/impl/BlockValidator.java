@@ -15,6 +15,7 @@ import com.flockinger.groschn.blockchain.model.Transaction;
 import com.flockinger.groschn.blockchain.util.CompressionUtils;
 import com.flockinger.groschn.blockchain.util.MerkleRootCalculator;
 import com.flockinger.groschn.blockchain.validation.Assessment;
+import com.flockinger.groschn.blockchain.validation.AssessmentFailure;
 import com.flockinger.groschn.blockchain.validation.ConsentValidator;
 import com.flockinger.groschn.blockchain.validation.Validator;
 
@@ -43,8 +44,8 @@ public class BlockValidator implements Validator<Block> {
     try {
       Block lastBlock = blockService.getLatestBlock();
       
-      // 1. check if position is higher than existing one
-      isPositionHigher(value.getPosition(), lastBlock);
+      // 1. check if position is exactly one higher than existing one
+      isPositionExactlyOneHigher(value.getPosition(), lastBlock);
       // 2. check if lastHash is correct 
       verifyLastHash(value.getLastHash(), lastBlock);
       // 4. check if transaction merkleRoot-Hash is correct
@@ -62,6 +63,10 @@ public class BlockValidator implements Validator<Block> {
       // 3. verify if current hash is correctly calculated
       verifyCurrentHash(value);
       isBlockValid.setValid(true);
+    } catch (AssessmentFailedException e) {
+      isBlockValid.setValid(false);
+      isBlockValid.setReasonOfFailure(e.getMessage());
+      isBlockValid.setFailure(e.getFailure());
     } catch (BlockchainException e) {
       isBlockValid.setValid(false);
       isBlockValid.setReasonOfFailure(e.getMessage());
@@ -69,14 +74,19 @@ public class BlockValidator implements Validator<Block> {
     return isBlockValid;
   }
   
-  private void isPositionHigher(Long position, Block block) {    
-    verifyAssessment(position != null && position > block.getPosition(), 
+  private void isPositionExactlyOneHigher(Long position, Block lastBlock) {
+    verifyAssessment(position != null && position > lastBlock.getPosition(), 
         "Incomming block must have a higher position than the latest one!");
+    
+    verifyAssessment(position != null && position <= (lastBlock.getPosition() + 1), 
+        "Incomming block has a too hight position, please resynchronize!", 
+        AssessmentFailure.BLOCK_POSITION_TOO_HIGH);
   }
   
-  private void verifyLastHash(String lastHash, Block block) {
-    block.setHash(null);
-    verifyAssessment(hasher.isHashCorrect(lastHash, block), "Last block hash is wrong!");
+  private void verifyLastHash(String lastHash, Block lastBlock) {
+    lastBlock.setHash(null);
+    verifyAssessment(hasher.isHashCorrect(lastHash, lastBlock), "Last block hash is wrong, try reynchronizing!", 
+        AssessmentFailure.BLOCK_LAST_HASH_WRONG);
   }
   
   private void verifyCurrentHash(Block block) {
@@ -126,8 +136,11 @@ public class BlockValidator implements Validator<Block> {
   }
   
   private void verifyAssessment(boolean isValid, String errorMessage) {
+    verifyAssessment(isValid, errorMessage, AssessmentFailure.NONE);
+  }
+  private void verifyAssessment(boolean isValid, String errorMessage, AssessmentFailure failure) {
     if(!isValid) {
-      throw new AssessmentFailedException(errorMessage);
+      throw new AssessmentFailedException(errorMessage, failure);
     }
   }
 }

@@ -22,7 +22,7 @@ import com.flockinger.groschn.blockchain.TestDataFactory;
 import com.flockinger.groschn.blockchain.blockworks.impl.BlockStorageServiceImpl;
 import com.flockinger.groschn.blockchain.consensus.model.ConsensusType;
 import com.flockinger.groschn.blockchain.consensus.model.Consent;
-import com.flockinger.groschn.blockchain.exception.validation.BlockValidationException;
+import com.flockinger.groschn.blockchain.exception.validation.AssessmentFailedException;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.model.Transaction;
 import com.flockinger.groschn.blockchain.repository.BlockchainRepository;
@@ -115,7 +115,7 @@ public class BlockStorageServiceTest extends BaseDbTest {
     assertEquals("verify transactions will be updated with correct status", TransactionStatus.EMBEDDED_IN_BLOCK, statusCaptor.getValue());
   }
   
-  @Test(expected=BlockValidationException.class)
+  @Test(expected=AssessmentFailedException.class)
   public void testStoreInBlockchain_withInvalidBlock_shouldThrowException() {
     Block freshBlock = TestDataFactory.getFakeBlock();
     when(validator.validate(any())).thenReturn(TestDataFactory.fakeAssessment(false));

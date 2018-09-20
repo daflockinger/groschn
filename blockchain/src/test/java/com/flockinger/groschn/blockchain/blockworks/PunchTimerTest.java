@@ -19,6 +19,8 @@ import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
 import com.flockinger.groschn.blockchain.consensus.impl.ConsensusFactory;
+import com.flockinger.groschn.blockchain.messaging.dto.SyncStatus;
+import com.flockinger.groschn.blockchain.messaging.sync.SyncKeeper;
 
 @RunWith(SpringRunner.class)
 @ActiveProfiles("test")
@@ -31,6 +33,8 @@ public class PunchTimerTest {
   private ConsensusFactory consensusFactory;
   @MockBean(reset=MockReset.BEFORE)
   private BlockMaker blockMaker;
+  @MockBean(reset=MockReset.BEFORE)
+  private SyncKeeper blockSynchronizer;
   
   @Autowired
   private PunchTimer timer;
@@ -38,6 +42,7 @@ public class PunchTimerTest {
   
   @Test
   public void testCheckMiningProcess_withRunningProcessNoTimeout_shouldDoNothing() {
+    when(blockSynchronizer.syncStatus()).thenReturn(SyncStatus.DONE.name());
     when(consensusFactory.isProcessing()).thenReturn(true);
     Date stillOkDate = new Date(new Date().getTime() - 15000);
     when(consensusFactory.lastProcessStartDate()).thenReturn(Optional.of(stillOkDate));
@@ -50,6 +55,7 @@ public class PunchTimerTest {
   
   @Test
   public void testCheckMiningProcess_withNoRunningProcesses_shouldStartOne() {
+    when(blockSynchronizer.syncStatus()).thenReturn(SyncStatus.DONE.name());
     when(consensusFactory.isProcessing()).thenReturn(false);
    
     timer.checkMiningProcess();
@@ -59,6 +65,7 @@ public class PunchTimerTest {
   
   @Test
   public void testCheckMiningProcess_withRunningProcessVeryOld_shouldStopAndStartNewOne() {
+    when(blockSynchronizer.syncStatus()).thenReturn(SyncStatus.DONE.name());
     when(consensusFactory.isProcessing()).thenReturn(true);
     Date stillOkDate = new Date(new Date().getTime() - 21001);
     when(consensusFactory.lastProcessStartDate()).thenReturn(Optional.of(stillOkDate));
@@ -67,5 +74,15 @@ public class PunchTimerTest {
     
     verify(consensusFactory, times(1)).stopFindingConsensus();
     verify(blockMaker, times(1)).produceBlock();
+  }
+  
+  @Test
+  public void testCheckMiningProcess_withRunningSyncInBackground_shouldDoNothing() {
+    when(blockSynchronizer.syncStatus()).thenReturn(SyncStatus.IN_PROGRESS.name());
+    when(consensusFactory.isProcessing()).thenReturn(false);
+   
+    timer.checkMiningProcess();
+    
+    verify(blockMaker, times(0)).produceBlock();
   }
 }

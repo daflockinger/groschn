@@ -8,7 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
 import com.flockinger.groschn.blockchain.consensus.model.ConsensusType;
-import com.flockinger.groschn.blockchain.exception.validation.BlockValidationException;
+import com.flockinger.groschn.blockchain.exception.validation.AssessmentFailedException;
 import com.flockinger.groschn.blockchain.exception.validation.ValidationException;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.repository.BlockchainRepository;
@@ -50,8 +50,7 @@ public class BlockStorageServiceImpl implements BlockStorageService {
   private void validateBlock(Block block) {
     Assessment assessment = validator.validate(block);
     if (!assessment.isValid()) {
-      throw new BlockValidationException(
-          "Block validation failed because of: " + assessment.getReasonOfFailure());
+      throw new AssessmentFailedException(assessment.getReasonOfFailure(), assessment.getFailure());
     }
   }
 

@@ -63,7 +63,7 @@ public class BlockSynchronizer implements SyncKeeper {
   //TODO get rid of this wild WHILE loop
   @Override
   public void synchronize(long fromPosition) {
-    if(getSyncStatus().equals(SyncStatus.IN_PROGRESS.name())) {
+    if(syncStatus().equals(SyncStatus.IN_PROGRESS.name())) {
       LOG.warn("Synchronization still in progress!");
       return;
     }
@@ -112,7 +112,8 @@ public class BlockSynchronizer implements SyncKeeper {
     return allStoredSuccessful;
   }
   
-  private String getSyncStatus() {
+  @Override
+  public String syncStatus() {
     return StringUtils.defaultString(syncBlockIdCache
         .getIfPresent(SyncStatus.SYNC_STATUS_CACHE_KEY),SyncStatus.DONE.name());
   }
