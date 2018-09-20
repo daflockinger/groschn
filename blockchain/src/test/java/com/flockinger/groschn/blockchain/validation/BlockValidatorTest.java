@@ -25,6 +25,7 @@ import com.flockinger.groschn.blockchain.blockworks.impl.MultiHashGenerator;
 import com.flockinger.groschn.blockchain.consensus.impl.ConsensusFactory;
 import com.flockinger.groschn.blockchain.consensus.impl.ProofOfMajorityAlgorithm;
 import com.flockinger.groschn.blockchain.consensus.impl.ProofOfWorkAlgorithm;
+import com.flockinger.groschn.blockchain.messaging.MessagingUtils;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.repository.BlockProcessRepository;
 import com.flockinger.groschn.blockchain.repository.BlockchainRepository;
@@ -33,7 +34,6 @@ import com.flockinger.groschn.blockchain.repository.WalletRepository;
 import com.flockinger.groschn.blockchain.transaction.impl.BookkeeperImpl;
 import com.flockinger.groschn.blockchain.transaction.impl.TransactionManagerImpl;
 import com.flockinger.groschn.blockchain.transaction.impl.TransactionPoolListener;
-import com.flockinger.groschn.blockchain.util.CompressedEntity;
 import com.flockinger.groschn.blockchain.util.CompressionUtils;
 import com.flockinger.groschn.blockchain.util.MerkleRootCalculator;
 import com.flockinger.groschn.blockchain.util.crypto.impl.KeyAESCipher;
@@ -46,14 +46,14 @@ import com.flockinger.groschn.blockchain.validation.impl.RewardTransactionValida
 import com.flockinger.groschn.blockchain.validation.impl.TransactionValidationHelper;
 import com.flockinger.groschn.blockchain.validation.impl.TransactionValidator;
 import com.flockinger.groschn.blockchain.wallet.impl.WalletServiceImpl;
-import com.flockinger.groschn.messaging.distribution.DistributedCollectionBuilder;
-import com.flockinger.groschn.messaging.members.ElectionStatistics;
+import com.flockinger.groschn.messaging.members.NetworkStatistics;
+import com.flockinger.groschn.messaging.model.MessagePayload;
 import com.flockinger.groschn.messaging.outbound.Broadcaster;
 
 @ContextConfiguration(classes = {BlockValidator.class, BlockchainRepository.class, 
     MultiHashGenerator.class, MerkleRootCalculator.class, 
     BlockTransactionsValidator.class, TransactionValidator.class, RewardTransactionValidator.class, 
-    TransactionValidationHelper.class, PowConsensusValidator.class, FstSerializer.class,
+    TransactionValidationHelper.class, PowConsensusValidator.class, FstSerializer.class, MessagingUtils.class, 
     // those are all needed to create a somewhat real block to verify:
     BlockMakerImpl.class,
     ConsensusFactory.class, ProofOfWorkAlgorithm.class, ProofOfMajorityAlgorithm.class,
@@ -69,15 +69,13 @@ public class BlockValidatorTest extends BaseDbTest {
   private CompressionUtils compressor;
   
   @MockBean
-  private DistributedCollectionBuilder distributedCollectionBuilder;
-  @MockBean
   private TransactionPoolListener transactionListener;
   @MockBean
-  private ElectionStatistics statistics;
+  private NetworkStatistics statistics;
   @MockBean
   private BlockStorageService storageService;
   @MockBean
-  private Broadcaster<CompressedEntity> broadcaster;
+  private Broadcaster<MessagePayload> broadcaster;
   @Autowired
   private HashGenerator hasher;
   

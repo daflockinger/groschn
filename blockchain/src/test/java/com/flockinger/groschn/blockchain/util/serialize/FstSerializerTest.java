@@ -13,12 +13,12 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import com.flockinger.groschn.blockchain.TestDataFactory;
 import com.flockinger.groschn.blockchain.consensus.model.ConsensusType;
-import com.flockinger.groschn.blockchain.dto.MessagePayload;
 import com.flockinger.groschn.blockchain.exception.SerializationException;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.model.Transaction;
 import com.flockinger.groschn.blockchain.repository.model.BlockProcess;
 import com.flockinger.groschn.blockchain.util.serialize.impl.FstSerializer;
+import com.flockinger.groschn.messaging.model.MessagePayload;
 
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes = {FstSerializer.class})

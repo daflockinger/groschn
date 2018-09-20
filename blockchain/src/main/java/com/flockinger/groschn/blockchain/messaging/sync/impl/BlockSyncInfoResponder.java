@@ -7,7 +7,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
-import com.flockinger.groschn.blockchain.dto.MessagePayload;
 import com.flockinger.groschn.blockchain.messaging.MessagingUtils;
 import com.flockinger.groschn.blockchain.messaging.dto.BlockInfo;
 import com.flockinger.groschn.blockchain.messaging.dto.SyncRequest;
@@ -16,6 +15,7 @@ import com.flockinger.groschn.blockchain.messaging.sync.GeneralMessageResponder;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.messaging.config.MainTopics;
 import com.flockinger.groschn.messaging.model.Message;
+import com.flockinger.groschn.messaging.model.MessagePayload;
 import com.github.benmanes.caffeine.cache.Cache;
 
 @Service
@@ -29,7 +29,7 @@ public class BlockSyncInfoResponder extends GeneralMessageResponder {
   @Qualifier("SyncBlockInfoId_Cache")
   private Cache<String, String> syncBlockInfoIdCache;
   
-  @Value("${blockchain.node.id}")
+  @Value("${atomix.node-id}")
   private String nodeId;
     
   protected Message<MessagePayload> createResponse(SyncRequest request) {

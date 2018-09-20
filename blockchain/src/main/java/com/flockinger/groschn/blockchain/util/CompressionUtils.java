@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 import com.flockinger.groschn.blockchain.exception.SerializationException;
 import com.flockinger.groschn.blockchain.model.Hashable;
 import com.flockinger.groschn.blockchain.util.serialize.BlockSerializer;
+import com.flockinger.groschn.messaging.model.CompressedEntity;
 import net.jpountz.lz4.LZ4Compressor;
 import net.jpountz.lz4.LZ4Exception;
 import net.jpountz.lz4.LZ4Factory;

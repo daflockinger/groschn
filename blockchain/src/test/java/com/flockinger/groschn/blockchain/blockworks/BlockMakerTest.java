@@ -27,33 +27,34 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.ConfigFileApplicationContextInitializer;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
+import com.flockinger.groschn.blockchain.BaseCachingTest;
 import com.flockinger.groschn.blockchain.TestConfig;
 import com.flockinger.groschn.blockchain.blockworks.impl.BlockMakerImpl;
 import com.flockinger.groschn.blockchain.consensus.impl.ConsensusFactory;
 import com.flockinger.groschn.blockchain.dto.TransactionDto;
 import com.flockinger.groschn.blockchain.exception.ReachingConsentFailedException;
 import com.flockinger.groschn.blockchain.exception.validation.BlockValidationException;
+import com.flockinger.groschn.blockchain.messaging.MessagingUtils;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.model.Transaction;
 import com.flockinger.groschn.blockchain.model.TransactionInput;
 import com.flockinger.groschn.blockchain.model.TransactionOutput;
 import com.flockinger.groschn.blockchain.transaction.Bookkeeper;
 import com.flockinger.groschn.blockchain.transaction.TransactionManager;
-import com.flockinger.groschn.blockchain.util.CompressedEntity;
 import com.flockinger.groschn.blockchain.util.CompressionUtils;
+import com.flockinger.groschn.blockchain.util.serialize.impl.FstSerializer;
 import com.flockinger.groschn.blockchain.wallet.WalletService;
+import com.flockinger.groschn.messaging.model.MessagePayload;
 import com.flockinger.groschn.messaging.outbound.Broadcaster;
 
 @RunWith(SpringRunner.class)
-@ContextConfiguration(classes = {BlockMakerImpl.class}, 
-initializers=ConfigFileApplicationContextInitializer.class)
+@ContextConfiguration(classes = {BlockMakerImpl.class, MessagingUtils.class, CompressionUtils.class, FstSerializer.class})
 @Import(TestConfig.class)
-public class BlockMakerTest {
+public class BlockMakerTest extends BaseCachingTest {
 
   @MockBean
   private ConsensusFactory consensusFactory;
@@ -62,9 +63,7 @@ public class BlockMakerTest {
   @MockBean
   private BlockStorageService storageService;
   @MockBean
-  private CompressionUtils compressor;
-  @MockBean
-  private Broadcaster<CompressedEntity> broadcaster;
+  private Broadcaster<MessagePayload> broadcaster;
 
   @MockBean
   private Bookkeeper bookkeeper;
@@ -86,7 +85,6 @@ public class BlockMakerTest {
     when(storageService.getLatestBlock()).thenReturn(Block.GENESIS_BLOCK());
     when(bookkeeper.countChange(any())).thenReturn(new BigDecimal("1"));
     when(bookkeeper.calculateBlockReward(anyLong())).thenReturn(new BigDecimal("100"));
-    when(compressor.compress(any())).thenReturn(CompressedEntity.build());
   }
 
   @Test
@@ -297,7 +295,6 @@ public class BlockMakerTest {
     TransactionDto request = requestCaptor.getValue();
     assertEquals("verify reward transaction request contains a valid public key", MASTER_KEY,
         request.getPublicKey());
-    verify(compressor, times(1)).compress(any());
     verify(broadcaster, times(1)).broadcast(any(),any());
     verify(storageService).saveInBlockchain(any());
     verify(storageService).saveInBlockchain(any());

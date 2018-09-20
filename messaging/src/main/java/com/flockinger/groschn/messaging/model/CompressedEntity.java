@@ -1,4 +1,4 @@
-package com.flockinger.groschn.blockchain.util;
+package com.flockinger.groschn.messaging.model;
 
 import java.io.Serializable;
 import javax.validation.constraints.Min;

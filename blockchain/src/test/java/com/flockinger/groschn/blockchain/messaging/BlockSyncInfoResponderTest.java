@@ -24,10 +24,10 @@ import com.flockinger.groschn.blockchain.messaging.dto.SyncRequest;
 import com.flockinger.groschn.blockchain.messaging.dto.SyncResponse;
 import com.flockinger.groschn.blockchain.messaging.sync.impl.BlockSyncInfoResponder;
 import com.flockinger.groschn.blockchain.model.Block;
-import com.flockinger.groschn.blockchain.util.CompressedEntity;
 import com.flockinger.groschn.blockchain.util.CompressionUtils;
 import com.flockinger.groschn.blockchain.util.serialize.impl.FstSerializer;
 import com.flockinger.groschn.messaging.members.NetworkStatistics;
+import com.flockinger.groschn.messaging.model.CompressedEntity;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.google.common.collect.ImmutableList;
 

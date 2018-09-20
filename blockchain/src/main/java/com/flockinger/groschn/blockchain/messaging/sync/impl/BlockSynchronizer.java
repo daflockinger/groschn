@@ -35,7 +35,7 @@ public class BlockSynchronizer implements SyncKeeper {
   @Autowired
   private SyncInquirer inquirer;
   
-  @Value("${blockchain.node.id}")
+  @Value("${atomix.node-id}")
   private String nodeId;
   
   private final static Logger LOG = LoggerFactory.getLogger(BlockSynchronizer.class);

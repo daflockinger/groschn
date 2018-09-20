@@ -1,6 +1,6 @@
 package com.flockinger.groschn.blockchain.config;
 
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,8 +24,8 @@ public class GeneralConfig {
   }
   
   @Bean
-  public ExecutorService executor() {
-    ExecutorService executorService = Executors.newFixedThreadPool(threadPoolSize);
+  public Executor executor() {
+    Executor executorService = Executors.newFixedThreadPool(threadPoolSize);
     return executorService;
   }
 }

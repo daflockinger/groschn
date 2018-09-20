@@ -5,7 +5,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import com.flockinger.groschn.blockchain.dto.MessagePayload;
 import com.flockinger.groschn.blockchain.messaging.MessagingUtils;
 import com.flockinger.groschn.blockchain.messaging.dto.SyncRequest;
 import com.flockinger.groschn.blockchain.messaging.dto.SyncResponse;
@@ -14,6 +13,7 @@ import com.flockinger.groschn.blockchain.model.Transaction;
 import com.flockinger.groschn.blockchain.transaction.TransactionManager;
 import com.flockinger.groschn.messaging.config.MainTopics;
 import com.flockinger.groschn.messaging.model.Message;
+import com.flockinger.groschn.messaging.model.MessagePayload;
 import com.github.benmanes.caffeine.cache.Cache;
 
 @Service("TransactionFullSyncResponder")
@@ -26,7 +26,7 @@ public class TransactionFullSyncResponder extends GeneralMessageResponder {
   @Qualifier("SyncTransactionId_Cache")
   private Cache<String, String> syncTransactionIdCache;
   
-  @Value("${blockchain.node.id}")
+  @Value("${atomix.node-id}")
   private String nodeId;
   
   protected Message<MessagePayload> createResponse(SyncRequest request) {

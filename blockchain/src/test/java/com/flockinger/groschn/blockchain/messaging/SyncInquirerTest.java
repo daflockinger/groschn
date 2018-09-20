@@ -29,7 +29,6 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.MockReset;
 import org.springframework.test.context.ContextConfiguration;
 import com.flockinger.groschn.blockchain.BaseCachingTest;
-import com.flockinger.groschn.blockchain.dto.MessagePayload;
 import com.flockinger.groschn.blockchain.exception.messaging.ReceivedMessageInvalidException;
 import com.flockinger.groschn.blockchain.messaging.dto.SyncBatchRequest;
 import com.flockinger.groschn.blockchain.messaging.dto.SyncRequest;
@@ -43,6 +42,7 @@ import com.flockinger.groschn.blockchain.util.serialize.impl.FstSerializer;
 import com.flockinger.groschn.messaging.config.MainTopics;
 import com.flockinger.groschn.messaging.members.NetworkStatistics;
 import com.flockinger.groschn.messaging.model.Message;
+import com.flockinger.groschn.messaging.model.MessagePayload;
 import com.flockinger.groschn.messaging.outbound.Broadcaster;
 
 @ContextConfiguration(classes = {SyncInquirerImpl.class, MessagingUtils.class, CompressionUtils.class, FstSerializer.class})
@@ -60,7 +60,7 @@ public class SyncInquirerTest extends BaseCachingTest{
   @Autowired
   private SyncInquirer inquirer;
   
-  @Value("${blockchain.node.id}")
+  @Value("${atomix.node-id}")
   private String nodeId;
   
   ExecutorService exec = Executors.newScheduledThreadPool(10);

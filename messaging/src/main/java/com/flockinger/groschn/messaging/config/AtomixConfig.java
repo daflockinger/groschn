@@ -4,19 +4,38 @@ import java.util.List;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
+import io.atomix.storage.StorageLevel;
 
 @Configuration
 @PropertySource("classpath:application.yml")
 @ConfigurationProperties(prefix="atomix")
 public class AtomixConfig {
   
-  public final static String MANAGEMENT_PARTITION_GROUP_NAME = "management-group";
+  public final static String MANAGEMENT_PARTITION_GROUP_NAME = "system";
   
+  private String nodeId;
   private String hostNodeAddress;
   private Discovery discovery;
   private PartitionGroup partitionGroup;
+  private ManagementGroup managementGroup;
   
   
+  public ManagementGroup getManagementGroup() {
+    return managementGroup;
+  }
+
+  public void setManagementGroup(ManagementGroup managementGroup) {
+    this.managementGroup = managementGroup;
+  }
+
+  public String getNodeId() {
+    return nodeId;
+  }
+
+  public void setNodeId(String nodeId) {
+    this.nodeId = nodeId;
+  }
+
   public String getHostNodeAddress() {
     return hostNodeAddress;
   }
@@ -63,6 +82,24 @@ public class AtomixConfig {
     }
   }
   
+  
+  public static class ManagementGroup extends PartitionGroup {
+    private String dataDirectory;
+    private StorageLevel storageLevel;
+    
+    public String getDataDirectory() {
+      return dataDirectory;
+    }
+    public void setDataDirectory(String dataDirectory) {
+      this.dataDirectory = dataDirectory;
+    }
+    public StorageLevel getStorageLevel() {
+      return storageLevel;
+    }
+    public void setStorageLevel(StorageLevel storageLevel) {
+      this.storageLevel = storageLevel;
+    }
+  }
   
   
   public static class Discovery {

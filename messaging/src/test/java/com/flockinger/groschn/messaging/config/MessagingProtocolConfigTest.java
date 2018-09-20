@@ -1,5 +1,6 @@
 package com.flockinger.groschn.messaging.config;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -13,6 +14,7 @@ import org.springframework.boot.test.context.ConfigFileApplicationContextInitial
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import com.flockinger.groschn.messaging.config.AtomixConfig.AtomixNode;
+import com.flockinger.groschn.messaging.config.AtomixConfig.ManagementGroup;
 import com.flockinger.groschn.messaging.config.AtomixConfig.PartitionGroup;
 import io.atomix.core.Atomix;
 
@@ -24,11 +26,12 @@ public class MessagingProtocolConfigTest {
   @Autowired
   private AtomixConfig config;
   @Autowired
-  private MessagingProtocolConfig protocolConfig;
+  private MessagingProtocolConfig protocolConfig; 
   
   @Test
   public void testConfig_shouldBeCorrect() {
     assertNotNull("verify atomix config is not null", config);
+    assertEquals("verify correct node id", "groschn1", config.getNodeId());
     assertNotNull("verify config node address is not null", config.getHostNodeAddress());
     assertNotNull("verify config discovery failure timeout is not null", 
         config.getDiscovery().getFailureTimeoutMilliseconds());
@@ -44,13 +47,19 @@ public class MessagingProtocolConfigTest {
     assertNotNull("verify partitiongroup is not null", group);
     assertNotNull("verify partition number is not null", group.getNumberPartitions());
     assertNotNull("verify partition name is not null", group.getNumberPartitions());
+    ManagementGroup management = config.getManagementGroup();
+    assertNotNull("verify partitiongroup is not null", management);
+    assertNotNull("verify partition number is not null", management.getNumberPartitions());
+    assertNotNull("verify partition name is not null", management.getName());
+    assertNotNull("verify partition data dir is not null", management.getDataDirectory());
+    assertNotNull("verify partition storage level is not null", management.getStorageLevel());
   }
-  
   
   @Test
-  public void testProtocolConfig_shouldSomehowWork() {
-    Atomix atomix = protocolConfig.createAtomixInstance();
+  public void testProtocolConfig_shouldSomehowWork() throws Exception {
+    Atomix atomix = protocolConfig.createAndStartAtomixInstance();
     assertNotNull("verify created atomix instance is not null", atomix);
+    
+    atomix.stop().join();
   }
-  
 }

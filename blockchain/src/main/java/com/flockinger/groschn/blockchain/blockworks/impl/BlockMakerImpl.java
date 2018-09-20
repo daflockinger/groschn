@@ -5,11 +5,11 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import com.flockinger.groschn.blockchain.blockworks.BlockMaker;
 import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
@@ -18,6 +18,7 @@ import com.flockinger.groschn.blockchain.dto.TransactionDto;
 import com.flockinger.groschn.blockchain.dto.TransactionStatementDto;
 import com.flockinger.groschn.blockchain.exception.BlockchainException;
 import com.flockinger.groschn.blockchain.exception.validation.transaction.TransactionException;
+import com.flockinger.groschn.blockchain.messaging.MessagingUtils;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.model.Transaction;
 import com.flockinger.groschn.blockchain.model.TransactionInput;
@@ -25,11 +26,9 @@ import com.flockinger.groschn.blockchain.model.TransactionOutput;
 import com.flockinger.groschn.blockchain.transaction.Bookkeeper;
 import com.flockinger.groschn.blockchain.transaction.TransactionManager;
 import com.flockinger.groschn.blockchain.transaction.impl.TransactionUtils;
-import com.flockinger.groschn.blockchain.util.CompressedEntity;
-import com.flockinger.groschn.blockchain.util.CompressionUtils;
 import com.flockinger.groschn.blockchain.wallet.WalletService;
 import com.flockinger.groschn.messaging.config.MainTopics;
-import com.flockinger.groschn.messaging.model.Message;
+import com.flockinger.groschn.messaging.model.MessagePayload;
 import com.flockinger.groschn.messaging.outbound.Broadcaster;
 
 @Component
@@ -42,15 +41,18 @@ public class BlockMakerImpl implements BlockMaker {
   @Autowired
   private BlockStorageService storageService;
   @Autowired
-  private CompressionUtils compressor;
+  private MessagingUtils messagingUtils;
   @Autowired
   private Bookkeeper bookkeeper;
   @Autowired
   private WalletService wallet;
   @Autowired
-  private Broadcaster<CompressedEntity> broadcaster;
+  private Broadcaster<MessagePayload> broadcaster;
   @Autowired
   private ModelMapper mapper;
+  
+  @Value("${atomix.node-id}")
+  private String nodeId;
 
   private final static Logger LOG = LoggerFactory.getLogger(BlockMaker.class);
 
@@ -68,15 +70,12 @@ public class BlockMakerImpl implements BlockMaker {
 
   private void forgeBlockUnsafe(List<Transaction> transactions) {
     Block generatedBlock = consensusFactory.reachConsensus(transactions);
-    broadcastBlock(compressor.compress(generatedBlock));
+    broadcastBlock(generatedBlock);
     storageService.saveInBlockchain(generatedBlock);
   }
 
-  private void broadcastBlock(CompressedEntity block) {
-    Message<CompressedEntity> message = new Message<>();
-    message.setId(UUID.randomUUID().toString());
-    message.setTimestamp(new Date().getTime());
-    message.setPayload(block);
+  private void broadcastBlock(Block block) {
+    var message = messagingUtils.packageMessage(block, nodeId);
     broadcaster.broadcast(message, MainTopics.FRESH_BLOCK);
   }
 

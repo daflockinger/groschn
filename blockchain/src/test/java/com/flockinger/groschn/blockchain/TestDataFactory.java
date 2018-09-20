@@ -9,7 +9,6 @@ import org.apache.commons.lang3.RandomUtils;
 import org.modelmapper.ModelMapper;
 import com.flockinger.groschn.blockchain.consensus.model.ConsensusType;
 import com.flockinger.groschn.blockchain.consensus.model.Consent;
-import com.flockinger.groschn.blockchain.dto.MessagePayload;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.model.Transaction;
 import com.flockinger.groschn.blockchain.model.TransactionInput;
@@ -17,9 +16,10 @@ import com.flockinger.groschn.blockchain.model.TransactionOutput;
 import com.flockinger.groschn.blockchain.repository.model.StoredTransaction;
 import com.flockinger.groschn.blockchain.repository.model.StoredTransactionInput;
 import com.flockinger.groschn.blockchain.repository.model.StoredTransactionOutput;
-import com.flockinger.groschn.blockchain.util.CompressedEntity;
 import com.flockinger.groschn.blockchain.validation.Assessment;
+import com.flockinger.groschn.messaging.model.CompressedEntity;
 import com.flockinger.groschn.messaging.model.Message;
+import com.flockinger.groschn.messaging.model.MessagePayload;
 import com.google.common.collect.ImmutableList;
 
 public class TestDataFactory {

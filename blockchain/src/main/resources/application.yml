@@ -20,6 +20,7 @@ blockchain:
     punch-rate: 15000
     process-timeout-seconds: 45
   messaging:
+   response-timeout: 30
    thread-pool:
      size: 50
    id-cache:
@@ -29,14 +30,18 @@ blockchain:
     
 # message protocol configuration
 atomix:
+  node-id: ${ATOMIX_NODE_ID:groschn1}
   host-node-address: ${ATOMIX_NODE_ADDR:localhost:1234}
   discovery:
     heartbeat-milliseconds: ${ATOMIX_HEARTBEAT_INTERVAL:1000}
     failure-timeout-milliseconds: ${ATOMIX_MULTICAST_FAILURE_TIMEOUT:20000}
     bootstrap-nodes:
-      - {name: 'master1', address: 'localhost:1001'}
-      - {name: 'master2', address: 'localhost:1002'}
-      - {name: 'master3', address: 'localhost:1003'}
+      - {name: 'groschn1', address: 'localhost:1234'}
   partition-group:
     number-partitions: ${ATOMIX_PARTITION_GROUP_SIZE:23}
     name: ${ATOMIX_PARTITION_GROUP_NAME:data}
+  management-group:
+    number-partitions: ${ATOMIX_MANAGEMENT_GROUP_SIZE:1}
+    name: ${ATOMIX_MANAGEMENT_GROUP_NAME:system}
+    data-directory: ${ATOMIX_MANAGEMENT_DATA_DIRECTORY:/tmp/groschn}
+    storage-level: ${ATOMIX_MANAGEMENT_STORAGE_LEVEL:DISK}

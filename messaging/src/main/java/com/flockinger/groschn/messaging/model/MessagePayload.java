@@ -1,9 +1,8 @@
-package com.flockinger.groschn.blockchain.dto;
+package com.flockinger.groschn.messaging.model;
 
 import java.io.Serializable;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
-import com.flockinger.groschn.blockchain.util.CompressedEntity;
 
 public class MessagePayload implements Serializable {
   /**

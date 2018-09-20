@@ -15,6 +15,7 @@ import com.flockinger.groschn.blockchain.TestDataFactory;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.model.Transaction;
 import com.flockinger.groschn.blockchain.util.serialize.impl.FstSerializer;
+import com.flockinger.groschn.messaging.model.CompressedEntity;
 
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes = {CompressionUtils.class, FstSerializer.class})

@@ -27,7 +27,7 @@ public class TransactionPoolFullSynchronizer implements FullSyncKeeper {
   @Autowired
   private SyncInquirer inquirer;
 
-  @Value("${blockchain.node.id}")
+  @Value("${atomix.node-id}")
   private String nodeId;
 
   private final static int TRANSACTION_POOL_PACKAGE_SIZE = 100;
