@@ -6,7 +6,7 @@ import com.flockinger.groschn.blockchain.consensus.impl.ProofOfWorkAlgorithm;
 import com.flockinger.groschn.blockchain.consensus.model.ConsensusType;
 import com.flockinger.groschn.blockchain.consensus.model.Consent;
 
-public class Block implements Hashable {
+public class Block implements Hashable<Block> {
   /**
   * 
   */
@@ -117,5 +117,17 @@ public class Block implements Hashable {
 
   public void setConsent(Consent consent) {
     this.consent = consent;
+  }
+
+  @Override
+  public int compareTo(Block o) {
+    if (this.getPosition() == null && o.getPosition() == null) {
+      return 0;
+    } else if (this.getPosition() == null) {
+      return -1;
+    } else if (o.getPosition() == null) {
+      return 1;
+    }
+    return this.getPosition().compareTo(o.getPosition());
   }
 }

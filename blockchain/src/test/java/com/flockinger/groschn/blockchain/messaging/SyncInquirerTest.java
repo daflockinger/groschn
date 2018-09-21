@@ -82,7 +82,7 @@ public class SyncInquirerTest extends BaseCachingTest{
       }});
     
     when(broadcaster.sendRequest(any(), anyString(), any(MainTopics.class)))
-    .thenReturn(fakeFuture(1,2)).thenReturn(fakeFuture(1,9, 15, false)).thenReturn(fakeFuture(1,12))
+    .thenReturn(fakeFuture(1,2)).thenReturn(fakeFuture(1,9, 15, false)).thenReturn(fakeFuture(1,2))
     .thenReturn(fakeFuture(200,13)).thenReturn(fakeFuture(200,15)).thenReturn(fakeFuture(200,19));
     
     
@@ -103,7 +103,7 @@ public class SyncInquirerTest extends BaseCachingTest{
     assertEquals("verify non null request has correct batch size", 10l, 
         firstSentSyncReq.get().getRequestPackageSize().longValue());
     
-    verify(merkleCalculator, atLeast(3)).calculateMerkleRootHash(anyList());
+    verify(merkleCalculator, atLeast(3)).calculateMerkleRootHash(any());
     verify(networkStatistics, times(1)).activeNodeCount();
     verify(networkStatistics, times(1)).activeNodeIds();
   }
@@ -134,7 +134,7 @@ public class SyncInquirerTest extends BaseCachingTest{
     assertEquals("verify correct amount responded entities", 10, response.get().getEntities().size());
     
     verify(broadcaster, times(6)).sendRequest(any(), anyString(), any(MainTopics.class));
-    verify(merkleCalculator, atLeast(3)).calculateMerkleRootHash(anyList());
+    verify(merkleCalculator, atLeast(3)).calculateMerkleRootHash(any());
     verify(networkStatistics, times(1)).activeNodeCount();
     verify(networkStatistics, times(1)).activeNodeIds();
   }
@@ -164,7 +164,7 @@ public class SyncInquirerTest extends BaseCachingTest{
     assertEquals("verify correct amount responded entities", 10, response.get().getEntities().size());
     
     verify(broadcaster,times(6)).sendRequest(any(), anyString(), any(MainTopics.class));
-    verify(merkleCalculator, times(2)).calculateMerkleRootHash(anyList());
+    verify(merkleCalculator, times(2)).calculateMerkleRootHash(any());
     verify(networkStatistics, times(1)).activeNodeCount();
     verify(networkStatistics, times(1)).activeNodeIds();
   }
@@ -194,7 +194,7 @@ public class SyncInquirerTest extends BaseCachingTest{
     assertEquals("verify correct amount responded entities", 10, response.get().getEntities().size());
     
     verify(broadcaster,times(6)).sendRequest(any(), anyString(), any(MainTopics.class));
-    verify(merkleCalculator, times(1)).calculateMerkleRootHash(anyList());
+    verify(merkleCalculator, times(1)).calculateMerkleRootHash(any());
     verify(networkStatistics, times(1)).activeNodeCount();
     verify(networkStatistics, times(1)).activeNodeIds();
   }
@@ -225,7 +225,7 @@ public class SyncInquirerTest extends BaseCachingTest{
     assertEquals("verify correct amount responded entities", 10, response.get().getEntities().size());
     
     verify(broadcaster,times(18)).sendRequest(any(), anyString(), any(MainTopics.class));
-    verify(merkleCalculator, atLeast(3)).calculateMerkleRootHash(anyList());
+    verify(merkleCalculator, atLeast(3)).calculateMerkleRootHash(any());
     verify(networkStatistics, times(3)).activeNodeCount();
     verify(networkStatistics, times(3)).activeNodeIds();
   }
@@ -288,7 +288,7 @@ public class SyncInquirerTest extends BaseCachingTest{
     assertEquals("verify correct amount responded entities", 10, response.get().getEntities().size());
     
     verify(broadcaster,times(3)).sendRequest(any(), anyString(), any(MainTopics.class));
-    verify(merkleCalculator, times(2)).calculateMerkleRootHash(anyList());
+    verify(merkleCalculator, times(2)).calculateMerkleRootHash(any());
     verify(networkStatistics, times(1)).activeNodeCount();
     verify(networkStatistics, times(1)).activeNodeIds();
   }

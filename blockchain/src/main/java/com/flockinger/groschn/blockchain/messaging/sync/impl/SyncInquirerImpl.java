@@ -5,6 +5,7 @@ import static java.util.stream.Collectors.toList;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map.Entry;
@@ -48,8 +49,10 @@ public class SyncInquirerImpl implements SyncInquirer {
   private final static Logger LOG = LoggerFactory.getLogger(SyncInquirerImpl.class);
   public SecureRandom randomizer = new SecureRandom();
 
+  
+  //TODO make findMajorlyAcceptedBatch optional and add custom Function<...> interface to SyncBatchRequest
   @Override
-  public <T extends Hashable> Optional<SyncResponse<T>> fetchNextBatch(SyncBatchRequest request,
+  public <T extends Hashable<T>> Optional<SyncResponse<T>> fetchNextBatch(SyncBatchRequest request,
       Class<T> responseType) {
     messageUtils.assertEntity(request);
     Optional<SyncResponse<T>> response = Optional.empty();
@@ -127,7 +130,7 @@ public class SyncInquirerImpl implements SyncInquirer {
   }
   
   
-  private <T extends Hashable> Optional<SyncResponse<T>> findMostLikelyValidResponse(List<Message<MessagePayload>> messages, Class<T> payloadType) {
+  private <T extends Hashable<T>> Optional<SyncResponse<T>> findMostLikelyValidResponse(List<Message<MessagePayload>> messages, Class<T> payloadType) {
     return messages.stream()
         .map(message -> messageUtils.extractPayload(message, SyncResponse.class))
         .filter(Optional::isPresent).map(Optional::get).map(response -> (SyncResponse<T>)response)
@@ -137,11 +140,11 @@ public class SyncInquirerImpl implements SyncInquirer {
             .flatMap(Collection::stream).findFirst();
   }
   
-  private <T extends Hashable> String merkleRootOfPayloadHashes(SyncResponse<T> response) {
+  private <T extends Hashable<T>> String merkleRootOfPayloadHashes(SyncResponse<T> response) {
     return merkleCalculator.calculateMerkleRootHash(response.getEntities());
   }
   
-  private <T extends Hashable> List<SyncResponse<T>> findMajorlyAcceptedBatch(
+  private <T extends Hashable<T>> List<SyncResponse<T>> findMajorlyAcceptedBatch(
       List<SyncResponse<T>> first, List<SyncResponse<T>> second){
     return (first.size() > second.size()) ? first : second;
   }

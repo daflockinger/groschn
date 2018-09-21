@@ -3,6 +3,7 @@ package com.flockinger.groschn.blockchain.transaction.impl;
 import static java.lang.Math.abs;
 import static java.lang.Math.max;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -103,6 +104,7 @@ public class TransactionManagerImpl implements TransactionManager {
 
   private void signTransactionInput(TransactionInput input, List<TransactionOutput> outputs,
       byte[] privateKey) {
+    Collections.sort(outputs);
     String signature = signer.sign(serializer.serialize(outputs), privateKey);
     input.setSignature(signature);
   }

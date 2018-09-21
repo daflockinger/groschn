@@ -2,12 +2,12 @@ package com.flockinger.groschn.blockchain.consensus.model;
 
 import com.flockinger.groschn.blockchain.model.Hashable;
 
-public class Consent implements Hashable {
+public class Consent implements Hashable<Consent> {
   /**
    * 
    */
   private static final long serialVersionUID = -8569663167682846480L;
-  
+
   private Long nonce;
   private Long timestamp;
   private Integer difficulty;
@@ -52,5 +52,17 @@ public class Consent implements Hashable {
 
   public void setTimestamp(Long timestamp) {
     this.timestamp = timestamp;
+  }
+
+  @Override
+  public int compareTo(Consent o) {
+    if (this.getTimestamp() == null && o.getTimestamp() == null) {
+      return 0;
+    } else if (this.getTimestamp() == null) {
+      return -1;
+    } else if (o.getTimestamp() == null) {
+      return 1;
+    }
+    return this.getTimestamp().compareTo(o.getTimestamp());
   }
 }

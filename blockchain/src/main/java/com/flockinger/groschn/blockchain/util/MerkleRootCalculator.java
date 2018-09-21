@@ -1,8 +1,10 @@
 package com.flockinger.groschn.blockchain.util;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.commons.collections4.ListUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import com.flockinger.groschn.blockchain.blockworks.HashGenerator;
@@ -15,8 +17,8 @@ public class MerkleRootCalculator {
   @Autowired
   private HashGenerator hasher;
   
-  
-  public <T extends Hashable> String calculateMerkleRootHash(List<T> entities) {
+  public <T extends Hashable<T>> String calculateMerkleRootHash(List<T> entities) {
+    Collections.sort(entities);
     List<MerkleNode> nodes = createHashPairs(entities.stream()
         .map(hasher::generateHash).collect(Collectors.toList()));
     while(nodes.size() > 1) {
@@ -51,7 +53,12 @@ public class MerkleRootCalculator {
     return createHashPairs(currentHashes);
   }
   
-  private final static class MerkleNode implements Hashable{
+  private final static class MerkleNode implements Hashable<MerkleNode>{
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 6541850432848128430L;
+    
     private String leftNode;
     private String rightNode;
     
@@ -74,6 +81,15 @@ public class MerkleRootCalculator {
     public MerkleNode rightNode(String rightNode) {
       this.rightNode = rightNode;
       return this;
+    }
+    @Override
+    public int compareTo(MerkleNode o) {
+      int leftNodeComparison = StringUtils.compare(this.getLeftNode(), o.getLeftNode());
+      if(leftNodeComparison == 0) {
+        return StringUtils.compare(this.getRightNode(), o.getRightNode());
+      } else {
+        return leftNodeComparison;
+      }
     }
   }
 }

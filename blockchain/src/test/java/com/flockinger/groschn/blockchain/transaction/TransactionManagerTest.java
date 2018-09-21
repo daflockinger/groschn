@@ -10,7 +10,9 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -19,6 +21,8 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.RandomUtils;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -234,6 +238,36 @@ public class TransactionManagerTest extends BaseDbTest {
     Transaction signedTransaction = manager.createSignedTransaction(request);
     // assert
     assertNotNull("verify signed transaction is not null", signedTransaction);
+  }
+  
+  @Test
+  public void testCreateSignedTransaction_withValidRequestSentTwiceWithShuffledOutputList_shouldResultEqual() {  
+    when(signer.sign(any(), any())).thenAnswer(new Answer<String>() {
+      @Override
+      public String answer(InvocationOnMock invocation) throws Throwable {
+        byte[] toSign = (byte[])invocation.getArguments()[0];
+        return new String(toSign, StandardCharsets.UTF_8);
+      }});
+    
+    TransactionDto request = new TransactionDto();
+    TransactionStatementDto input  = new TransactionStatementDto();
+    input.setAmount(100d);
+    input.setPublicKey("masta-key");
+    input.setSequenceNumber(1l);
+    input.setTimestamp(3000l);
+    request.setInputs(ImmutableList.of(input));
+    var outputs = new ArrayList<TransactionStatementDto>();
+    outputs.addAll(ImmutableList.of(createStatement(1),createStatement(2),createStatement(3)));
+    request.setOutputs(outputs);
+    
+    String signature = manager.createSignedTransaction(request).getInputs().get(0).getSignature();
+    String sameSignature = manager.createSignedTransaction(request).getInputs().get(0).getSignature();
+    assertEquals("verify that signature is the equal also with non-shuffled outputs", signature, sameSignature);
+    Collections.shuffle(request.getOutputs());
+    String shuffledSignature = manager.createSignedTransaction(request).getInputs().get(0).getSignature();
+    
+    // assert
+    assertEquals("verify that signature is the equal also with shuffled outputs", signature, shuffledSignature);
   }
   
   @Test(expected = CantConfigureSigningAlgorithmException.class)

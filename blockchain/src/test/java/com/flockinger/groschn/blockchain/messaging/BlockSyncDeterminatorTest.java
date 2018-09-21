@@ -2,6 +2,7 @@ package com.flockinger.groschn.blockchain.messaging;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import java.util.ArrayList;
@@ -20,6 +21,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
 import com.flockinger.groschn.blockchain.exception.BlockSynchronizationException;
 import com.flockinger.groschn.blockchain.messaging.dto.BlockInfo;
+import com.flockinger.groschn.blockchain.messaging.dto.BlockInfoResult;
 import com.flockinger.groschn.blockchain.messaging.dto.SyncBatchRequest;
 import com.flockinger.groschn.blockchain.messaging.dto.SyncResponse;
 import com.flockinger.groschn.blockchain.messaging.sync.SyncInquirer;
@@ -66,11 +68,14 @@ public class BlockSyncDeterminatorTest {
         batchInfoRequest.getFromPosition(), storedFakeBlocks.get(0).getPosition().longValue());
     assertEquals("verify that the target topic is correct", MainTopics.BLOCK_INFO, batchInfoRequest.getTopic());
     
-    var syncPositionCaptor = ArgumentCaptor.forClass(Long.class);
-    verify(synchronizer).synchronize(syncPositionCaptor.capture());
-    var syncPosition = syncPositionCaptor.getValue();
-    assertNotNull("verify chosen start position is not null", syncPosition);
-    assertEquals("verify chosen sync start position is correct", 101l, syncPosition.longValue());
+    var syncResultCaptor = ArgumentCaptor.forClass(BlockInfoResult.class);
+    verify(synchronizer).synchronize(syncResultCaptor.capture());
+    var syncResult = syncResultCaptor.getValue();
+    assertNotNull("verify chosen start position is not null", syncResult.getStartPosition());
+    assertEquals("verify chosen sync start position is correct", 101l, syncResult.getStartPosition());
+    assertEquals("verify correct info count", 100, syncResult.getCorrectInfos().size());
+    assertTrue("verify correct infos are chosen", syncResult.getCorrectInfos().stream().allMatch(info -> info.getPosition() >= 100));
+    
     var removeFromCaptor = ArgumentCaptor.forClass(Long.class);
     verify(blockService).removeBlocks(removeFromCaptor.capture());
     var removeFrom = removeFromCaptor.getValue();
@@ -99,11 +104,12 @@ public class BlockSyncDeterminatorTest {
     assertEquals("verify that blockInfo request start position is equal to last block position", 
         batchInfoRequest.getFromPosition(), storedFakeBlocks.get(0).getPosition().longValue());
     
-    var syncPositionCaptor = ArgumentCaptor.forClass(Long.class);
-    verify(synchronizer).synchronize(syncPositionCaptor.capture());
-    var syncPosition = syncPositionCaptor.getValue();
-    assertNotNull("verify chosen start position is not null", syncPosition);
-    assertEquals("verify chosen sync start position is correct", 2l, syncPosition.longValue());
+    var syncResultCaptor = ArgumentCaptor.forClass(BlockInfoResult.class);
+    verify(synchronizer).synchronize(syncResultCaptor.capture());
+    var syncResult = syncResultCaptor.getValue();
+    assertNotNull("verify chosen start position is not null", syncResult.getStartPosition());
+    assertEquals("verify chosen sync start position is correct", 2l, syncResult.getStartPosition());
+    assertEquals("verify correct info count", 100, syncResult.getCorrectInfos().size());
     var removeFromCaptor = ArgumentCaptor.forClass(Long.class);
     verify(blockService).removeBlocks(removeFromCaptor.capture());
     var removeFrom = removeFromCaptor.getValue();
@@ -129,11 +135,13 @@ public class BlockSyncDeterminatorTest {
     
     determinator.determineAndSync();
     
-    var syncPositionCaptor = ArgumentCaptor.forClass(Long.class);
-    verify(synchronizer).synchronize(syncPositionCaptor.capture());
-    var syncPosition = syncPositionCaptor.getValue();
-    assertNotNull("verify chosen start position is not null", syncPosition);
-    assertEquals("verify chosen sync start position is correct", 201l, syncPosition.longValue());
+    var syncResultCaptor = ArgumentCaptor.forClass(BlockInfoResult.class);
+    verify(synchronizer).synchronize(syncResultCaptor.capture());
+    var syncResult = syncResultCaptor.getValue();
+    assertNotNull("verify chosen start position is not null", syncResult.getStartPosition());
+    assertEquals("verify chosen sync start position is correct", 201l, syncResult.getStartPosition());
+    assertEquals("verify correct info count for resync", 200, syncResult.getCorrectInfos().size());
+    assertTrue("verify correct infos are chosen", syncResult.getCorrectInfos().stream().allMatch(info -> info.getPosition() > 200));
     var removeFromCaptor = ArgumentCaptor.forClass(Long.class);
     verify(blockService).removeBlocks(removeFromCaptor.capture());
     var removeFrom = removeFromCaptor.getValue();
@@ -158,11 +166,14 @@ public class BlockSyncDeterminatorTest {
     
     determinator.determineAndSync();
     
-    var syncPositionCaptor = ArgumentCaptor.forClass(Long.class);
-    verify(synchronizer).synchronize(syncPositionCaptor.capture());
-    var syncPosition = syncPositionCaptor.getValue();
-    assertNotNull("verify chosen start position is not null", syncPosition);
-    assertEquals("verify chosen sync start position is correct", 278l, syncPosition.longValue());
+    var syncResultCaptor = ArgumentCaptor.forClass(BlockInfoResult.class);
+    verify(synchronizer).synchronize(syncResultCaptor.capture());
+    var syncResult = syncResultCaptor.getValue();
+    assertNotNull("verify chosen start position is not null", syncResult.getStartPosition());
+    assertEquals("verify chosen sync start position is correct", 278l, syncResult.getStartPosition());
+    assertEquals("verify correct info count", 123, syncResult.getCorrectInfos().size());
+    assertTrue("verify correct infos are chosen", syncResult.getCorrectInfos().stream().allMatch(info -> info.getPosition() >= 278));
+        
     var removeFromCaptor = ArgumentCaptor.forClass(Long.class);
     verify(blockService).removeBlocks(removeFromCaptor.capture());
     var removeFrom = removeFromCaptor.getValue();

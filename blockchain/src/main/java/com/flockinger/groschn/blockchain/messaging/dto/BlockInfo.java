@@ -1,8 +1,9 @@
 package com.flockinger.groschn.blockchain.messaging.dto;
 
+import java.util.Objects;
 import com.flockinger.groschn.blockchain.model.Hashable;
 
-public class BlockInfo implements Comparable<BlockInfo>, Hashable {
+public class BlockInfo implements Hashable<BlockInfo> {
   /**
    * 
    */
@@ -24,6 +25,7 @@ public class BlockInfo implements Comparable<BlockInfo>, Hashable {
     this.position = position;
   }
   
+  @Override
   public int compareTo(BlockInfo o) {
     if(this.getPosition() == null && o.getPosition() == null) {
       return 0;
@@ -33,5 +35,17 @@ public class BlockInfo implements Comparable<BlockInfo>, Hashable {
       return 1;
     }
     return this.getPosition().compareTo(o.getPosition());
+  }
+  
+  @Override
+  public boolean equals(Object obj) {
+    if(obj == null) {
+      return false;
+    }
+    if(!(obj instanceof BlockInfo)) {
+      return false;
+    }
+    return Objects.equals(this.getBlockHash(),((BlockInfo)obj).getBlockHash())
+    && Objects.equals(this.getPosition(),((BlockInfo)obj).getPosition());
   }
 }

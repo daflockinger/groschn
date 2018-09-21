@@ -4,7 +4,7 @@ import java.io.Serializable;
 import java.util.List;
 import com.flockinger.groschn.blockchain.model.Hashable;
 
-public class SyncResponse<T extends Serializable> implements Hashable{
+public class SyncResponse<T extends Serializable> implements Hashable<SyncResponse<T>>{
   /**
    * 
    */
@@ -38,5 +38,17 @@ public class SyncResponse<T extends Serializable> implements Hashable{
 
   public void setLastPositionReached(boolean lastPositionReached) {
     this.lastPositionReached = lastPositionReached;
+  }
+
+  @Override
+  public int compareTo(SyncResponse<T> o) {
+    if (this.getStartingPosition() == null && o.getStartingPosition() == null) {
+      return 0;
+    } else if (this.getStartingPosition() == null) {
+      return -1;
+    } else if (o.getStartingPosition() == null) {
+      return 1;
+    }
+    return this.getStartingPosition().compareTo(o.getStartingPosition());
   }
 }

@@ -1,11 +1,15 @@
 package com.flockinger.groschn.blockchain.messaging.sync.impl;
 
+import static org.apache.commons.collections4.ListUtils.emptyIfNull;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import static org.apache.commons.collections4.ListUtils.emptyIfNull;
+import java.util.stream.Collectors;
+import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +19,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
 import com.flockinger.groschn.blockchain.exception.BlockchainException;
+import com.flockinger.groschn.blockchain.messaging.dto.BlockInfo;
+import com.flockinger.groschn.blockchain.messaging.dto.BlockInfoResult;
 import com.flockinger.groschn.blockchain.messaging.dto.SyncBatchRequest;
 import com.flockinger.groschn.blockchain.messaging.dto.SyncResponse;
 import com.flockinger.groschn.blockchain.messaging.dto.SyncStatus;
@@ -48,21 +54,23 @@ public class BlockSynchronizer implements SyncKeeper {
   /**
    * Number of retries when the validation of one of the received Blocks fails.
    */
-  private final static Integer BLOCK_FETCH_N_STORE_RETRIES = 1;
+  private final static Integer BLOCK_FETCH_N_STORE_RETRIES = 20;
   
   private final SyncBatchRequest batchRequest = SyncBatchRequest.build()
       .batchSize(BLOCK_REQUEST_PACKAGE_SIZE) 
       // Ideal amount of nodes that responded the synchronization request.
-      .idealReceiveNodeCount(3)
-      //Amount of retires to request ideally three (and with a small network one) synchronization responses.
-      .maxFetchRetries(3)
+      .idealReceiveNodeCount(1)
+      //Amount of retires to request ideally five (and with a small network one) synchronization responses.
+      .maxFetchRetries(5)
       // Block sync request topic
       .topic(MainTopics.SYNC_BLOCKCHAIN);
   
-  
-  //TODO get rid of this wild WHILE loop
   @Override
-  public void synchronize(long fromPosition) {
+  public void synchronize(BlockInfoResult infoResult) {
+    var fromPosition = infoResult.getStartPosition();
+    var blockInfos = ListUtils.emptyIfNull(infoResult.getCorrectInfos());
+    var totalBatches = Math.round(Math.ceil(blockInfos.size()/BLOCK_REQUEST_PACKAGE_SIZE));
+    Collections.sort(blockInfos);
     if(syncStatus().equals(SyncStatus.IN_PROGRESS.name())) {
       LOG.warn("Synchronization still in progress!");
       return;
@@ -71,8 +79,10 @@ public class BlockSynchronizer implements SyncKeeper {
     LOG.debug("Started synchronization at position: " + fromPosition);
     try {
       boolean hasFinishedSync = false;
-      while(!hasFinishedSync) {
-        hasFinishedSync = storeBatchOfBlocksAndReturnHasFinished(SyncBatchRequest.build(batchRequest).fromPosition(fromPosition));
+      for(int batchCount =0;(batchCount < totalBatches) && !hasFinishedSync; batchCount++) {
+        var relatedInfos = extractPartition(blockInfos, batchCount);
+        hasFinishedSync = storeBatchOfBlocksAndReturnHasFinished(SyncBatchRequest
+            .build(batchRequest).fromPosition(fromPosition), relatedInfos);
         LOG.debug("Successfully synced and stored Blocks until position: " + fromPosition);
         fromPosition += BLOCK_REQUEST_PACKAGE_SIZE;
       }
@@ -82,21 +92,42 @@ public class BlockSynchronizer implements SyncKeeper {
     }
   }
   
-  private boolean storeBatchOfBlocksAndReturnHasFinished(SyncBatchRequest request) {
-    Optional<SyncResponse<Block>> blocks = Optional.empty();
+  private List<BlockInfo> extractPartition(List<BlockInfo> allInfos, int position) {
+    var splitInfos = ListUtils.partition(allInfos, BLOCK_REQUEST_PACKAGE_SIZE);
+    return position < splitInfos.size() ? splitInfos.get(position) : new ArrayList<>();
+  }
+  
+  private boolean storeBatchOfBlocksAndReturnHasFinished(SyncBatchRequest request, List<BlockInfo> relatedInfos) {
+    Optional<SyncResponse<Block>> syncResponse = Optional.empty();
     boolean isValidAndStored = false;
     for(int retryCount = 0; retryCount <= BLOCK_FETCH_N_STORE_RETRIES && !isValidAndStored; retryCount++) {
-      blocks = inquirer.fetchNextBatch(request, Block.class);
-      isValidAndStored = blocks.stream().map(SyncResponse::getEntities)
-          .filter(Objects::nonNull)
-          .map(this::storeBlocksAndReturnSuccess)
-          .findFirst().orElse(true);
+      syncResponse = inquirer.fetchNextBatch(request, Block.class);      
+      if(isResponseCorrect(syncResponse, relatedInfos)) {
+        isValidAndStored = syncResponse.stream().map(SyncResponse::getEntities)
+            .filter(Objects::nonNull)
+            .map(this::storeBlocksAndReturnSuccess)
+            .findFirst().orElse(true);
+      }
     }
-    return blocks.stream().map(response -> 
+    return syncResponse.stream().map(response -> 
     response.isLastPositionReached() || emptyIfNull(response.getEntities()).isEmpty())
         .findFirst().orElse(true) || !isValidAndStored;
   }
   
+  private boolean isResponseCorrect(Optional<SyncResponse<Block>> response, List<BlockInfo> relatedInfos) {
+    var respondedBlockInfos = response.stream()
+        .map(SyncResponse::getEntities).filter(Objects::nonNull).flatMap(Collection::stream)
+        .map(this::mapToInfo).collect(Collectors.toList());
+    //Only works properly if the added Equals in BlockInfo works!
+    return respondedBlockInfos.containsAll(relatedInfos);
+  }
+  
+  private BlockInfo mapToInfo(Block block) {
+    var info = new BlockInfo();
+    info.setBlockHash(block.getHash());
+    info.setPosition(block.getPosition());
+    return info;
+  }
   
   private boolean storeBlocksAndReturnSuccess(List<Block> blocks) {
     boolean allStoredSuccessful = false;

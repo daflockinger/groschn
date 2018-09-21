@@ -10,6 +10,6 @@ import com.flockinger.groschn.blockchain.model.Hashable;
  */
 public interface SyncInquirer {
 
-  <T extends Hashable> Optional<SyncResponse<T>> fetchNextBatch(SyncBatchRequest request,
+  <T extends Hashable<T>> Optional<SyncResponse<T>> fetchNextBatch(SyncBatchRequest request,
       Class<T> responseType);
 }

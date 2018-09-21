@@ -1,8 +1,9 @@
 package com.flockinger.groschn.blockchain.model;
 
 import java.util.List;
+import org.apache.commons.lang3.StringUtils;
 
-public class Transaction implements Hashable {
+public class Transaction implements Hashable<Transaction> {
   /**
   * 
   */
@@ -49,4 +50,14 @@ public class Transaction implements Hashable {
   public void setLockTime(Long lockTime) {
     this.lockTime = lockTime;
   }
+
+  @Override
+  public int compareTo(Transaction o) {
+    if(o == null) {
+      return 1;
+    }
+    return StringUtils.compare(this.getTransactionHash(), o.getTransactionHash());
+  }
+  
+  
 }
