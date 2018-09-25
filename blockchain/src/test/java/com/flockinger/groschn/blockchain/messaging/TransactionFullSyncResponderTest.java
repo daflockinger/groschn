@@ -9,6 +9,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import java.util.Optional;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,15 +22,13 @@ import com.flockinger.groschn.blockchain.messaging.dto.SyncResponse;
 import com.flockinger.groschn.blockchain.messaging.sync.impl.TransactionFullSyncResponder;
 import com.flockinger.groschn.blockchain.model.Transaction;
 import com.flockinger.groschn.blockchain.transaction.TransactionManager;
-import com.flockinger.groschn.blockchain.util.CompressionUtils;
-import com.flockinger.groschn.blockchain.util.serialize.impl.FstSerializer;
+import com.flockinger.groschn.commons.compress.CompressedEntity;
+import com.flockinger.groschn.commons.compress.CompressionUtils;
 import com.flockinger.groschn.messaging.members.NetworkStatistics;
-import com.flockinger.groschn.messaging.model.CompressedEntity;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.google.common.collect.ImmutableList;
 
-@ContextConfiguration(classes = {TransactionFullSyncResponder.class, 
-    CompressionUtils.class, MessagingUtils.class, FstSerializer.class})
+@ContextConfiguration(classes = {TransactionFullSyncResponder.class, MessagingUtils.class})
 public class TransactionFullSyncResponderTest extends BaseCachingTest {
   
   @MockBean
@@ -70,7 +69,7 @@ public class TransactionFullSyncResponderTest extends BaseCachingTest {
     assertTrue("verify that compressed entity is not empty", entity.getEntity().length > 0);
     assertTrue("verify that compressed entity has an original size", entity.getOriginalSize() > 0);
     
-    var response = compressor.decompress(entity.getEntity(), entity.getOriginalSize(), SyncResponse.class);
+    Optional<SyncResponse> response = compressor.decompress(entity.getEntity(), entity.getOriginalSize(), SyncResponse.class);
     assertTrue("verify that response is there", response.isPresent());
     assertEquals("verify that response starting position is correct", 1l, 
         response.get().getStartingPosition().longValue());

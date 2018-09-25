@@ -10,7 +10,6 @@ import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import com.flockinger.groschn.blockchain.dto.WalletDto;
@@ -22,12 +21,11 @@ import com.flockinger.groschn.blockchain.repository.BlockchainRepository;
 import com.flockinger.groschn.blockchain.repository.WalletRepository;
 import com.flockinger.groschn.blockchain.repository.model.StoredBlock;
 import com.flockinger.groschn.blockchain.repository.model.StoredWallet;
-import com.flockinger.groschn.blockchain.transaction.impl.TransactionUtils;
-import com.flockinger.groschn.blockchain.util.Base58;
-import com.flockinger.groschn.blockchain.util.crypto.EncryptedKey;
-import com.flockinger.groschn.blockchain.util.crypto.KeyCipher;
-import com.flockinger.groschn.blockchain.util.sign.Signer;
 import com.flockinger.groschn.blockchain.wallet.WalletService;
+import com.flockinger.groschn.commons.Base58;
+import com.flockinger.groschn.commons.crypto.EncryptedKey;
+import com.flockinger.groschn.commons.crypto.KeyCipher;
+import com.flockinger.groschn.commons.sign.Signer;
 
 @Component
 public class WalletServiceImpl implements WalletService {
@@ -39,7 +37,6 @@ public class WalletServiceImpl implements WalletService {
   @Autowired
   private KeyCipher cipher;
   @Autowired
-  @Qualifier("ECDSA_Signer")
   private Signer signer;
   @Autowired
   private WalletRepository walletDao;

@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
-import org.apache.commons.lang3.RandomUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,22 +18,19 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import com.flockinger.groschn.blockchain.BaseDbTest;
 import com.flockinger.groschn.blockchain.dto.WalletDto;
-import com.flockinger.groschn.blockchain.exception.crypto.CantConfigureSigningAlgorithmException;
-import com.flockinger.groschn.blockchain.exception.crypto.CipherConfigurationException;
 import com.flockinger.groschn.blockchain.repository.BlockchainRepository;
 import com.flockinger.groschn.blockchain.repository.WalletRepository;
 import com.flockinger.groschn.blockchain.repository.model.StoredBlock;
 import com.flockinger.groschn.blockchain.repository.model.StoredTransaction;
 import com.flockinger.groschn.blockchain.repository.model.StoredTransactionOutput;
 import com.flockinger.groschn.blockchain.repository.model.StoredWallet;
-import com.flockinger.groschn.blockchain.util.Base58;
-import com.flockinger.groschn.blockchain.util.crypto.impl.KeyAESCipher;
-import com.flockinger.groschn.blockchain.util.sign.Signer;
-import com.flockinger.groschn.blockchain.util.sign.impl.EcdsaSecpSigner;
 import com.flockinger.groschn.blockchain.wallet.impl.WalletServiceImpl;
+import com.flockinger.groschn.commons.Base58;
+import com.flockinger.groschn.commons.exception.crypto.CantConfigureSigningAlgorithmException;
+import com.flockinger.groschn.commons.exception.crypto.CipherConfigurationException;
+import com.flockinger.groschn.commons.sign.Signer;
 
-@ContextConfiguration(classes = {WalletServiceImpl.class, BlockchainRepository.class,
-    WalletRepository.class, KeyAESCipher.class, EcdsaSecpSigner.class})
+@ContextConfiguration(classes = {WalletServiceImpl.class, BlockchainRepository.class, WalletRepository.class})
 @TestPropertySource(properties = {"blockchain.node.credentials.public-key=master-pub-key",
     "blockchain.node.credentials.private-key=master-private-key"})
 public class WalletServiceTest extends BaseDbTest {
@@ -44,7 +40,6 @@ public class WalletServiceTest extends BaseDbTest {
   @Autowired
   private WalletService service;
   @Autowired
-  @Qualifier("ECDSA_Signer")
   private Signer signer;
   @Autowired
   private WalletRepository walletDao;

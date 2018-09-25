@@ -11,11 +11,12 @@ import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
 import com.flockinger.groschn.blockchain.config.CacheConfig;
+import com.flockinger.groschn.commons.config.CommonsConfig;
 
 @ActiveProfiles("test")
 @RunWith(SpringRunner.class)
 @ContextConfiguration(initializers=ConfigFileApplicationContextInitializer.class)
-@Import(CacheConfig.class)
+@Import({CacheConfig.class, TestConfig.class, CommonsConfig.class})
 @TestExecutionListeners({DependencyInjectionTestExecutionListener.class, MockitoTestExecutionListener.class, ResetMocksTestExecutionListener.class})
 public abstract class BaseCachingTest {
 

@@ -38,6 +38,11 @@
 			<artifactId>messaging</artifactId>
 			<version>0.0.1</version>
 		</dependency>
+		<dependency>
+			<groupId>com.flockinger.groschn</groupId>
+			<artifactId>commons</artifactId>
+			<version>0.0.1</version>
+		</dependency>
 
 		<dependency>
 			<groupId>org.modelmapper</groupId>

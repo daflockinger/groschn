@@ -22,8 +22,8 @@ import org.springframework.test.context.support.DependencyInjectionTestExecution
 import com.flockinger.groschn.blockchain.exception.messaging.ReceivedMessageInvalidException;
 import com.flockinger.groschn.blockchain.messaging.dto.SyncRequest;
 import com.flockinger.groschn.blockchain.model.Block;
-import com.flockinger.groschn.blockchain.util.CompressionUtils;
-import com.flockinger.groschn.messaging.model.CompressedEntity;
+import com.flockinger.groschn.commons.compress.CompressedEntity;
+import com.flockinger.groschn.commons.compress.CompressionUtils;
 import com.flockinger.groschn.messaging.model.Message;
 import com.flockinger.groschn.messaging.model.MessagePayload;
 
@@ -120,7 +120,7 @@ public class MessagingUtilsTest {
   @Test
   public void testExtractPayload_withValidPayload_shouldExtract() {
     Block freshBlock = new Block();
-    when(compressor.decompress(any(), any(Integer.class), any())).thenReturn(Optional.ofNullable(freshBlock));
+    when(compressor.decompress(any(), any(Integer.class), any(Class.class))).thenReturn(Optional.ofNullable(freshBlock));
     
     Optional<Block> extractedBlock = utils.extractPayload(validMessage(), Block.class);
     assertTrue("verify extracted block exists", extractedBlock.isPresent());

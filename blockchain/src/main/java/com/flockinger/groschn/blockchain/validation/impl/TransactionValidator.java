@@ -4,18 +4,17 @@ import static com.flockinger.groschn.blockchain.model.Block.MAX_AMOUNT_MINED_GRO
 import java.math.BigDecimal;
 import java.util.Date;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
-import com.flockinger.groschn.blockchain.blockworks.HashGenerator;
-import com.flockinger.groschn.blockchain.exception.BlockchainException;
 import com.flockinger.groschn.blockchain.exception.validation.AssessmentFailedException;
 import com.flockinger.groschn.blockchain.model.Transaction;
 import com.flockinger.groschn.blockchain.model.TransactionInput;
 import com.flockinger.groschn.blockchain.model.TransactionOutput;
-import com.flockinger.groschn.blockchain.util.sign.Signer;
 import com.flockinger.groschn.blockchain.validation.Assessment;
 import com.flockinger.groschn.blockchain.validation.Validator;
 import com.flockinger.groschn.blockchain.wallet.WalletService;
+import com.flockinger.groschn.commons.exception.BlockchainException;
+import com.flockinger.groschn.commons.hash.HashGenerator;
+import com.flockinger.groschn.commons.sign.Signer;
 
 /**
  * Single Transaction Validator should be used for new incomming <br>
@@ -50,7 +49,6 @@ public class TransactionValidator implements Validator<Transaction> {
   @Autowired
   private HashGenerator hasher;
   @Autowired
-  @Qualifier("ECDSA_Signer")
   private Signer signer;
   @Autowired
   private WalletService wallet;

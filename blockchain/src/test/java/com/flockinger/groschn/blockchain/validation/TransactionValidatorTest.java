@@ -18,15 +18,15 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import com.flockinger.groschn.blockchain.TestDataFactory;
-import com.flockinger.groschn.blockchain.blockworks.HashGenerator;
 import com.flockinger.groschn.blockchain.exception.HashingException;
-import com.flockinger.groschn.blockchain.exception.crypto.CantConfigureSigningAlgorithmException;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.model.Transaction;
-import com.flockinger.groschn.blockchain.util.sign.Signer;
 import com.flockinger.groschn.blockchain.validation.impl.TransactionValidationHelper;
 import com.flockinger.groschn.blockchain.validation.impl.TransactionValidator;
 import com.flockinger.groschn.blockchain.wallet.WalletService;
+import com.flockinger.groschn.commons.exception.crypto.CantConfigureSigningAlgorithmException;
+import com.flockinger.groschn.commons.hash.HashGenerator;
+import com.flockinger.groschn.commons.sign.Signer;
 
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes = {TransactionValidator.class, TransactionValidationHelper.class})
@@ -34,7 +34,7 @@ public class TransactionValidatorTest {
   
   @MockBean
   private HashGenerator hasher;
-  @MockBean(name="ECDSA_Signer")
+  @MockBean
   private Signer signer;
   @MockBean
   private WalletService wallet;

@@ -1,13 +1,13 @@
 package com.flockinger.groschn.messaging.inbound;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.function.Function;
 import javax.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import com.flockinger.groschn.commons.serialize.BlockSerializer;
 import com.flockinger.groschn.messaging.model.Message;
 import com.flockinger.groschn.messaging.model.MessagePayload;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
@@ -22,25 +22,25 @@ public class MessageDispatcher {
   private List<MessageResponder<MessagePayload>> responders;
   
   @Autowired
+  private BlockSerializer serializer;
+  
+  @Autowired
   private Atomix atomix;
   @Autowired
   private Executor pooledExecutor;
   
   @Value("${blockchain.messaging.response-timeout}")
   private Integer responseTimeoutSeconds;
-  
-  private Function<Optional<Message<MessagePayload>>, byte[]> encoder = null;
-  private Function<byte[], Message<MessagePayload>> decoder = null;
-  
+    
   @PostConstruct
   public void init() {
     for(MessageListener<MessagePayload> listener: listeners) {
       clusterCommunicator().subscribe(listener.getSubscribedTopic().name(), 
-          decoder, listener::receiveMessage, pooledExecutor);
+          decoder(), listener::receiveMessage, pooledExecutor);
     }
     for(MessageResponder<MessagePayload> responder: responders) {
       clusterCommunicator().subscribe(responder.getSubscribedTopic().name(), 
-          decoder, responder::respond, encoder, pooledExecutor);
+          decoder(), responder::respond, serializer::serialize, pooledExecutor);
     }
   }
   
@@ -48,10 +48,8 @@ public class MessageDispatcher {
     return atomix.getCommunicationService();
   }
   
-  public void setEncoder(Function<Optional<Message<MessagePayload>>, byte[]> encoder) {
-    this.encoder = encoder;
-  }
-  public void setDecoder(Function<byte[], Message<MessagePayload>> decoder) {
-    this.decoder = decoder;
+  @SuppressWarnings("unchecked")
+  public Function<byte[], Message<MessagePayload>> decoder() {
+    return payload -> (Message<MessagePayload>)serializer.deserialize(payload, Message.class);
   }
 }

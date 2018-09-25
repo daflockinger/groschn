@@ -4,11 +4,11 @@ import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import com.flockinger.groschn.commons.serialize.BlockSerializer;
 import com.flockinger.groschn.messaging.config.MainTopics;
 import com.flockinger.groschn.messaging.model.Message;
 import com.flockinger.groschn.messaging.model.MessagePayload;
@@ -29,45 +29,39 @@ public class BroadcasterImpl implements Broadcaster<MessagePayload> {
   @Value("${blockchain.messaging.response-timeout}")
   private Integer responseTimeoutSeconds;
   
-  private Function<Message<MessagePayload>, byte[]> encoder = null;
-  private Function<byte[], Message<MessagePayload>> decoder = null;
+  @Autowired
+  private BlockSerializer serializer;
   
   @Override
   public void broadcast(Message<MessagePayload> message, MainTopics topic) {
-    clusterCommunicator().broadcast(topic.name(), message, encoder);
+    clusterCommunicator().broadcast(topic.name(), message, serializer::serialize);
   }
 
   @Override
   public void multicast(Message<MessagePayload> message, List<String> receiverNodeIds,
       MainTopics topic) {
     var recepients = receiverNodeIds.stream().map(MemberId::from).collect(Collectors.toSet());
-    clusterCommunicator().multicast(topic.name(), message, encoder, recepients);
+    clusterCommunicator().multicast(topic.name(), message, serializer::serialize, recepients);
   }
 
   @Override
   public void unicast(Message<MessagePayload> message, String receiverNodeId, MainTopics topic) {
-    clusterCommunicator().unicast(topic.name(), message, encoder, MemberId.from(receiverNodeId));
+    clusterCommunicator().unicast(topic.name(), message, serializer::serialize, MemberId.from(receiverNodeId));
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public CompletableFuture<Message<MessagePayload>> sendRequest(Message<MessagePayload> request,
       String receiverNodeId, MainTopics topic) {
     Member member = atomix.getMembershipService().getMember(receiverNodeId);
-    byte[] requestBytes = encoder.apply(request);
+    byte[] requestBytes = serializer.serialize(request);
     var timeout = Duration.ofSeconds(responseTimeoutSeconds);
     return atomix.getMessagingService()
         .sendAndReceive(member.address(), topic.name(), requestBytes, timeout, pooledExecutor)
-        .thenApply(decoder::apply);
+        .thenApply(message -> (Message<MessagePayload>)serializer.deserialize(message, Message.class));
   }
   
   private ClusterCommunicationService clusterCommunicator() {
     return atomix.getCommunicationService();
-  }
-
-  public void setEncoder(Function<Message<MessagePayload>, byte[]> encoder) {
-    this.encoder = encoder;
-  }
-  public void setDecoder(Function<byte[], Message<MessagePayload>> decoder) {
-    this.decoder = decoder;
   }
 }

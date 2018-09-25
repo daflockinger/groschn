@@ -1,6 +1,6 @@
 package com.flockinger.groschn.blockchain.exception.messaging;
 
-import com.flockinger.groschn.blockchain.exception.BlockchainException;
+import com.flockinger.groschn.commons.exception.BlockchainException;
 
 public class ReceivedMessageInvalidException extends BlockchainException {
   /**

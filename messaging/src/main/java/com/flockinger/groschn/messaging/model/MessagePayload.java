@@ -3,6 +3,7 @@ package com.flockinger.groschn.messaging.model;
 import java.io.Serializable;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import com.flockinger.groschn.commons.compress.CompressedEntity;
 
 public class MessagePayload implements Serializable {
   /**
@@ -12,6 +13,7 @@ public class MessagePayload implements Serializable {
   
   @NotNull
   private String senderId;
+  
   @NotNull
   @Valid
   private CompressedEntity entity;

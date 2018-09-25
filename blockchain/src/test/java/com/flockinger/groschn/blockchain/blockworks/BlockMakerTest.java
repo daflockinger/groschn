@@ -45,14 +45,12 @@ import com.flockinger.groschn.blockchain.model.TransactionInput;
 import com.flockinger.groschn.blockchain.model.TransactionOutput;
 import com.flockinger.groschn.blockchain.transaction.Bookkeeper;
 import com.flockinger.groschn.blockchain.transaction.TransactionManager;
-import com.flockinger.groschn.blockchain.util.CompressionUtils;
-import com.flockinger.groschn.blockchain.util.serialize.impl.FstSerializer;
 import com.flockinger.groschn.blockchain.wallet.WalletService;
 import com.flockinger.groschn.messaging.model.MessagePayload;
 import com.flockinger.groschn.messaging.outbound.Broadcaster;
 
 @RunWith(SpringRunner.class)
-@ContextConfiguration(classes = {BlockMakerImpl.class, MessagingUtils.class, CompressionUtils.class, FstSerializer.class})
+@ContextConfiguration(classes = {BlockMakerImpl.class, MessagingUtils.class})
 @Import(TestConfig.class)
 public class BlockMakerTest extends BaseCachingTest {
 

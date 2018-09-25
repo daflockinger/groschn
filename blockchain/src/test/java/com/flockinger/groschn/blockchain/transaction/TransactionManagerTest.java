@@ -30,12 +30,10 @@ import org.springframework.data.mongodb.MongoDbFactory;
 import org.springframework.test.context.ContextConfiguration;
 import com.flockinger.groschn.blockchain.BaseDbTest;
 import com.flockinger.groschn.blockchain.TestDataFactory;
-import com.flockinger.groschn.blockchain.blockworks.HashGenerator;
 import com.flockinger.groschn.blockchain.dto.TransactionDto;
 import com.flockinger.groschn.blockchain.dto.TransactionStatementDto;
 import com.flockinger.groschn.blockchain.exception.HashingException;
 import com.flockinger.groschn.blockchain.exception.TransactionAlreadyClearedException;
-import com.flockinger.groschn.blockchain.exception.crypto.CantConfigureSigningAlgorithmException;
 import com.flockinger.groschn.blockchain.exception.validation.AssessmentFailedException;
 import com.flockinger.groschn.blockchain.model.Transaction;
 import com.flockinger.groschn.blockchain.model.TransactionInput;
@@ -49,22 +47,23 @@ import com.flockinger.groschn.blockchain.repository.model.StoredTransactionInput
 import com.flockinger.groschn.blockchain.repository.model.StoredTransactionOutput;
 import com.flockinger.groschn.blockchain.repository.model.TransactionStatus;
 import com.flockinger.groschn.blockchain.transaction.impl.TransactionManagerImpl;
-import com.flockinger.groschn.blockchain.util.CompressionUtils;
-import com.flockinger.groschn.blockchain.util.serialize.impl.FstSerializer;
-import com.flockinger.groschn.blockchain.util.sign.Signer;
 import com.flockinger.groschn.blockchain.validation.Assessment;
 import com.flockinger.groschn.blockchain.validation.Validator;
 import com.flockinger.groschn.blockchain.wallet.WalletService;
+import com.flockinger.groschn.commons.compress.CompressionUtils;
+import com.flockinger.groschn.commons.exception.crypto.CantConfigureSigningAlgorithmException;
+import com.flockinger.groschn.commons.hash.HashGenerator;
+import com.flockinger.groschn.commons.sign.Signer;
 import com.google.common.collect.ImmutableList;
 
 @ContextConfiguration(classes = {TransactionManagerImpl.class, TransactionPoolRepository.class, MongoDbFactory.class,
-    BlockchainRepository.class, CompressionUtils.class, FstSerializer.class})
+    BlockchainRepository.class})
 public class TransactionManagerTest extends BaseDbTest {
 
   @Autowired
   private TransactionManager manager;
   
-  @MockBean(name="ECDSA_Signer")
+  @MockBean
   private Signer signer;
   @MockBean
   private WalletService walletMock;

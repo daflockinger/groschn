@@ -8,6 +8,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -24,14 +25,13 @@ import com.flockinger.groschn.blockchain.messaging.dto.SyncRequest;
 import com.flockinger.groschn.blockchain.messaging.dto.SyncResponse;
 import com.flockinger.groschn.blockchain.messaging.sync.impl.BlockSyncInfoResponder;
 import com.flockinger.groschn.blockchain.model.Block;
-import com.flockinger.groschn.blockchain.util.CompressionUtils;
-import com.flockinger.groschn.blockchain.util.serialize.impl.FstSerializer;
+import com.flockinger.groschn.commons.compress.CompressedEntity;
+import com.flockinger.groschn.commons.compress.CompressionUtils;
 import com.flockinger.groschn.messaging.members.NetworkStatistics;
-import com.flockinger.groschn.messaging.model.CompressedEntity;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.google.common.collect.ImmutableList;
 
-@ContextConfiguration(classes = {BlockSyncInfoResponder.class, CompressionUtils.class, MessagingUtils.class, FstSerializer.class})
+@ContextConfiguration(classes = {BlockSyncInfoResponder.class, MessagingUtils.class})
 public class BlockSyncInfoResponderTest extends BaseCachingTest {
 
   @Autowired
@@ -75,7 +75,7 @@ public class BlockSyncInfoResponderTest extends BaseCachingTest {
     assertTrue("verify that compressed entity is not empty", entity.getEntity().length > 0);
     assertTrue("verify that compressed entity has an original size", entity.getOriginalSize() > 0);
     
-    var response = compressor.decompress(entity.getEntity(), entity.getOriginalSize(), SyncResponse.class);
+    Optional<SyncResponse> response = compressor.decompress(entity.getEntity(), entity.getOriginalSize(), SyncResponse.class);
     assertTrue("verify that response is there", response.isPresent());
     assertEquals("verify that response starting position is correct", 123l, 
         response.get().getStartingPosition().longValue());
@@ -115,7 +115,7 @@ public class BlockSyncInfoResponderTest extends BaseCachingTest {
     assertTrue("verify that compressed entity is not empty", entity.getEntity().length > 0);
     assertTrue("verify that compressed entity has an original size", entity.getOriginalSize() > 0);
     
-    var response = compressor.decompress(entity.getEntity(), entity.getOriginalSize(), SyncResponse.class);
+    Optional<SyncResponse> response = compressor.decompress(entity.getEntity(), entity.getOriginalSize(), SyncResponse.class);
     assertTrue("verify that response is there", response.isPresent());
     assertEquals("verify that response starting position is correct", 999l, 
         response.get().getStartingPosition().longValue());

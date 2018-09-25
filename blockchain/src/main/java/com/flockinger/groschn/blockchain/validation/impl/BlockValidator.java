@@ -7,17 +7,17 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import com.flockinger.groschn.blockchain.blockworks.BlockMaker;
 import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
-import com.flockinger.groschn.blockchain.blockworks.HashGenerator;
-import com.flockinger.groschn.blockchain.exception.BlockchainException;
 import com.flockinger.groschn.blockchain.exception.validation.AssessmentFailedException;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.model.Transaction;
-import com.flockinger.groschn.blockchain.util.CompressionUtils;
-import com.flockinger.groschn.blockchain.util.MerkleRootCalculator;
 import com.flockinger.groschn.blockchain.validation.Assessment;
 import com.flockinger.groschn.blockchain.validation.AssessmentFailure;
 import com.flockinger.groschn.blockchain.validation.ConsentValidator;
 import com.flockinger.groschn.blockchain.validation.Validator;
+import com.flockinger.groschn.commons.MerkleRootCalculator;
+import com.flockinger.groschn.commons.compress.CompressionUtils;
+import com.flockinger.groschn.commons.exception.BlockchainException;
+import com.flockinger.groschn.commons.hash.HashGenerator;
 
 @Component
 public class BlockValidator implements Validator<Block> {

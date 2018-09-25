@@ -19,7 +19,6 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
-import com.flockinger.groschn.blockchain.blockworks.HashGenerator;
 import com.flockinger.groschn.blockchain.dto.TransactionDto;
 import com.flockinger.groschn.blockchain.exception.TransactionAlreadyClearedException;
 import com.flockinger.groschn.blockchain.exception.validation.AssessmentFailedException;
@@ -30,12 +29,13 @@ import com.flockinger.groschn.blockchain.repository.TransactionPoolRepository;
 import com.flockinger.groschn.blockchain.repository.model.StoredPoolTransaction;
 import com.flockinger.groschn.blockchain.repository.model.TransactionStatus;
 import com.flockinger.groschn.blockchain.transaction.TransactionManager;
-import com.flockinger.groschn.blockchain.util.CompressionUtils;
-import com.flockinger.groschn.blockchain.util.serialize.BlockSerializer;
-import com.flockinger.groschn.blockchain.util.sign.Signer;
 import com.flockinger.groschn.blockchain.validation.Assessment;
 import com.flockinger.groschn.blockchain.validation.Validator;
 import com.flockinger.groschn.blockchain.wallet.WalletService;
+import com.flockinger.groschn.commons.compress.CompressionUtils;
+import com.flockinger.groschn.commons.hash.HashGenerator;
+import com.flockinger.groschn.commons.serialize.BlockSerializer;
+import com.flockinger.groschn.commons.sign.Signer;
 import com.google.common.collect.ImmutableList;
 
 @Service
@@ -47,7 +47,6 @@ public class TransactionManagerImpl implements TransactionManager {
   @Autowired
   private ModelMapper mapper;
   @Autowired
-  @Qualifier("ECDSA_Signer")
   private Signer signer;
   @Autowired
   private CompressionUtils compressor;

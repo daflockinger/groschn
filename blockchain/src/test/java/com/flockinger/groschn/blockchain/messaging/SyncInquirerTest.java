@@ -4,7 +4,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.times;
@@ -36,16 +35,14 @@ import com.flockinger.groschn.blockchain.messaging.dto.SyncResponse;
 import com.flockinger.groschn.blockchain.messaging.sync.SyncInquirer;
 import com.flockinger.groschn.blockchain.messaging.sync.impl.SyncInquirerImpl;
 import com.flockinger.groschn.blockchain.model.Block;
-import com.flockinger.groschn.blockchain.util.CompressionUtils;
-import com.flockinger.groschn.blockchain.util.MerkleRootCalculator;
-import com.flockinger.groschn.blockchain.util.serialize.impl.FstSerializer;
+import com.flockinger.groschn.commons.MerkleRootCalculator;
 import com.flockinger.groschn.messaging.config.MainTopics;
 import com.flockinger.groschn.messaging.members.NetworkStatistics;
 import com.flockinger.groschn.messaging.model.Message;
 import com.flockinger.groschn.messaging.model.MessagePayload;
 import com.flockinger.groschn.messaging.outbound.Broadcaster;
 
-@ContextConfiguration(classes = {SyncInquirerImpl.class, MessagingUtils.class, CompressionUtils.class, FstSerializer.class})
+@ContextConfiguration(classes = {SyncInquirerImpl.class, MessagingUtils.class})
 public class SyncInquirerTest extends BaseCachingTest{
 
   @MockBean(reset=MockReset.BEFORE)

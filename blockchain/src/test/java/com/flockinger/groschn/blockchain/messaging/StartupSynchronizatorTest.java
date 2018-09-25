@@ -14,10 +14,10 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
-import com.flockinger.groschn.blockchain.exception.BlockchainException;
 import com.flockinger.groschn.blockchain.messaging.sync.FullSyncKeeper;
 import com.flockinger.groschn.blockchain.messaging.sync.StartupSynchronizator;
 import com.flockinger.groschn.blockchain.messaging.sync.SyncDeterminator;
+import com.flockinger.groschn.commons.exception.BlockchainException;
 
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes = {StartupSynchronizator.class})

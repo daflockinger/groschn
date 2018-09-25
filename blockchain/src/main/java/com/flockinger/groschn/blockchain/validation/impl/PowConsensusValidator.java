@@ -9,11 +9,11 @@ import org.springframework.stereotype.Component;
 import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
 import com.flockinger.groschn.blockchain.consensus.model.ConsensusType;
 import com.flockinger.groschn.blockchain.consensus.model.Consent;
-import com.flockinger.groschn.blockchain.exception.BlockchainException;
 import com.flockinger.groschn.blockchain.exception.validation.AssessmentFailedException;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.validation.Assessment;
 import com.flockinger.groschn.blockchain.validation.ConsentValidator;
+import com.flockinger.groschn.commons.exception.BlockchainException;
 
 @Component("ProofOfWork_Validator")
 public class PowConsensusValidator implements ConsentValidator {
