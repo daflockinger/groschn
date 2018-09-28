@@ -28,9 +28,6 @@ public class MessageDispatcher {
   private Atomix atomix;
   @Autowired
   private Executor pooledExecutor;
-  
-  @Value("${blockchain.messaging.response-timeout}")
-  private Integer responseTimeoutSeconds;
     
   @PostConstruct
   public void init() {

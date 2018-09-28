@@ -38,18 +38,6 @@ public class BroadcasterImpl implements Broadcaster<MessagePayload> {
   }
 
   @Override
-  public void multicast(Message<MessagePayload> message, List<String> receiverNodeIds,
-      MainTopics topic) {
-    var recepients = receiverNodeIds.stream().map(MemberId::from).collect(Collectors.toSet());
-    clusterCommunicator().multicast(topic.name(), message, serializer::serialize, recepients);
-  }
-
-  @Override
-  public void unicast(Message<MessagePayload> message, String receiverNodeId, MainTopics topic) {
-    clusterCommunicator().unicast(topic.name(), message, serializer::serialize, MemberId.from(receiverNodeId));
-  }
-
-  @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<Message<MessagePayload>> sendRequest(Message<MessagePayload> request,
       String receiverNodeId, MainTopics topic) {

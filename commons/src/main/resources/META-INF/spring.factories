@@ -1,2 +1,2 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-com.flockinger.groschn.blockchain.config.CommonsConfig
+com.flockinger.groschn.commons.config.CommonsConfig
