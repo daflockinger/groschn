@@ -6,7 +6,7 @@ public class TransactionInput extends TransactionOutput {
   */
   private static final long serialVersionUID = 2651960220715786130L;
 
-  private String signature;
+  private String signature = null;
 
 
   public String getSignature() {
@@ -15,5 +15,12 @@ public class TransactionInput extends TransactionOutput {
 
   public void setSignature(String signature) {
     this.signature = signature;
+  }
+
+  @Override
+  public String toString() {
+    return "TransactionInput [signature=" + signature + ", amount=" + getAmount()
+        + ", publicKey=" + getPublicKey() + ", timestamp=" + getTimestamp()
+        + ", sequenceNumber=" + getSequenceNumber() + "]";
   }
 }

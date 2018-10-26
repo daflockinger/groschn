@@ -5,6 +5,8 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.flockinger.groschn.blockchain.blockworks.BlockMaker;
 import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
 import com.flockinger.groschn.blockchain.exception.validation.AssessmentFailedException;
@@ -84,9 +86,11 @@ public class BlockValidator implements Validator<Block> {
   }
   
   private void verifyLastHash(String lastHash, Block lastBlock) {
+    var lastBlocksHash = lastBlock.getHash();
     lastBlock.setHash(null);
     verifyAssessment(hasher.isHashCorrect(lastHash, lastBlock), "Last block hash is wrong, try reynchronizing!", 
         AssessmentFailure.BLOCK_LAST_HASH_WRONG);
+    lastBlock.setHash(lastBlocksHash);
   }
   
   private void verifyCurrentHash(Block block) {
@@ -98,7 +102,7 @@ public class BlockValidator implements Validator<Block> {
     verifyAssessment(isHashCorrect, "Block hash is wrong!");
   }
   
-  private void verifyTransactionsMerkleRoot(Block value) {
+  private void verifyTransactionsMerkleRoot(Block value) {    
     String rootHash = merkleRootCalculator.calculateMerkleRootHash(value.getTransactions());
     verifyAssessment(rootHash.equals(value.getTransactionMerkleRoot()), 
         "MerkleRoot-Hash of all transactions is wrong!");

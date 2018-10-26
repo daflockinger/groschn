@@ -3,10 +3,10 @@ package com.flockinger.groschn.commons.model;
 import java.util.ArrayList;
 import java.util.List;
 
-public class BlockInfoResult {
+public class TestBlockInfoResult {
   
   private long startPosition = 0l;
-  private List<BlockInfo> correctInfos = new ArrayList<>();
+  private List<TestBlockInfo> correctInfos = new ArrayList<>();
 
   public long getStartPosition() {
     return startPosition;
@@ -16,7 +16,7 @@ public class BlockInfoResult {
     this.startPosition = startPosition;
   }
 
-  public List<BlockInfo> getCorrectInfos() {
+  public List<TestBlockInfo> getCorrectInfos() {
     return correctInfos;
   }
 }

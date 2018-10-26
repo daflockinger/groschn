@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import com.flockinger.groschn.blockchain.model.Hashable;
 
-public class Block implements Hashable<Block> {
+public class TestBlock implements Hashable<TestBlock> {
   /**
   * 
   */
@@ -17,9 +17,9 @@ public class Block implements Hashable<Block> {
   private Long timestamp;
   private Integer version;
 
-  private Consent consent;
+  private TestConsent consent;
 
-  private List<Transaction> transactions;
+  private List<TestTransaction> transactions;
 
 
   /**
@@ -34,18 +34,18 @@ public class Block implements Hashable<Block> {
   public final static Long MAX_AMOUNT_MINED_GROSCHN = 650000000l;
 
 
-  public final static Block GENESIS_BLOCK() {
-    Block genesisBlock = new Block();
+  public final static TestBlock GENESIS_BLOCK() {
+    TestBlock genesisBlock = new TestBlock();
     genesisBlock.setLastHash("Wer den Groschen nicht ehrt, ist den Schilling nicht wert!");
     genesisBlock.setHash(
-        "00001b789b2d74adaa9c5e7e82e7f584fa30e6c52aa66683d6b44a456d1e9f9b9ac1f41ccbc76cc89503208e98735789356560e9389fd38664fabdd0bf2c543a");
+        "253fe5a9b5754af105567ec7fc95fd8970701e6897f76ff77f7e9c3c97836f7b84a4b5813ee10be8462befbe08f301a8b93bf2bbc6a24cba4d7d2b52d50a8e5a");
     genesisBlock.setTimestamp(484696800000l);
     genesisBlock.setTransactions(new ArrayList<>());
     genesisBlock.setPosition(1l);
     genesisBlock.setVersion(1);
-    Consent powConsent = new Consent();
-    powConsent.setType(ConsensusType.PROOF_OF_WORK);
-    powConsent.setDifficulty(Consent.DEFAULT_DIFFICULTY);
+    TestConsent powConsent = new TestConsent();
+    powConsent.setType(TestConsensusType.PROOF_OF_WORK);
+    powConsent.setDifficulty(TestConsent.DEFAULT_DIFFICULTY);
     powConsent.setMilliSecondsSpentMining(439l);
     powConsent.setTimestamp(1536407028239l);
     powConsent.setNonce(69532l);
@@ -101,24 +101,24 @@ public class Block implements Hashable<Block> {
     this.version = version;
   }
 
-  public List<Transaction> getTransactions() {
+  public List<TestTransaction> getTransactions() {
     return transactions;
   }
 
-  public void setTransactions(List<Transaction> transactions) {
+  public void setTransactions(List<TestTransaction> transactions) {
     this.transactions = transactions;
   }
 
-  public Consent getConsent() {
+  public TestConsent getConsent() {
     return consent;
   }
 
-  public void setConsent(Consent consent) {
+  public void setConsent(TestConsent consent) {
     this.consent = consent;
   }
 
   @Override
-  public int compareTo(Block o) {
+  public int compareTo(TestBlock o) {
     if (this.getPosition() == null && o.getPosition() == null) {
       return 0;
     } else if (this.getPosition() == null) {
@@ -127,5 +127,12 @@ public class Block implements Hashable<Block> {
       return 1;
     }
     return this.getPosition().compareTo(o.getPosition());
+  }
+
+  @Override
+  public String toString() {
+    return "TestBlock [position=" + position + ", hash=" + hash + ", lastHash=" + lastHash
+        + ", transactionMerkleRoot=" + transactionMerkleRoot + ", timestamp=" + timestamp
+        + ", version=" + version + ", consent=" + consent + ", transactions=" + transactions + "]";
   }
 }

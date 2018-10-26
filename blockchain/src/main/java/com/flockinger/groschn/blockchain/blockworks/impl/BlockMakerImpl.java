@@ -77,6 +77,7 @@ public class BlockMakerImpl implements BlockMaker {
   private void broadcastBlock(Block block) {
     var message = messagingUtils.packageMessage(block, nodeId);
     broadcaster.broadcast(message, MainTopics.FRESH_BLOCK);
+    LOG.info("Freshly forged Block broadcasted with ID: " + message.getId());
   }
 
   private void addRewardTransaction(List<Transaction> transactions) {

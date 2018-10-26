@@ -4,7 +4,7 @@ import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import com.flockinger.groschn.blockchain.model.Hashable;
 
-public class Transaction implements Hashable<Transaction> {
+public class TestTransaction implements Hashable<TestTransaction> {
   /**
   * 
   */
@@ -15,8 +15,8 @@ public class Transaction implements Hashable<Transaction> {
    */
   private Long lockTime;
 
-  private List<TransactionInput> inputs;
-  private List<TransactionOutput> outputs;
+  private List<TestTransactionInput> inputs;
+  private List<TestTransactionOutput> outputs;
   
   private String transactionHash;
 
@@ -28,19 +28,19 @@ public class Transaction implements Hashable<Transaction> {
     this.transactionHash = transactionHash;
   }
 
-  public List<TransactionInput> getInputs() {
+  public List<TestTransactionInput> getInputs() {
     return inputs;
   }
 
-  public void setInputs(List<TransactionInput> inputs) {
+  public void setInputs(List<TestTransactionInput> inputs) {
     this.inputs = inputs;
   }
 
-  public List<TransactionOutput> getOutputs() {
+  public List<TestTransactionOutput> getOutputs() {
     return outputs;
   }
 
-  public void setOutputs(List<TransactionOutput> outputs) {
+  public void setOutputs(List<TestTransactionOutput> outputs) {
     this.outputs = outputs;
   }
 
@@ -53,12 +53,16 @@ public class Transaction implements Hashable<Transaction> {
   }
 
   @Override
-  public int compareTo(Transaction o) {
+  public int compareTo(TestTransaction o) {
     if(o == null) {
       return 1;
     }
     return StringUtils.compare(this.getTransactionHash(), o.getTransactionHash());
   }
-  
-  
+
+  @Override
+  public String toString() {
+    return "TestTransaction [lockTime=" + lockTime + ", inputs=" + inputs + ", outputs=" + outputs
+        + ", transactionHash=" + transactionHash + "]";
+  }
 }

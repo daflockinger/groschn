@@ -55,6 +55,7 @@ public class ProofOfWorkAlgorithm implements ConsensusAlgorithm {
     Block lastBlock = blockService.getLatestProofOfWorkBlock();
     
     Block freshBlock = new Block();
+    freshBlock.setHash(null);
     freshBlock.setPosition(blockService.getLatestBlock().getPosition() + 1);
     freshBlock.setTransactions(transactions);
     freshBlock.setLastHash(lastBlock.getHash());
@@ -69,6 +70,7 @@ public class ProofOfWorkAlgorithm implements ConsensusAlgorithm {
     
     forgeBlock(freshBlock);
     processingConsent = false;
+    
     return freshBlock;
   }
   

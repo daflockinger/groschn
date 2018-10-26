@@ -6,12 +6,12 @@ import java.util.concurrent.Executors;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
-import com.flockinger.groschn.commons.model.Block;
-import com.flockinger.groschn.commons.model.ConsensusType;
-import com.flockinger.groschn.commons.model.Consent;
-import com.flockinger.groschn.commons.model.Transaction;
-import com.flockinger.groschn.commons.model.TransactionInput;
-import com.flockinger.groschn.commons.model.TransactionOutput;
+import com.flockinger.groschn.commons.model.TestBlock;
+import com.flockinger.groschn.commons.model.TestConsensusType;
+import com.flockinger.groschn.commons.model.TestConsent;
+import com.flockinger.groschn.commons.model.TestTransaction;
+import com.flockinger.groschn.commons.model.TestTransactionInput;
+import com.flockinger.groschn.commons.model.TestTransactionOutput;
 import com.flockinger.groschn.commons.serialize.BlockSerializer;
 import com.flockinger.groschn.commons.serialize.FstSerializer;
 
@@ -20,12 +20,12 @@ public class TestConfig {
   @Bean
   public BlockSerializer serializer() {
     var registered = new ArrayList<Class<?>>();
-    registered.add(Block.class);
-    registered.add(Transaction.class);
-    registered.add(TransactionInput.class);
-    registered.add(TransactionOutput.class);
-    registered.add(Consent.class);
-    registered.add(ConsensusType.class); 
+    registered.add(TestBlock.class);
+    registered.add(TestTransaction.class);
+    registered.add(TestTransactionInput.class);
+    registered.add(TestTransactionOutput.class);
+    registered.add(TestConsent.class);
+    registered.add(TestConsensusType.class); 
     
     return new FstSerializer(registered);
   }

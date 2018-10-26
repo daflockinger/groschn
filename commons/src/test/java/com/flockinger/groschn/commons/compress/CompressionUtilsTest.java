@@ -16,8 +16,8 @@ import com.flockinger.groschn.commons.TestConfig;
 import com.flockinger.groschn.commons.TestDataFactory;
 import com.flockinger.groschn.commons.compress.CompressedEntity;
 import com.flockinger.groschn.commons.compress.CompressionUtils;
-import com.flockinger.groschn.commons.model.Block;
-import com.flockinger.groschn.commons.model.Transaction;
+import com.flockinger.groschn.commons.model.TestBlock;
+import com.flockinger.groschn.commons.model.TestTransaction;
 
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes = {CompressionUtils.class})
@@ -29,17 +29,17 @@ public class CompressionUtilsTest {
   
   @Test
   public void testCompressUncompress_withFullBlock_shouldDoCorrectly() {
-    Block fakeBlock = TestDataFactory.getFakeBlock();
+    TestBlock fakeBlock = TestDataFactory.getFakeBlock();
     
     // compress
     CompressedEntity entity = utils.compress(fakeBlock);
     
     assertNotNull("verify compressedEntity is returned not null", entity);
     assertEquals("verify correct original size", 629l, entity.getOriginalSize());
-    assertEquals("verify correct compressed size", 387l, entity.getEntity().length);
+    assertEquals("verify correct compressed size", 388, entity.getEntity().length);
     
     // decompress
-    Optional<Block> uncompressedBlock = utils.decompress(entity.getEntity(), entity.getOriginalSize(), Block.class);
+    Optional<TestBlock> uncompressedBlock = utils.decompress(entity.getEntity(), entity.getOriginalSize(), TestBlock.class);
     
     assertTrue("verify that uncompressed Block is present", uncompressedBlock.isPresent());
     assertEquals("verify correct block consent difficulty", fakeBlock.getConsent().getDifficulty(), uncompressedBlock.get().getConsent().getDifficulty());
@@ -53,8 +53,8 @@ public class CompressionUtilsTest {
     assertEquals("verify correct block timestamp", fakeBlock.getTimestamp(), uncompressedBlock.get().getTimestamp());
     assertEquals("verify correct block transactions merkle root", fakeBlock.getTransactionMerkleRoot(), uncompressedBlock.get().getTransactionMerkleRoot());
     assertEquals("verify correct block transaction size", fakeBlock.getTransactions().size(), uncompressedBlock.get().getTransactions().size());
-    Transaction firstTransaction = fakeBlock.getTransactions().get(0);
-    Transaction firstUncompressedTr = uncompressedBlock.get().getTransactions().get(0);
+    TestTransaction firstTransaction = fakeBlock.getTransactions().get(0);
+    TestTransaction firstUncompressedTr = uncompressedBlock.get().getTransactions().get(0);
     assertEquals("verify correct block first transaction inputs size", firstTransaction.getInputs().size()
         , firstUncompressedTr.getInputs().size());
     assertEquals("verify correct block first transaction input amount", firstTransaction.getInputs().get(0).getAmount(), 
@@ -87,13 +87,13 @@ public class CompressionUtilsTest {
   
   @Test
   public void testCompressedByteSize_withEmptyTransactions_shouldReturnCorrect() {
-    int byteSize = utils.compressedByteSize(new ArrayList<Transaction>());
+    int byteSize = utils.compressedByteSize(new ArrayList<TestTransaction>());
     assertEquals("verify correct compressed size of entities", 0, byteSize);
   }
   
   @Test
   public void testCompressUncompress_withEmptyBlock_shouldDoCorrectly() {
-    Block fakeBlock = new Block();
+    TestBlock fakeBlock = new TestBlock();
     
     // compress
     CompressedEntity entity = utils.compress(fakeBlock);
@@ -103,7 +103,7 @@ public class CompressionUtilsTest {
     assertEquals("verify correct compressed size", 12l, entity.getEntity().length);
     
     // decompress
-    Optional<Block> uncompressedBlock = utils.decompress(entity.getEntity(), entity.getOriginalSize(), Block.class);
+    Optional<TestBlock> uncompressedBlock = utils.decompress(entity.getEntity(), entity.getOriginalSize(), TestBlock.class);
     
     assertTrue("verify that uncompressed Block is present", uncompressedBlock.isPresent());
     assertNotNull("verify that uncompressed block is not null", uncompressedBlock.get());
@@ -111,49 +111,49 @@ public class CompressionUtilsTest {
   
   @Test
   public void testUncompress_withWrongBlockSize_shouldReturnEmpty() {
-    Block fakeBlock = TestDataFactory.getFakeBlock();
+    TestBlock fakeBlock = TestDataFactory.getFakeBlock();
     
     // compress
     CompressedEntity entity = utils.compress(fakeBlock);
     
     assertNotNull("verify compressedEntity is returned not null", entity);
     assertEquals("verify correct original size", 629l, entity.getOriginalSize());
-    assertEquals("verify correct compressed size", 387l, entity.getEntity().length);
+    assertEquals("verify correct compressed size", 388, entity.getEntity().length);
     
     // decompress
-    var decompressedResult = utils.decompress(entity.getEntity(), entity.getOriginalSize() + 2, Block.class);
+    var decompressedResult = utils.decompress(entity.getEntity(), entity.getOriginalSize() + 2, TestBlock.class);
     assertFalse("verify that returned entity of wrong type is empty", decompressedResult.isPresent());
   }
   
   @Test
   public void testUncompress_withWrongCompressedEntity_shouldReturnEmpty() {
-    Block fakeBlock = TestDataFactory.getFakeBlock();
+    TestBlock fakeBlock = TestDataFactory.getFakeBlock();
     
     // compress
     CompressedEntity entity = utils.compress(fakeBlock);
     
     assertNotNull("verify compressedEntity is returned not null", entity);
     assertEquals("verify correct original size", 629l, entity.getOriginalSize());
-    assertEquals("verify correct compressed size", 387l, entity.getEntity().length);
+    assertEquals("verify correct compressed size", 388, entity.getEntity().length);
     
     // decompress
-    var decompressedResult = utils.decompress(new byte[10], entity.getOriginalSize(), Block.class);
+    var decompressedResult = utils.decompress(new byte[10], entity.getOriginalSize(), TestBlock.class);
     assertFalse("verify that returned entity of wrong type is empty", decompressedResult.isPresent());
   }
   
   @Test
   public void testUncompress_withWrongType_shouldReturnEmpty() {
-    Block fakeBlock = TestDataFactory.getFakeBlock();
+    TestBlock fakeBlock = TestDataFactory.getFakeBlock();
     
     // compress
     CompressedEntity entity = utils.compress(fakeBlock);
     
     assertNotNull("verify compressedEntity is returned not null", entity);
     assertEquals("verify correct original size", 629l, entity.getOriginalSize());
-    assertEquals("verify correct compressed size", 387l, entity.getEntity().length);
+    assertEquals("verify correct compressed size", 388, entity.getEntity().length);
     
     // decompress
-    var decompressedResult = utils.decompress(entity.getEntity(), entity.getOriginalSize(), Transaction.class);
+    var decompressedResult = utils.decompress(entity.getEntity(), entity.getOriginalSize(), TestTransaction.class);
     
     assertFalse("verify that returned entity of wrong type is empty", decompressedResult.isPresent());
   }

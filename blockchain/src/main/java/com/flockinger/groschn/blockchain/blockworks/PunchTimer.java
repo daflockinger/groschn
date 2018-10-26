@@ -3,6 +3,8 @@ package com.flockinger.groschn.blockchain.blockworks;
 import java.util.Date;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -21,6 +23,8 @@ public class PunchTimer {
   @Autowired
   private SyncKeeper blockSynchronizer;
   
+  private final static Logger LOG = LoggerFactory.getLogger(PunchTimer.class);
+  
   @Value("${blockchain.punch-timer.process-timeout-seconds}")
   private Integer processTimeout;
   
@@ -33,6 +37,7 @@ public class PunchTimer {
     if(consensusFactory.isProcessing()) {
       restartOnTimeout(checkIsProcessTimeouted());
     } else {
+      LOG.info("Start forging Block.");
       blockMaker.produceBlock();
     }
   }

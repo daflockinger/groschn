@@ -23,7 +23,7 @@ public class StartupSynchronizator implements InitializingBean {
       blockSynchronizer.determineAndSync();
       transactionFullSynchronizer.fullSynchronization();
     } catch (BlockchainException e) {
-      LOG.error("Node was unable to Initialize/Synchronize the Blockchain!");
+      LOG.error("Node was unable to Initialize/Synchronize the Blockchain!", e);
     }
   }
 }

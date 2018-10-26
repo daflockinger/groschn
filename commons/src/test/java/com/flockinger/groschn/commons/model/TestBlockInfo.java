@@ -3,7 +3,7 @@ package com.flockinger.groschn.commons.model;
 import java.util.Objects;
 import com.flockinger.groschn.blockchain.model.Hashable;
 
-public class BlockInfo implements Hashable<BlockInfo> {
+public class TestBlockInfo implements Hashable<TestBlockInfo> {
   /**
    * 
    */
@@ -26,7 +26,7 @@ public class BlockInfo implements Hashable<BlockInfo> {
   }
   
   @Override
-  public int compareTo(BlockInfo o) {
+  public int compareTo(TestBlockInfo o) {
     if(this.getPosition() == null && o.getPosition() == null) {
       return 0;
     } else if (this.getPosition() == null) {
@@ -42,10 +42,10 @@ public class BlockInfo implements Hashable<BlockInfo> {
     if(obj == null) {
       return false;
     }
-    if(!(obj instanceof BlockInfo)) {
+    if(!(obj instanceof TestBlockInfo)) {
       return false;
     }
-    return Objects.equals(this.getBlockHash(),((BlockInfo)obj).getBlockHash())
-    && Objects.equals(this.getPosition(),((BlockInfo)obj).getPosition());
+    return Objects.equals(this.getBlockHash(),((TestBlockInfo)obj).getBlockHash())
+    && Objects.equals(this.getPosition(),((TestBlockInfo)obj).getPosition());
   }
 }

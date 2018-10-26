@@ -90,5 +90,9 @@ public class MerkleRootCalculator {
         return leftNodeComparison;
       }
     }
+    @Override
+    public String toString() {
+      return "MerkleNode [leftNode=" + leftNode + ", rightNode=" + rightNode + "]";
+    }
   }
 }

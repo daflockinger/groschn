@@ -4,7 +4,7 @@ import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import com.flockinger.groschn.blockchain.model.Hashable;
 
-public class SyncRequest implements Hashable<SyncRequest> {
+public class TestSyncRequest implements Hashable<TestSyncRequest> {
   /**
    * 
    */
@@ -35,7 +35,7 @@ public class SyncRequest implements Hashable<SyncRequest> {
   }
 
   @Override
-  public int compareTo(SyncRequest o) {
+  public int compareTo(TestSyncRequest o) {
     if (this.getStartingPosition() == null && o.getStartingPosition() == null) {
       return 0;
     } else if (this.getStartingPosition() == null) {

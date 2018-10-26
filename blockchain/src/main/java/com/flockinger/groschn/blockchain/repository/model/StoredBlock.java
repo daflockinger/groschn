@@ -18,30 +18,30 @@ import com.flockinger.groschn.blockchain.consensus.model.Consent;
 public class StoredBlock {
 
   @Id
-  private String id;
+  private String id = null;
   
   @Indexed
   @NotNull
-  private Long position;
+  private Long position = null;
   
   @Indexed
   @NotNull
-  private String hash;
+  private String hash = null;
   
   @NotNull
-  private String lastHash;
+  private String lastHash = null;
   
   @Indexed
   @NotNull
-  private Long timestamp;
+  private Long timestamp = null;
   
-  private String transactionMerkleRoot;
+  private String transactionMerkleRoot = null;
   
-  private Integer version;
+  private Integer version = null;
   
-  private List<StoredTransaction> transactions;
+  private List<StoredTransaction> transactions = null;
   
-  private Consent consent;
+  private Consent consent = null;
 
   public Consent getConsent() {
     return consent;

@@ -15,18 +15,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
-import com.flockinger.groschn.commons.MerkleRootCalculator;
 import com.flockinger.groschn.commons.config.CommonsConfig;
 import com.flockinger.groschn.commons.exception.HashingException;
 import com.flockinger.groschn.commons.hash.MultiHashGenerator;
-import com.flockinger.groschn.commons.model.Block;
-import com.flockinger.groschn.commons.model.BlockInfo;
-import com.flockinger.groschn.commons.model.Consent;
-import com.flockinger.groschn.commons.model.SyncRequest;
-import com.flockinger.groschn.commons.model.SyncResponse;
-import com.flockinger.groschn.commons.model.Transaction;
-import com.flockinger.groschn.commons.model.TransactionInput;
-import com.flockinger.groschn.commons.serialize.FstSerializer;
+import com.flockinger.groschn.commons.model.TestBlock;
+import com.flockinger.groschn.commons.model.TestBlockInfo;
+import com.flockinger.groschn.commons.model.TestConsent;
+import com.flockinger.groschn.commons.model.TestSyncRequest;
+import com.flockinger.groschn.commons.model.TestSyncResponse;
+import com.flockinger.groschn.commons.model.TestTransaction;
+import com.flockinger.groschn.commons.model.TestTransactionInput;
 import com.google.common.collect.ImmutableList;
 
 @RunWith(SpringRunner.class)
@@ -54,7 +52,6 @@ public class MerkleRootCalculatorTest {
   
   @Test
   public void testCalculateMerkleRootHashAndTestSorting_withShuffledEntities_shouldReturnSameResult() {
-    
     var transactions = fakeTransactions(9,false);
     String rootHash = calc.calculateMerkleRootHash(transactions);
     assertNotNull("verify root hash is not null", rootHash);
@@ -88,7 +85,7 @@ public class MerkleRootCalculatorTest {
     
     var requests = fakeSyncRequest();
     String rootHash6 = calc.calculateMerkleRootHash(requests);
-    assertNotNull("verify root hash is not null", rootHash);
+    assertNotNull("verify root hash is not null", rootHash6);
     Collections.shuffle(requests);
     String shuffledRootHash6 = calc.calculateMerkleRootHash(requests);
     assertEquals("verify that shuffled list results in same root-hash", rootHash6, shuffledRootHash6);
@@ -103,126 +100,126 @@ public class MerkleRootCalculatorTest {
   
   @Test(expected = HashingException.class)
   public void testCalculateMerkleRootHash_withEmptyList_shouldStillReturnSomething() {
-    calc.calculateMerkleRootHash(new ArrayList<Block>());
+    calc.calculateMerkleRootHash(new ArrayList<TestBlock>());
   }
   
-  private List<Block> fakeBlocks() {
-    var blocks = new ArrayList<Block>();
+  private List<TestBlock> fakeBlocks() {
+    var blocks = new ArrayList<TestBlock>();
     for(long count=0;count<20;count++) {
-      Block block = new Block();
+      TestBlock block = new TestBlock();
       block.setPosition(count);
       block.setHash(UUID.randomUUID().toString());
       blocks.add(block);
     }
     return blocks;
   }
-  private List<BlockInfo> fakeBlockInfos() {
-    var blocks = new ArrayList<BlockInfo>();
+  private List<TestBlockInfo> fakeBlockInfos() {
+    var blocks = new ArrayList<TestBlockInfo>();
     for(long count=0;count<20;count++) {
-      BlockInfo blockInfo = new BlockInfo();
+      TestBlockInfo blockInfo = new TestBlockInfo();
       blockInfo.setPosition(count);
       blockInfo.setBlockHash(UUID.randomUUID().toString());
       blocks.add(blockInfo);
     }
     return blocks;
   }
-  private List<Consent> fakeConsents() {
-    var blocks = new ArrayList<Consent>();
+  private List<TestConsent> fakeConsents() {
+    var blocks = new ArrayList<TestConsent>();
     for(long count=0;count<20;count++) {
-      Consent consent = new Consent();
+      TestConsent consent = new TestConsent();
       consent.setTimestamp(count);
       blocks.add(consent);
     }
     return blocks;
   }
-  private List<SyncResponse> fakeSyncResponse() {
-    var responses = new ArrayList<SyncResponse>();
+  private List<TestSyncResponse> fakeSyncResponse() {
+    var responses = new ArrayList<TestSyncResponse>();
     for(long count=0;count<20;count++) {
-      SyncResponse response = new SyncResponse();
+      TestSyncResponse response = new TestSyncResponse();
       response.setStartingPosition(count);
       responses.add(response);
     }
     return responses;
   }
-  private List<SyncRequest> fakeSyncRequest() {
-    var requests = new ArrayList<SyncRequest>();
+  private List<TestSyncRequest> fakeSyncRequest() {
+    var requests = new ArrayList<TestSyncRequest>();
     for(long count=0;count<20;count++) {
-      SyncRequest request = new SyncRequest();
+      TestSyncRequest request = new TestSyncRequest();
       request.setStartingPosition(count);
       requests.add(request);
     }
     return requests;
   }
   
-  public static List<Transaction> fakeTransactions(int size, boolean modifyLittleStuff) {
-    Transaction tra1 = new Transaction();
+  public static List<TestTransaction> fakeTransactions(int size, boolean modifyLittleStuff) {
+    TestTransaction tra1 = new TestTransaction();
     tra1.setInputs(ImmutableList.of(fakeInput(86l), fakeInput(14l)));
     tra1.setOutputs(ImmutableList.of(fakeInput(27l), fakeInput(73l)));
     tra1.setLockTime(934857l);
-    tra1.setTransactionHash(UUID.randomUUID().toString());
+    tra1.setTransactionHash("1");
     
-    Transaction tra2 = new Transaction();
+    TestTransaction tra2 = new TestTransaction();
     tra2.setInputs(ImmutableList.of(fakeInput(6l), fakeInput(4l)));
     tra2.setOutputs(ImmutableList.of(fakeInput(7l), fakeInput(3l)));
     tra2.setLockTime(87687l);
-    tra2.setTransactionHash(UUID.randomUUID().toString());
+    tra2.setTransactionHash("2");
     
-    Transaction tra3 = new Transaction();
+    TestTransaction tra3 = new TestTransaction();
     tra3.setInputs(ImmutableList.of(fakeInput(9996l), fakeInput(9994l)));
     tra3.setOutputs(ImmutableList.of(fakeInput(9997l), fakeInput(9993l)));
     tra3.setLockTime(432l);
-    tra3.setTransactionHash(UUID.randomUUID().toString());
+    tra3.setTransactionHash("3");
     
-    Transaction tra4 = new Transaction();
+    TestTransaction tra4 = new TestTransaction();
     tra4.setInputs(ImmutableList.of(fakeInput(670006l), fakeInput(670004l)));
     tra4.setOutputs(ImmutableList.of(fakeInput(670007l), fakeInput(670003l)));
     tra4.setLockTime(987l);
-    tra4.setTransactionHash(UUID.randomUUID().toString());
+    tra4.setTransactionHash("4");
     
-    Transaction tra5 = new Transaction();
+    TestTransaction tra5 = new TestTransaction();
     tra5.setInputs(ImmutableList.of(fakeInput(3406l), fakeInput(3404l)));
     tra5.setOutputs(ImmutableList.of(fakeInput(3407l), fakeInput(3403l)));
     tra5.setLockTime(46547l);
-    tra5.setTransactionHash(UUID.randomUUID().toString());
+    tra5.setTransactionHash("5");
     
-    Transaction tra6 = new Transaction();
+    TestTransaction tra6 = new TestTransaction();
     tra6.setInputs(ImmutableList.of(fakeInput(106l), fakeInput(104l)));
     tra6.setOutputs(ImmutableList.of(fakeInput(107l), fakeInput(103l)));
     tra6.setLockTime(798678l);
-    tra6.setTransactionHash(UUID.randomUUID().toString());
+    tra6.setTransactionHash("6");
     
-    Transaction tra7 = new Transaction();
+    TestTransaction tra7 = new TestTransaction();
     tra7.setInputs(ImmutableList.of(fakeInput(6006l), fakeInput(6004l)));
     tra7.setOutputs(ImmutableList.of(fakeInput(6007l), fakeInput(6003l)));
     tra7.setLockTime(5423454l);
-    tra7.setTransactionHash(UUID.randomUUID().toString());
+    tra7.setTransactionHash("7");
     
-    Transaction tra8 = new Transaction();
+    TestTransaction tra8 = new TestTransaction();
     tra8.setInputs(ImmutableList.of(fakeInput(5006l), fakeInput(5004l)));
     tra8.setOutputs(ImmutableList.of(fakeInput(5007l), fakeInput(5003l)));
     tra8.setLockTime(5423454l);
-    tra8.setTransactionHash(UUID.randomUUID().toString());
+    tra8.setTransactionHash("8");
     
-    Transaction tra9 = new Transaction();
+    TestTransaction tra9 = new TestTransaction();
     tra9.setInputs(ImmutableList.of(fakeInput(4006l), fakeInput(4004l)));
     tra9.setOutputs(ImmutableList.of(fakeInput(4007l), fakeInput(4003l)));
     tra9.setLockTime(5423454l);
-    tra9.setTransactionHash(UUID.randomUUID().toString());
+    tra9.setTransactionHash("9");
     
     if(modifyLittleStuff) {
       tra9.getOutputs().get(0).setTimestamp(1234568l);
     }
     
-    List<Transaction> transactions = new ArrayList<>();
+    List<TestTransaction> transactions = new ArrayList<>();
     transactions.addAll(ImmutableList.of(tra1, tra2, tra3, tra4, tra5));
     transactions.addAll(ImmutableList.of(tra6, tra7, tra8, tra9));
-    List<Transaction> minList = new ArrayList<>();
+    List<TestTransaction> minList = new ArrayList<>();
     minList.addAll(transactions.subList(0, size));
     return minList;
   }
   
-  public static TransactionInput fakeInput(long amount) {
-    TransactionInput input = new TransactionInput();
+  public static TestTransactionInput fakeInput(long amount) {
+    TestTransactionInput input = new TestTransactionInput();
     input.setAmount(new BigDecimal(amount));
     input.setPublicKey("keykey");
     input.setTimestamp(1234567l);

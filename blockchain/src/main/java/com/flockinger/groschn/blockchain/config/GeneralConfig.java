@@ -8,7 +8,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
+import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.concurrent.ConcurrentTaskScheduler;
 import com.flockinger.groschn.blockchain.consensus.model.ConsensusType;
 import com.flockinger.groschn.blockchain.consensus.model.Consent;
 import com.flockinger.groschn.blockchain.model.Block;
@@ -36,6 +38,11 @@ public class GeneralConfig {
   public Executor executor() {
     Executor executorService = Executors.newFixedThreadPool(threadPoolSize);
     return executorService;
+  }
+  
+  @Bean
+  public TaskScheduler taskScheduler() {
+      return new ConcurrentTaskScheduler();
   }
   
   @Bean

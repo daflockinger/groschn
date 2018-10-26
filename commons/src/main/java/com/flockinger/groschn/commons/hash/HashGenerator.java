@@ -7,9 +7,9 @@ import com.flockinger.groschn.commons.exception.HashingException;
 
 public interface HashGenerator {
   
-  String generateHash(Hashable hashable) throws HashingException;
+  String generateHash(Hashable<?> hashable) throws HashingException;
   
   <T extends Sequential> byte[] generateListHash(List<T> sortable) throws HashingException;
   
-  boolean isHashCorrect(String hash, Hashable hashable);
+  boolean isHashCorrect(String hash, Hashable<?> hashable);
 }

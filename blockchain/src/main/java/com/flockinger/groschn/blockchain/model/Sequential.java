@@ -4,6 +4,9 @@ public interface Sequential extends Comparable<Sequential>{
   Long getSequenceNumber();
   
   default int compareTo(Sequential o) {
+    if(o == null) {
+      return 1;
+    }
     if(this.getSequenceNumber() == null && o.getSequenceNumber() == null) {
       return 0;
     } else if (this.getSequenceNumber() == null) {

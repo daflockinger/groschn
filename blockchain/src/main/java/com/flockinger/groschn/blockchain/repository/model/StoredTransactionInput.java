@@ -4,15 +4,15 @@ import java.math.BigDecimal;
 
 public class StoredTransactionInput {
   
-  private BigDecimal amount;
+  private BigDecimal amount = null;
   
-  private String publicKey;
+  private String publicKey = null;
   
-  private Long timestamp;
+  private Long timestamp = null;
   
-  private Long sequenceNumber;
+  private Long sequenceNumber = null;
   
-  private String signature;
+  private String signature = null;
   
   public String getSignature() {
       return signature;

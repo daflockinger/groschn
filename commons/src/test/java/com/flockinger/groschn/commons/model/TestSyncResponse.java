@@ -4,7 +4,7 @@ import java.io.Serializable;
 import java.util.List;
 import com.flockinger.groschn.blockchain.model.Hashable;
 
-public class SyncResponse<T extends Serializable> implements Hashable<SyncResponse<T>>{
+public class TestSyncResponse<T extends Serializable> implements Hashable<TestSyncResponse<T>>{
   /**
    * 
    */
@@ -41,7 +41,7 @@ public class SyncResponse<T extends Serializable> implements Hashable<SyncRespon
   }
 
   @Override
-  public int compareTo(SyncResponse<T> o) {
+  public int compareTo(TestSyncResponse<T> o) {
     if (this.getStartingPosition() == null && o.getStartingPosition() == null) {
       return 0;
     } else if (this.getStartingPosition() == null) {

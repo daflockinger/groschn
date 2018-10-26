@@ -4,7 +4,7 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import com.flockinger.groschn.blockchain.model.Sequential;
 
-public class TransactionOutput implements Serializable, Sequential {
+public class TestTransactionOutput implements Serializable, Sequential {
   /**
   * 
   */
@@ -48,5 +48,11 @@ public class TransactionOutput implements Serializable, Sequential {
 
   public void setSequenceNumber(Long sequenceNumber) {
     this.sequenceNumber = sequenceNumber;
+  }
+
+  @Override
+  public String toString() {
+    return "TestTransactionOutput [amount=" + amount + ", publicKey=" + publicKey + ", timestamp="
+        + timestamp + ", sequenceNumber=" + sequenceNumber + "]";
   }
 }

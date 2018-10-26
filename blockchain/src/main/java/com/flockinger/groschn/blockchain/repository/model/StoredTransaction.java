@@ -4,15 +4,13 @@ import java.util.Date;
 import java.util.List;
 
 public class StoredTransaction {
-  
-  private String transactionId;
-  
-  private Date lockTime;
+    
+  private Date lockTime = null;
 
-  private List<StoredTransactionInput> inputs;
-  private List<StoredTransactionOutput> outputs;
+  private List<StoredTransactionInput> inputs = null;
+  private List<StoredTransactionOutput> outputs = null;
   
-  private String transactionHash;
+  private String transactionHash = null;
 
   public String getTransactionHash() {
     return transactionHash;
@@ -22,12 +20,6 @@ public class StoredTransaction {
     this.transactionHash = transactionHash;
   }
   
-  public String getTransactionId() {
-    return transactionId;
-  }
-  public void setTransactionId(String transactionId) {
-    this.transactionId = transactionId;
-  }
   public Date getLockTime() {
     return lockTime;
   }

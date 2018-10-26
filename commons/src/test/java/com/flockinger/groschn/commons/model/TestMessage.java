@@ -5,7 +5,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 
-public class Message<T extends Serializable> {
+public class TestMessage<T extends Serializable> {
  
   @NotNull
   private String id;

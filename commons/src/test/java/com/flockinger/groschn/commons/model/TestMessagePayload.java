@@ -5,7 +5,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import com.flockinger.groschn.commons.compress.CompressedEntity;
 
-public class MessagePayload implements Serializable {
+public class TestMessagePayload implements Serializable {
   /**
    * 
    */

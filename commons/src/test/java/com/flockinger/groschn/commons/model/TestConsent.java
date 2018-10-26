@@ -2,7 +2,7 @@ package com.flockinger.groschn.commons.model;
 
 import com.flockinger.groschn.blockchain.model.Hashable;
 
-public class Consent implements Hashable<Consent> {
+public class TestConsent implements Hashable<TestConsent> {
   /**
    * 
    */
@@ -17,13 +17,13 @@ public class Consent implements Hashable<Consent> {
   private Long timestamp;
   private Integer difficulty;
   private Long milliSecondsSpentMining;
-  private ConsensusType type;
+  private TestConsensusType type;
 
-  public ConsensusType getType() {
+  public TestConsensusType getType() {
     return type;
   }
 
-  public void setType(ConsensusType type) {
+  public void setType(TestConsensusType type) {
     this.type = type;
   }
 
@@ -60,7 +60,7 @@ public class Consent implements Hashable<Consent> {
   }
 
   @Override
-  public int compareTo(Consent o) {
+  public int compareTo(TestConsent o) {
     if (this.getTimestamp() == null && o.getTimestamp() == null) {
       return 0;
     } else if (this.getTimestamp() == null) {
@@ -69,5 +69,11 @@ public class Consent implements Hashable<Consent> {
       return 1;
     }
     return this.getTimestamp().compareTo(o.getTimestamp());
+  }
+
+  @Override
+  public String toString() {
+    return "TestConsent [nonce=" + nonce + ", timestamp=" + timestamp + ", difficulty=" + difficulty
+        + ", milliSecondsSpentMining=" + milliSecondsSpentMining + ", type=" + type + "]";
   }
 }

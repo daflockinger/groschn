@@ -14,10 +14,10 @@ import org.springframework.test.context.junit4.SpringRunner;
 import com.flockinger.groschn.commons.TestConfig;
 import com.flockinger.groschn.commons.TestDataFactory;
 import com.flockinger.groschn.commons.exception.SerializationException;
-import com.flockinger.groschn.commons.model.Block;
-import com.flockinger.groschn.commons.model.ConsensusType;
-import com.flockinger.groschn.commons.model.MessagePayload;
-import com.flockinger.groschn.commons.model.Transaction;
+import com.flockinger.groschn.commons.model.TestBlock;
+import com.flockinger.groschn.commons.model.TestConsensusType;
+import com.flockinger.groschn.commons.model.TestMessagePayload;
+import com.flockinger.groschn.commons.model.TestTransaction;
 import com.flockinger.groschn.commons.serialize.BlockSerializer;
 
 @RunWith(SpringRunner.class)
@@ -29,13 +29,13 @@ public class FstSerializerTest {
   
   @Test
   public void testSerializeDeserialize_withHugeBlock_shouldWorkWell() {
-    Block fakeBlock =  TestDataFactory.getFakeBlock();
+    TestBlock fakeBlock =  TestDataFactory.getFakeBlock();
    
     byte[] serializedBlock = fstSerializer.serialize(fakeBlock);
     assertNotNull("verify serialized block is not null", serializedBlock);
     assertTrue("verify serialized block has some size to it", serializedBlock.length > 0);
     
-    Block deserializedBlock = fstSerializer.deserialize(serializedBlock, Block.class);
+    TestBlock deserializedBlock = fstSerializer.deserialize(serializedBlock, TestBlock.class);
     assertNotNull("verify that deserialized block is not null", deserializedBlock);
     assertEquals("verify correct block consent difficulty", fakeBlock.getConsent().getDifficulty(), deserializedBlock.getConsent().getDifficulty());
     assertEquals("verify correct block consent millisecondsspent", fakeBlock.getConsent().getMilliSecondsSpentMining(), deserializedBlock.getConsent().getMilliSecondsSpentMining());
@@ -48,8 +48,8 @@ public class FstSerializerTest {
     assertEquals("verify correct block timestamp", fakeBlock.getTimestamp(), deserializedBlock.getTimestamp());
     assertEquals("verify correct block transactions merkle root", fakeBlock.getTransactionMerkleRoot(), deserializedBlock.getTransactionMerkleRoot());
     assertEquals("verify correct block transaction size", fakeBlock.getTransactions().size(), deserializedBlock.getTransactions().size());
-    Transaction firstTransaction = fakeBlock.getTransactions().get(0);
-    Transaction firstUncompressedTr = deserializedBlock.getTransactions().get(0);
+    TestTransaction firstTransaction = fakeBlock.getTransactions().get(0);
+    TestTransaction firstUncompressedTr = deserializedBlock.getTransactions().get(0);
     assertEquals("verify correct block first transaction inputs size", firstTransaction.getInputs().size()
         , firstUncompressedTr.getInputs().size());
     assertEquals("verify correct block first transaction input amount", firstTransaction.getInputs().get(0).getAmount(), 
@@ -89,26 +89,26 @@ public class FstSerializerTest {
   
   @Test
   public void testSerializeDeserialize_withConsentTypeEnum_shouldWorkWell() {
-    ConsensusType type =  ConsensusType.PROOF_OF_MAJORITY;
+    TestConsensusType type =  TestConsensusType.PROOF_OF_MAJORITY;
    
     byte[] serializedBlock = fstSerializer.serialize(type);
     assertNotNull("verify serialized block is not null", serializedBlock);
     assertTrue("verify serialized block has some size to it", serializedBlock.length > 0);
     
-    ConsensusType typeResult = fstSerializer.deserialize(serializedBlock, ConsensusType.class);
+    TestConsensusType typeResult = fstSerializer.deserialize(serializedBlock, TestConsensusType.class);
     assertNotNull("verify that deserialized list is not null", typeResult);
-    assertEquals("verify that returned enum is correct", ConsensusType.PROOF_OF_MAJORITY, typeResult);
+    assertEquals("verify that returned enum is correct", TestConsensusType.PROOF_OF_MAJORITY, typeResult);
   }
   
   @Test
   public void testSerializeDeserialize_withListOfTransactions_shouldWorkWell() {
-    List<Transaction> transactions = TestDataFactory.createBlockTransactions(false, false);
+    List<TestTransaction> transactions = TestDataFactory.createBlockTransactions(false, false);
    
     byte[] serializedBlock = fstSerializer.serialize(transactions);
     assertNotNull("verify serialized block is not null", serializedBlock);
     assertTrue("verify serialized block has some size to it", serializedBlock.length > 0);
     
-    List<Transaction> transactionResults = fstSerializer.deserialize(serializedBlock, List.class);
+    List<TestTransaction> transactionResults = fstSerializer.deserialize(serializedBlock, List.class);
     assertNotNull("verify that deserialized list is not null", transactionResults);
     assertEquals("verify that returned transactions have correct size", 12, transactions.size());
     assertEquals("verify reward transacton miner pub key", "minerKey", transactions.get(4).getInputs().get(0).getPublicKey());
@@ -132,7 +132,7 @@ public class FstSerializerTest {
   
   @Test(expected=SerializationException.class)
   public void testDeserialize_withWrongType_shouldWorkWell() {
-    ConsensusType type =  ConsensusType.PROOF_OF_MAJORITY;
+    TestConsensusType type =  TestConsensusType.PROOF_OF_MAJORITY;
     byte[] serializedBlock = fstSerializer.serialize(type);
     
     fstSerializer.deserialize(serializedBlock, String.class);
@@ -147,13 +147,13 @@ public class FstSerializerTest {
   
   @Test
   public void testSerializeDeserialize_withNotRegisteredType_shouldWorkWell() {
-    MessagePayload message = new MessagePayload();
+    TestMessagePayload message = new TestMessagePayload();
    
     byte[] serializedBlock = fstSerializer.serialize(message);
     assertNotNull("verify serialized block is not null", serializedBlock);
     assertTrue("verify serialized block has some size to it", serializedBlock.length > 0);
     
-    MessagePayload messageRsult = fstSerializer.deserialize(serializedBlock, MessagePayload.class);
+    TestMessagePayload messageRsult = fstSerializer.deserialize(serializedBlock, TestMessagePayload.class);
     assertNotNull("verify that deserialized list is not null", messageRsult);
   }
 }

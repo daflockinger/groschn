@@ -1,5 +1,6 @@
 package com.flockinger.groschn.blockchain.model;
 
+import java.util.Collections;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 
@@ -12,12 +13,12 @@ public class Transaction implements Hashable<Transaction> {
   /**
    * Timestamp when the transaction is done
    */
-  private Long lockTime;
+  private Long lockTime = null;
 
-  private List<TransactionInput> inputs;
-  private List<TransactionOutput> outputs;
+  private List<TransactionInput> inputs = null;
+  private List<TransactionOutput> outputs = null;
   
-  private String transactionHash;
+  private String transactionHash = null;
 
   public String getTransactionHash() {
     return transactionHash;
@@ -56,8 +57,25 @@ public class Transaction implements Hashable<Transaction> {
     if(o == null) {
       return 1;
     }
+    if(this.getTransactionHash() == null && o.getTransactionHash() == null) {
+      return 0;
+    } else if (this.getTransactionHash() == null) {
+      return -1;
+    } else if (o.getTransactionHash() == null) {
+      return 1;
+    }
     return StringUtils.compare(this.getTransactionHash(), o.getTransactionHash());
   }
-  
-  
+
+  @Override
+  public String toString() {
+    if(inputs != null) {
+      Collections.sort(inputs);
+    }
+    if(outputs != null) {
+      Collections.sort(outputs);
+    }
+    return "Transaction [lockTime=" + lockTime + ", inputs=" + inputs + ", outputs=" + outputs
+        + ", transactionHash=" + transactionHash + "]";
+  }
 }

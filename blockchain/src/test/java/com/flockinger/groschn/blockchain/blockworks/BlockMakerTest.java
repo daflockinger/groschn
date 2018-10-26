@@ -295,7 +295,6 @@ public class BlockMakerTest extends BaseCachingTest {
         request.getPublicKey());
     verify(broadcaster, times(1)).broadcast(any(),any());
     verify(storageService).saveInBlockchain(any());
-    verify(storageService).saveInBlockchain(any());
   }
 
   private void mockValid() {
