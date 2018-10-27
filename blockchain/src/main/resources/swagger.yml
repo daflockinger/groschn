@@ -1,0 +1,265 @@
+swagger: '2.0'
+info:
+  description: Groschn Blockchain API
+  version: 1.0.0
+  title: Groschn API
+  license:
+    url: 'http://unlicense.org'
+    name: open source
+host: 'localhost:8081'
+basePath: /
+paths:
+  '/api/v1/groschn/wallet/balance/{pub-key}':
+    get:
+      tags:
+        - Wallet
+      summary: Available Balance of for a Public-Key.
+      description: Returns currently available Balance of for a Public-Key.
+      operationId: getBalance
+      produces:
+        - application/json
+      parameters:
+        - name: pub-key
+          in: path
+          description: Public key.
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Current available Balance.
+          schema:
+            $ref: '#/definitions/BalanceDto'
+        '400':
+          description: Bad request (validation failed).
+          schema:
+            $ref: '#/definitions/Error'
+        '403':
+          description: Forbidden (no rights to access resource).
+        '404':
+          description: Entity not found.
+          schema:
+            $ref: '#/definitions/Error'
+        '409':
+          description: Request results in a conflict.
+          schema:
+            $ref: '#/definitions/Error'
+  /api/v1/groschn/transaction:
+    post:
+      tags:
+        - Transaction
+      summary: Create and publish Transaction.
+      description: Creates and verifies a Transaction and then publishes it if it's fine.
+      operationId: publishTransaction
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: createTransaction
+          description: Transaction data
+          required: true
+          schema:
+            $ref: '#/definitions/CreateTransactionDto'
+      responses:
+        '201':
+          description: Transaction created and published.
+          schema:
+            $ref: '#/definitions/TransactionIdDto'
+        '400':
+          description: Bad request (validation failed).
+          schema:
+            $ref: '#/definitions/Error'
+        '401':
+          description: Unauthorized (need to log in / get token).
+        '403':
+          description: Forbidden (no rights to access resource).
+        '404':
+          description: Entity not found.
+          schema:
+            $ref: '#/definitions/Error'
+        '409':
+          description: Request results in a conflict.
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: Internal Server Error.
+  '/api/v1/groschn/transaction/{pub-key}':
+    get:
+      tags:
+        - Transaction
+      summary: Get all transactions from public key.
+      description: Fetches all transactions from a specific public key.
+      operationId: getTransactionsFromPublicKey
+      produces:
+        - application/json
+      parameters:
+        - name: pub-key
+          in: path
+          description: Public key.
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Transactions.
+          schema:
+            type: "array"
+            items:
+              $ref: '#/definitions/ViewTransactionDto'
+        '400':
+          description: Bad request (validation failed).
+          schema:
+            $ref: '#/definitions/Error'
+        '401':
+          description: Unauthorized (need to log in / get token).
+        '403':
+          description: Forbidden (no rights to access resource).
+        '404':
+          description: Entity not found.
+          schema:
+            $ref: '#/definitions/Error'
+        '409':
+          description: Request results in a conflict.
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: Internal Server Error.
+  '/api/v1/groschn/transaction/status/{transaction-id}':
+    get:
+      tags:
+        - Transaction
+      summary: Get status of the Transaction.
+      description: Fetches status information of the Transaction.
+      operationId: getTransactionStatus
+      produces:
+        - application/json
+      parameters:
+        - name: transaction-id
+          in: path
+          description: Unique identifier of the transaction.
+          required: true
+          type: string
+      responses:
+        '200':
+          description: TransactionStatus.
+          schema:
+            $ref: '#/definitions/TransactionStatus'
+        '400':
+          description: Bad request (validation failed).
+          schema:
+            $ref: '#/definitions/Error'
+        '401':
+          description: Unauthorized (need to log in / get token).
+        '403':
+          description: Forbidden (no rights to access resource).
+        '404':
+          description: Entity not found.
+          schema:
+            $ref: '#/definitions/Error'
+        '409':
+          description: Request results in a conflict.
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: Internal Server Error.
+definitions:
+  BalanceDto:
+    type: object
+    properties:
+      balance:
+        type: string
+        description: Current available Balance (in Groschn).
+  CreateTransactionDto:
+    type: object
+    properties:
+      inputs:
+        type: array
+        description: Transaction inputs.
+        items:
+          $ref: '#/definitions/TransactionInputDTO'
+      outputs:
+        type: array
+        description: Transaction outputs.
+        items:
+          $ref: '#/definitions/TransactionOutputDTO'
+  TransactionInputDTO:
+    type: object
+    properties:
+      signature:
+        type: string
+        description: Signature from the transaction sender.
+      amount:
+        type: string
+        description: Amount (Groschn) to transfer.
+      publicKey:
+        type: string
+        description: Public key of the transaction sender.
+      timestamp:
+        type: integer
+        format: int64
+        description: Input timestamp (milliseconds).
+      sequenceNumber:
+        type: integer
+        format: int64
+        description: Ordered sequence number of the input (starts with 1).
+  TransactionOutputDTO:
+    type: object
+    properties:
+      amount:
+        type: string
+        description: Amount (Groschn) transfered.
+      publicKey:
+        type: string
+        description: Public key of the transaction receiver.
+      timestamp:
+        type: integer
+        format: int64
+        description: Output timestamp (milliseconds).
+      sequenceNumber:
+        type: integer
+        format: int64
+        description: Ordered sequence number of the output (starts with 1).
+  TransactionIdDto:
+    type: object
+    properties: 
+      id:
+        type: string
+        description: Unique identifier of the created transaction.
+  ViewTransactionDto:
+    type: object
+    properties: 
+      id:
+        type: string
+        description: Unique identifier of the created transaction.
+      inputs:
+        type: array
+        description: Transaction inputs.
+        items:
+          $ref: '#/definitions/TransactionInputDTO'
+      outputs:
+        type: array
+        description: Transaction outputs.
+        items:
+          $ref: '#/definitions/TransactionOutputDTO'
+  TransactionStatus:
+    type: object
+    properties:
+      status:
+        type: string
+        description: Status of the transaction.
+      statusMessage:
+        type: string
+        description: Detailed status message of the transaction.
+  Error:
+    type: object
+    properties:
+      code:
+        type: integer
+        format: int32
+      fields:
+        type: object
+        description: Invalid fields.
+        additionalProperties:
+          type: string
+      message:
+        type: string
