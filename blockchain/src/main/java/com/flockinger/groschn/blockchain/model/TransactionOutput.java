@@ -9,13 +9,13 @@ public class TransactionOutput implements Serializable, Sequential {
   */
   private static final long serialVersionUID = 4422348192122659030L;
 
-  private BigDecimal amount;
+  private BigDecimal amount = null;
 
-  private String publicKey;
+  private String publicKey = null;
 
-  private Long timestamp;
+  private Long timestamp = null;
 
-  private Long sequenceNumber;
+  private Long sequenceNumber = null;
 
   public BigDecimal getAmount() {
     return amount;
@@ -47,5 +47,11 @@ public class TransactionOutput implements Serializable, Sequential {
 
   public void setSequenceNumber(Long sequenceNumber) {
     this.sequenceNumber = sequenceNumber;
+  }
+
+  @Override
+  public String toString() {
+    return "TransactionOutput [amount=" + amount + ", publicKey=" + publicKey + ", timestamp="
+        + timestamp + ", sequenceNumber=" + sequenceNumber + "]";
   }
 }

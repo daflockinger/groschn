@@ -4,32 +4,22 @@ import java.math.BigDecimal;
 
 public class StoredTransactionInput {
   
-  private BigDecimal amount;
+  private BigDecimal amount = null;
   
-  private String publicKey;
+  private String publicKey = null;
   
-  private Long timestamp;
+  private Long timestamp = null;
   
-  private Long sequenceNumber;
+  private Long sequenceNumber = null;
   
-  private String signature;
+  private String signature = null;
   
-  private StoredTransactionPointCut previousOutputTransaction;
-
   public String getSignature() {
       return signature;
   }
 
   public void setSignature(String signature) {
       this.signature = signature;
-  }
-
-  public StoredTransactionPointCut getPreviousOutputTransaction() {
-      return previousOutputTransaction;
-  }
-
-  public void setPreviousOutputTransaction(StoredTransactionPointCut previousOutputTransaction) {
-      this.previousOutputTransaction = previousOutputTransaction;
   }
 
   public BigDecimal getAmount() {

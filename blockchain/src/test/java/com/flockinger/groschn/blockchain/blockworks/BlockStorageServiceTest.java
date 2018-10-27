@@ -4,11 +4,15 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.junit.After;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -18,16 +22,18 @@ import com.flockinger.groschn.blockchain.TestDataFactory;
 import com.flockinger.groschn.blockchain.blockworks.impl.BlockStorageServiceImpl;
 import com.flockinger.groschn.blockchain.consensus.model.ConsensusType;
 import com.flockinger.groschn.blockchain.consensus.model.Consent;
-import com.flockinger.groschn.blockchain.exception.validation.BlockValidationException;
+import com.flockinger.groschn.blockchain.exception.validation.AssessmentFailedException;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.model.Transaction;
 import com.flockinger.groschn.blockchain.repository.BlockchainRepository;
 import com.flockinger.groschn.blockchain.repository.model.StoredBlock;
 import com.flockinger.groschn.blockchain.repository.model.StoredTransaction;
+import com.flockinger.groschn.blockchain.repository.model.TransactionStatus;
+import com.flockinger.groschn.blockchain.transaction.TransactionManager;
 import com.flockinger.groschn.blockchain.validation.impl.BlockValidator;
 import com.google.common.collect.ImmutableList;
 
-@ContextConfiguration(classes = {BlockchainRepository.class, BlockStorageServiceImpl.class, })
+@ContextConfiguration(classes = {BlockchainRepository.class, BlockStorageServiceImpl.class})
 public class BlockStorageServiceTest extends BaseDbTest {
 
   @Autowired
@@ -39,6 +45,8 @@ public class BlockStorageServiceTest extends BaseDbTest {
   
   @MockBean
   private BlockValidator validator;
+  @MockBean
+  private TransactionManager transactionManager;
   
   
   @After
@@ -78,8 +86,6 @@ public class BlockStorageServiceTest extends BaseDbTest {
     assertEquals("verify correct block transaction size", freshBlock.getTransactions().size(), storedBlock.get().getTransactions().size());
     Transaction firstTransaction = freshBlock.getTransactions().get(0);
     StoredTransaction firstUncompressedTr = storedBlock.get().getTransactions().get(0);
-    assertEquals("verify correct block first transaction id", firstTransaction.getId()
-        , firstUncompressedTr.getTransactionId());
     assertEquals("verify correct block first transaction inputs size", firstTransaction.getInputs().size()
         , firstUncompressedTr.getInputs().size());
     assertEquals("verify correct block first transaction input amount", firstTransaction.getInputs().get(0).getAmount(), 
@@ -103,9 +109,13 @@ public class BlockStorageServiceTest extends BaseDbTest {
     assertEquals("verify correct block first transaction locktime", firstTransaction.getLockTime().longValue(), 
         firstUncompressedTr.getLockTime().getTime());
     assertEquals("verify correct block ", freshBlock.getVersion(), storedBlock.get().getVersion());
+    
+    ArgumentCaptor<TransactionStatus> statusCaptor = ArgumentCaptor.forClass(TransactionStatus.class);
+    verify(transactionManager).updateTransactionStatuses(anyList(), statusCaptor.capture());
+    assertEquals("verify transactions will be updated with correct status", TransactionStatus.EMBEDDED_IN_BLOCK, statusCaptor.getValue());
   }
   
-  @Test(expected=BlockValidationException.class)
+  @Test(expected=AssessmentFailedException.class)
   public void testStoreInBlockchain_withInvalidBlock_shouldThrowException() {
     Block freshBlock = TestDataFactory.getFakeBlock();
     when(validator.validate(any())).thenReturn(TestDataFactory.fakeAssessment(false));
@@ -124,7 +134,7 @@ public class BlockStorageServiceTest extends BaseDbTest {
   
   @Test
   public void testGetLatestProofOfWorkBlock_filledChain_shouldReturnCorrect() {
-    dao.saveAll(fakeBlocks());
+    dao.saveAll(fakeBlocks(23l,50l,54l,98l,101l));
     
     Block lastBlock = service.getLatestProofOfWorkBlock();
     assertNotNull("verify last block is not null", lastBlock);
@@ -146,23 +156,108 @@ public class BlockStorageServiceTest extends BaseDbTest {
         ConsensusType.PROOF_OF_WORK, lastBlock.getConsent().getType());
   }
   
+  @Test
+  public void testFindBlocks_withValidPositionAndQuandity_shouldWork() {
+    dao.saveAll(fakeBlocks(3l,2l,1l,4l,5l));
+    
+    List<Block> blocks = service.findBlocks(2, 3);
+    assertNotNull("verify received blocks are not null", blocks);
+    assertEquals("verify correct response amount", 3, blocks.size());
+    assertTrue("verify correct blocks are received", blocks.stream().map(Block::getPosition)
+        .collect(Collectors.toList()).containsAll(ImmutableList.of(2l,3l,4l)));
+    
+    List<Block> blocks3 = service.findBlocks(1, 2);
+    assertNotNull("verify received blocks are not null", blocks3);
+    assertEquals("verify correct response amount", 2, blocks3.size());
+    assertTrue("verify correct blocks are received", blocks3.stream().map(Block::getPosition)
+        .collect(Collectors.toList()).containsAll(ImmutableList.of(1l,2l)));
+    
+    List<Block> blocks2 = service.findBlocks(3, 5);
+    assertNotNull("verify received blocks are not null", blocks2);
+    assertEquals("verify correct response amount", 3, blocks2.size());
+    assertTrue("verify correct blocks are received", blocks2.stream().map(Block::getPosition)
+        .collect(Collectors.toList()).containsAll(ImmutableList.of(3l,4l,5l)));
+  }
   
-  private List<StoredBlock> fakeBlocks() {
+  @Test
+  public void testFindBlocks_withZeroQuantity_shouldWork() {
+    dao.saveAll(fakeBlocks(3l,2l,1l,4l,5l));
+    
+    List<Block> blocks = service.findBlocks(2, 0);
+    assertNotNull("verify received blocks are not null", blocks);
+    assertEquals("verify correct response amount", 0, blocks.size());
+  }
+  
+  @Test
+  public void testFindBlocks_withNegativeStartingPoint_shouldWork() {
+    dao.saveAll(fakeBlocks(3l,2l,1l,4l,5l));
+    
+    List<Block> blocks = service.findBlocks(-3, 3);
+    assertNotNull("verify received blocks are not null", blocks);
+    assertEquals("verify correct response amount", 3, blocks.size());
+    assertTrue("verify correct blocks are received", blocks.stream().map(Block::getPosition)
+        .collect(Collectors.toList()).containsAll(ImmutableList.of(1l,2l,3l)));
+  }
+  
+  @Test
+  public void testFindBlocks_withBothNegative_shouldWork() {
+    dao.saveAll(fakeBlocks(3l,2l,1l,4l,5l));
+    
+    List<Block> blocks = service.findBlocks(-3, -3);
+    assertNotNull("verify received blocks are not null", blocks);
+    assertEquals("verify correct response amount", 0, blocks.size());
+  }
+  
+  @Test
+  public void testRemoveBlocks_withMiddlePosition_shouldRemoveCorrect() {
+    dao.saveAll(fakeBlocks(3l,2l,1l,4l,5l));
+    
+    service.removeBlocks(3);
+    
+    var existingBlocks = dao.findAll();
+    assertEquals("verify that enough blocks still exist", 2, existingBlocks.size());
+    assertTrue("verify that the first block still exists", existingBlocks.stream().anyMatch(b -> b.getPosition() == 1));
+    assertTrue("verify that the 2nd block still exists", existingBlocks.stream().anyMatch(b -> b.getPosition() == 2));
+  }
+  
+  @Test
+  public void testRemoveBlocks_withZeroPosition_shouldNotRemoveGenesisBlock() {
+    dao.saveAll(fakeBlocks(5l,3l,2l,5l,6l));
+    
+    service.removeBlocks(1);
+    
+    var existingBlocks = dao.findAll();
+    assertEquals("verify that enough blocks still exist", 1, existingBlocks.size());
+    assertTrue("verify that the first block still exists", existingBlocks.stream().anyMatch(b -> b.getPosition() == 1));
+  }
+  
+  @Test
+  public void testRemoveBlocks_withTooHighPosition_shouldDoNothing() {
+    dao.saveAll(fakeBlocks(3l,2l,1l,4l,5l));
+    
+    service.removeBlocks(6);
+    
+    var existingBlocks = dao.findAll();
+    assertEquals("verify that enough blocks still exist", 5, existingBlocks.size());
+  }
+  
+  
+  private List<StoredBlock> fakeBlocks(long pos1, long pos2, long pos3, long pos4, long pos5) {
     Block block1 = TestDataFactory.getFakeBlock();
     block1.setConsent(fakeConsent(ConsensusType.PROOF_OF_WORK));
-    block1.setPosition(23l);
+    block1.setPosition(pos1);
     Block block2 = TestDataFactory.getFakeBlock();
     block2.setConsent(fakeConsent(ConsensusType.PROOF_OF_MAJORITY));
-    block2.setPosition(50l);
+    block2.setPosition(pos2);
     Block block3 = TestDataFactory.getFakeBlock();
     block3.setConsent(fakeConsent(ConsensusType.PROOF_OF_WORK));
-    block3.setPosition(54l);
+    block3.setPosition(pos3);
     Block block4 = TestDataFactory.getFakeBlock();
     block4.setConsent(fakeConsent(ConsensusType.PROOF_OF_WORK));
-    block4.setPosition(98l);
+    block4.setPosition(pos4);
     Block block7 = TestDataFactory.getFakeBlock();
     block7.setConsent(fakeConsent(ConsensusType.PROOF_OF_MAJORITY));
-    block7.setPosition(101l);
+    block7.setPosition(pos5);
     return ImmutableList.of(map(block1), map(block7), map(block3), map(block4), map(block2));
   }
   

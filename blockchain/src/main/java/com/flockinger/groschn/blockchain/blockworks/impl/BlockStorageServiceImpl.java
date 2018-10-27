@@ -1,16 +1,20 @@
 package com.flockinger.groschn.blockchain.blockworks.impl;
 
+import java.util.List;
+import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
 import com.flockinger.groschn.blockchain.consensus.model.ConsensusType;
-import com.flockinger.groschn.blockchain.exception.validation.BlockValidationException;
+import com.flockinger.groschn.blockchain.exception.validation.AssessmentFailedException;
 import com.flockinger.groschn.blockchain.exception.validation.ValidationException;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.repository.BlockchainRepository;
 import com.flockinger.groschn.blockchain.repository.model.StoredBlock;
+import com.flockinger.groschn.blockchain.repository.model.TransactionStatus;
+import com.flockinger.groschn.blockchain.transaction.TransactionManager;
 import com.flockinger.groschn.blockchain.validation.Assessment;
 import com.flockinger.groschn.blockchain.validation.impl.BlockValidator;
 
@@ -23,6 +27,8 @@ public class BlockStorageServiceImpl implements BlockStorageService {
   private BlockchainRepository dao;
   @Autowired
   private ModelMapper mapper;
+  @Autowired
+  private TransactionManager transactionManager;
 
   @PostConstruct
   public void initBlockchain() {
@@ -35,6 +41,7 @@ public class BlockStorageServiceImpl implements BlockStorageService {
   @Override
   public StoredBlock saveInBlockchain(Block block) throws ValidationException {
     validateBlock(block);
+    transactionManager.updateTransactionStatuses(block.getTransactions(), TransactionStatus.EMBEDDED_IN_BLOCK);
     StoredBlock storedBlock = mapToStoredBlock(block);
     storedBlock = dao.save(storedBlock);
     return storedBlock;
@@ -43,8 +50,7 @@ public class BlockStorageServiceImpl implements BlockStorageService {
   private void validateBlock(Block block) {
     Assessment assessment = validator.validate(block);
     if (!assessment.isValid()) {
-      throw new BlockValidationException(
-          "Block validation failed because of: " + assessment.getReasonOfFailure());
+      throw new AssessmentFailedException(assessment.getReasonOfFailure(), assessment.getFailure());
     }
   }
 
@@ -67,5 +73,18 @@ public class BlockStorageServiceImpl implements BlockStorageService {
         .findTop3ByConsentTypeOrderByPositionDesc(ConsensusType.PROOF_OF_WORK)
         .stream().map(this::mapToBlock)
         .findFirst().get();
+  }
+  
+  @Override
+  public List<Block> findBlocks(long fromPosition, long quantity) {
+    var from = Math.max(fromPosition, 1);
+    var until = Math.max(from + quantity, 0);
+    return dao.findByPositionBetween(from-1, until).stream()
+        .map(this::mapToBlock).collect(Collectors.toList());
+  }
+
+  @Override
+  public void removeBlocks(long fromPositionInclusive) {
+    dao.removeByPositionGreaterThanEqual(Math.max(2l, fromPositionInclusive));
   }
 }

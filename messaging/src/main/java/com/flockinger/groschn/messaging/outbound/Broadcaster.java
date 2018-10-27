@@ -1,7 +1,8 @@
 package com.flockinger.groschn.messaging.outbound;
 
 import java.io.Serializable;
-import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import com.flockinger.groschn.messaging.config.MainTopics;
 import com.flockinger.groschn.messaging.model.Message;
 
 /**
@@ -15,27 +16,9 @@ public interface Broadcaster<T extends Serializable> {
    * Sends a message to all other connected nodes.
    * 
    * @param message
+   * @param topic
    */
-  void broadcast(Message<T> message);
-  
-  
-  /**
-   * Sends a message to a list of pre defined nodes (by nodeId).
-   * 
-   * @param message
-   * @param receiverNodeIds
-   */
-  void multicast(Message<T> message, List<String> receiverNodeIds);
-  
-  
-  /**
-   * Sends a message to one specified node (by nodeId).
-   * 
-   * @param message
-   * @param receiverNodeId
-   */
-  void unicast(Message<T> message, String receiverNodeId);
-  
+  void broadcast(Message<T> message, MainTopics topic);
   
   
   /**
@@ -43,7 +26,8 @@ public interface Broadcaster<T extends Serializable> {
    * 
    * @param request Message
    * @param receiverNodeId ID of the receiver
+   * @param topic
    * @return response Message
    */
-  Message<T> sendRequest(Message<T> request, String receiverNodeId);
+  CompletableFuture<Message<T>> sendRequest(Message<T> request, String receiverNodeId, MainTopics topic);
 }

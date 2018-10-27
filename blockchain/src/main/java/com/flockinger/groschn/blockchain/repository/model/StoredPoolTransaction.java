@@ -4,19 +4,25 @@ import java.util.Date;
 import java.util.List;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 @Document(collection="transactionPool")
 public class StoredPoolTransaction {
   
+  public final static String TX_HASH_NAME = "transactionHash";
+  public final static String STATUS_NAME = "status";
+  
   @Id
   private String id;
   
-  private String transactionId;
+  @Field(TX_HASH_NAME)
+  private String transactionHash;
   
   private Date lockTime;
   
   private Date createdAt;
   
+  @Field(STATUS_NAME)
   private TransactionStatus status;
 
   private List<StoredTransactionInput> inputs;
@@ -35,11 +41,11 @@ public class StoredPoolTransaction {
   public void setId(String id) {
     this.id = id;
   }
-  public String getTransactionId() {
-    return transactionId;
+  public String getTransactionHash() {
+    return transactionHash;
   }
-  public void setTransactionId(String transactionId) {
-    this.transactionId = transactionId;
+  public void setTransactionHash(String transactionHash) {
+    this.transactionHash = transactionHash;
   }
   public Date getLockTime() {
     return lockTime;

@@ -22,4 +22,8 @@ public interface BlockchainRepository extends MongoRepository<StoredBlock, Strin
   Optional<StoredBlock> findFirstByTransactionsInputsPublicKeyOrderByPositionDesc(String publicKey);
   
   List<StoredBlock> findByPositionGreaterThanEqualAndTransactionsOutputsPublicKey(Long position, String publicKey);
+  
+  List<StoredBlock> findByPositionBetween(Long startingPosition, Long endPosition);
+  
+  void removeByPositionGreaterThanEqual(Long position);
 }

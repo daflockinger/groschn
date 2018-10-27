@@ -19,7 +19,7 @@ import com.flockinger.groschn.blockchain.repository.BlockProcessRepository;
 import com.flockinger.groschn.blockchain.repository.BlockchainRepository;
 import com.flockinger.groschn.blockchain.repository.model.BlockProcess;
 import com.flockinger.groschn.blockchain.repository.model.ProcessStatus;
-import com.flockinger.groschn.messaging.members.ElectionStatistics;
+import com.flockinger.groschn.messaging.members.NetworkStatistics;
 
 @Component("ConsensusDecider")
 public class ConsensusFactory implements ConsensusAlgorithm {
@@ -33,7 +33,7 @@ public class ConsensusFactory implements ConsensusAlgorithm {
   private ConsensusAlgorithm proofOfMajorityAlgorithm;
   
   @Autowired
-  private ElectionStatistics statistics;
+  private NetworkStatistics statistics;
   @Autowired
   private BlockchainRepository blockchainRepo;
   @Autowired
@@ -59,7 +59,7 @@ public class ConsensusFactory implements ConsensusAlgorithm {
   }
   
   private boolean isProofOfMajorityAllowed() {
-    boolean areEnoughNodesActive = statistics.currentActiveVoterCount() >= MIN_ACTIVE_NODE_COUNT;
+    boolean areEnoughNodesActive = statistics.activeNodeCount() >= MIN_ACTIVE_NODE_COUNT;
     boolean wereEnoughProofOfWorkBlocksMined = blockchainRepo.count() > MIN_BLOCK_COUNT_BEFORE_ACTIVATE_POM;
     
     return areEnoughNodesActive && wereEnoughProofOfWorkBlocksMined;

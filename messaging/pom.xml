@@ -32,6 +32,11 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>com.flockinger.groschn</groupId>
+			<artifactId>commons</artifactId>
+			<version>0.0.1</version>
+		</dependency>
 
 		<dependency>
 			<groupId>io.atomix</groupId>
@@ -58,6 +63,12 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.powermock</groupId>
+			<artifactId>powermock-core</artifactId>
+			<version>1.7.4</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>

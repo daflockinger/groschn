@@ -2,17 +2,17 @@ package com.flockinger.groschn.blockchain.consensus.model;
 
 import com.flockinger.groschn.blockchain.model.Hashable;
 
-public class Consent implements Hashable {
+public class Consent implements Hashable<Consent> {
   /**
    * 
    */
   private static final long serialVersionUID = -8569663167682846480L;
-  
-  private Long nonce;
-  private Long timestamp;
-  private Integer difficulty;
-  private Long milliSecondsSpentMining;
-  private ConsensusType type;
+
+  private Long nonce = null;
+  private Long timestamp = null;
+  private Integer difficulty = null;
+  private Long milliSecondsSpentMining = null;
+  private ConsensusType type = null;
 
   public ConsensusType getType() {
     return type;
@@ -53,4 +53,24 @@ public class Consent implements Hashable {
   public void setTimestamp(Long timestamp) {
     this.timestamp = timestamp;
   }
+
+  @Override
+  public int compareTo(Consent o) {
+    if (this.getTimestamp() == null && o.getTimestamp() == null) {
+      return 0;
+    } else if (this.getTimestamp() == null) {
+      return -1;
+    } else if (o.getTimestamp() == null) {
+      return 1;
+    }
+    return this.getTimestamp().compareTo(o.getTimestamp());
+  }
+
+  @Override
+  public String toString() {
+    return "Consent [nonce=" + nonce + ", timestamp=" + timestamp + ", difficulty=" + difficulty
+        + ", milliSecondsSpentMining=" + milliSecondsSpentMining + ", type=" + type.name() + "]";
+  }
+  
+  
 }

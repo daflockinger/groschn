@@ -9,13 +9,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import com.flockinger.groschn.blockchain.blockworks.BlockMaker;
 import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
-import com.flockinger.groschn.blockchain.blockworks.HashGenerator;
 import com.flockinger.groschn.blockchain.consensus.ConsensusAlgorithm;
 import com.flockinger.groschn.blockchain.consensus.model.ConsensusType;
 import com.flockinger.groschn.blockchain.consensus.model.Consent;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.model.Transaction;
-import com.flockinger.groschn.blockchain.util.MerkleRootCalculator;
+import com.flockinger.groschn.commons.MerkleRootCalculator;
+import com.flockinger.groschn.commons.hash.HashGenerator;
 
 @Component(value = "POW")
 public class ProofOfWorkAlgorithm implements ConsensusAlgorithm {
@@ -55,6 +55,7 @@ public class ProofOfWorkAlgorithm implements ConsensusAlgorithm {
     Block lastBlock = blockService.getLatestProofOfWorkBlock();
     
     Block freshBlock = new Block();
+    freshBlock.setHash(null);
     freshBlock.setPosition(blockService.getLatestBlock().getPosition() + 1);
     freshBlock.setTransactions(transactions);
     freshBlock.setLastHash(lastBlock.getHash());
@@ -69,6 +70,7 @@ public class ProofOfWorkAlgorithm implements ConsensusAlgorithm {
     
     forgeBlock(freshBlock);
     processingConsent = false;
+    
     return freshBlock;
   }
   

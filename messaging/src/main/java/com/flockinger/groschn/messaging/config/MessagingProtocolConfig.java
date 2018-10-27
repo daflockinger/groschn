@@ -1,5 +1,6 @@
 package com.flockinger.groschn.messaging.config;
 
+import java.io.File;
 import java.time.Duration;
 import java.util.List;
 import java.util.function.Function;
@@ -8,12 +9,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import com.flockinger.groschn.messaging.config.AtomixConfig.AtomixNode;
+import io.atomix.cluster.MemberId;
 import io.atomix.cluster.Node;
 import io.atomix.cluster.discovery.BootstrapDiscoveryProvider;
 import io.atomix.core.Atomix;
 import io.atomix.protocols.backup.partition.PrimaryBackupPartitionGroup;
 import io.atomix.protocols.raft.partition.RaftPartitionGroup;
-import io.atomix.storage.StorageLevel;
 
 @Configuration
 public class MessagingProtocolConfig {
@@ -22,10 +23,10 @@ public class MessagingProtocolConfig {
   private AtomixConfig config;
   
   @Bean
-  public Atomix createAtomixInstance() {
-    
+  public Atomix createAndStartAtomixInstance() throws Exception {
     Atomix atomix = Atomix.builder()
         .withAddress(config.getHostNodeAddress())
+        .withMemberId(MemberId.from(config.getNodeId()))
         .withMembershipProvider(BootstrapDiscoveryProvider.builder()
             .withNodes(mapNodes(config
                 .getDiscovery().getBootstrapNodes(), this::mapToNode))
@@ -34,15 +35,16 @@ public class MessagingProtocolConfig {
             .withFailureTimeout(Duration.ofMillis(config
                 .getDiscovery().getFailureTimeoutMilliseconds()))
             .build())
-        .withManagementGroup(RaftPartitionGroup.builder(AtomixConfig.MANAGEMENT_PARTITION_GROUP_NAME)
+        .withManagementGroup(RaftPartitionGroup.builder(config.getManagementGroup().getName())
             .withMembers(mapNodes(
                 config.getDiscovery().getBootstrapNodes()
                 ,this::mapToMember))
-            .withNumPartitions(config.getPartitionGroup().getNumberPartitions())
+            .withNumPartitions(config.getManagementGroup().getNumberPartitions())
             /* should be sufficient to only store stuff in memory since it should be
              *  resynced anyways on a restart.
              */
-            .withStorageLevel(StorageLevel.MEMORY)
+            .withStorageLevel(config.getManagementGroup().getStorageLevel())
+            .withDataDirectory(new File(config.getManagementGroup().getDataDirectory()))
             .build())
         /* Chosen cause of the faster propagation speed in comparison to Raft
          * which for this protocol is only used for leader election.
@@ -52,6 +54,8 @@ public class MessagingProtocolConfig {
             .build())
         .withShutdownHookEnabled()
         .build();
+    atomix.start().join();
+    
     return atomix;
   }
   

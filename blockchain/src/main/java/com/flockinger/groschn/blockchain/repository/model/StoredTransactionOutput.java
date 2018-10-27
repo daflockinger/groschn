@@ -3,13 +3,13 @@ package com.flockinger.groschn.blockchain.repository.model;
 import java.math.BigDecimal;
 
 public class StoredTransactionOutput {
-  private BigDecimal amount;
+  private BigDecimal amount = null;
   
-  private String publicKey;
+  private String publicKey = null;
   
-  private Long timestamp;
+  private Long timestamp = null;
   
-  private Long sequenceNumber;
+  private Long sequenceNumber = null;
 
   public BigDecimal getAmount() {
     return amount;

@@ -1,5 +1,7 @@
 package com.flockinger.groschn.blockchain.exception;
 
+import com.flockinger.groschn.commons.exception.BlockchainException;
+
 public class TransactionAlreadyClearedException extends BlockchainException {
   /**
    * 

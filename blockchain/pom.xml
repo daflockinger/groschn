@@ -38,6 +38,11 @@
 			<artifactId>messaging</artifactId>
 			<version>0.0.1</version>
 		</dependency>
+		<dependency>
+			<groupId>com.flockinger.groschn</groupId>
+			<artifactId>commons</artifactId>
+			<version>0.0.1</version>
+		</dependency>
 
 		<dependency>
 			<groupId>org.modelmapper</groupId>
@@ -84,6 +89,10 @@
 		</dependency>
 
 
+		<dependency>
+			<groupId>javax.validation</groupId>
+			<artifactId>validation-api</artifactId>
+		</dependency>
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-collections4</artifactId>

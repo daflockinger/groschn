@@ -3,7 +3,8 @@ package com.flockinger.groschn.blockchain.validation;
 public class Assessment {
   
   private boolean isValid;
-  String reasonOfFailure;
+  private String reasonOfFailure;
+  private AssessmentFailure failure = AssessmentFailure.NONE;
   
   public boolean isValid() {
     return isValid;
@@ -30,5 +31,13 @@ public class Assessment {
   public Assessment reason(String reasonOfFailure) {
     setReasonOfFailure(reasonOfFailure);
     return this;
+  }
+  
+  public AssessmentFailure getFailure() {
+    return failure;
+  }
+  
+  public void setFailure(AssessmentFailure failure) {
+    this.failure = failure;
   }
 }

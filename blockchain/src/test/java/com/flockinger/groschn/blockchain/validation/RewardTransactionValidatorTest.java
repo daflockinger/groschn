@@ -20,17 +20,17 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
-import com.flockinger.groschn.blockchain.blockworks.HashGenerator;
 import com.flockinger.groschn.blockchain.exception.HashingException;
-import com.flockinger.groschn.blockchain.exception.crypto.CantConfigureSigningAlgorithmException;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.model.Transaction;
 import com.flockinger.groschn.blockchain.model.TransactionInput;
 import com.flockinger.groschn.blockchain.transaction.Bookkeeper;
-import com.flockinger.groschn.blockchain.util.sign.Signer;
 import com.flockinger.groschn.blockchain.validation.impl.RewardTransactionValidator;
 import com.flockinger.groschn.blockchain.validation.impl.TransactionValidationHelper;
 import com.flockinger.groschn.blockchain.wallet.WalletService;
+import com.flockinger.groschn.commons.exception.crypto.CantConfigureSigningAlgorithmException;
+import com.flockinger.groschn.commons.hash.HashGenerator;
+import com.flockinger.groschn.commons.sign.Signer;
 
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes = {RewardTransactionValidator.class, TransactionValidationHelper.class})
@@ -38,7 +38,7 @@ public class RewardTransactionValidatorTest {
   
   @MockBean
   private HashGenerator hasher;
-  @MockBean(name="ECDSA_Signer")
+  @MockBean
   private Signer signer;
   @MockBean
   private WalletService wallet;

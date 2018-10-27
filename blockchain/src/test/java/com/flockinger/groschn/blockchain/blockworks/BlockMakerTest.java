@@ -31,6 +31,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
+import com.flockinger.groschn.blockchain.BaseCachingTest;
 import com.flockinger.groschn.blockchain.TestConfig;
 import com.flockinger.groschn.blockchain.blockworks.impl.BlockMakerImpl;
 import com.flockinger.groschn.blockchain.consensus.impl.ConsensusFactory;
@@ -43,15 +44,15 @@ import com.flockinger.groschn.blockchain.model.TransactionInput;
 import com.flockinger.groschn.blockchain.model.TransactionOutput;
 import com.flockinger.groschn.blockchain.transaction.Bookkeeper;
 import com.flockinger.groschn.blockchain.transaction.TransactionManager;
-import com.flockinger.groschn.blockchain.util.CompressedEntity;
-import com.flockinger.groschn.blockchain.util.CompressionUtils;
 import com.flockinger.groschn.blockchain.wallet.WalletService;
+import com.flockinger.groschn.messaging.model.MessagePayload;
 import com.flockinger.groschn.messaging.outbound.Broadcaster;
+import com.flockinger.groschn.messaging.util.MessagingUtils;
 
 @RunWith(SpringRunner.class)
-@ContextConfiguration(classes = {BlockMakerImpl.class})
+@ContextConfiguration(classes = {BlockMakerImpl.class, MessagingUtils.class})
 @Import(TestConfig.class)
-public class BlockMakerTest {
+public class BlockMakerTest extends BaseCachingTest {
 
   @MockBean
   private ConsensusFactory consensusFactory;
@@ -60,9 +61,7 @@ public class BlockMakerTest {
   @MockBean
   private BlockStorageService storageService;
   @MockBean
-  private CompressionUtils compressor;
-  @MockBean
-  private Broadcaster<CompressedEntity> broadcaster;
+  private Broadcaster<MessagePayload> broadcaster;
 
   @MockBean
   private Bookkeeper bookkeeper;
@@ -84,13 +83,12 @@ public class BlockMakerTest {
     when(storageService.getLatestBlock()).thenReturn(Block.GENESIS_BLOCK());
     when(bookkeeper.countChange(any())).thenReturn(new BigDecimal("1"));
     when(bookkeeper.calculateBlockReward(anyLong())).thenReturn(new BigDecimal("100"));
-    when(compressor.compress(any())).thenReturn(CompressedEntity.build());
   }
 
   @Test
   public void testProduceBlock_withValidTransactionsWithoutOnesFromTheMiner_shouldCreateStoreAndRewardBlock() {
     var transactions = createRandomTransactions(Optional.empty(), Optional.empty(), true);
-    when(transactionManager.fetchTransactionsFromPool(anyLong())).thenReturn(transactions);
+    when(transactionManager.fetchTransactionsBySize(anyLong())).thenReturn(transactions);
     mockValid();
 
     maker.produceBlock();
@@ -134,7 +132,7 @@ public class BlockMakerTest {
   @Test
   public void testProduceBlock_withValidTransactionsWithOnlyAnIncomeOneFromTheMiner_shouldCreateStoreAndRewardBlock() {
     var transactions = createRandomTransactions(Optional.of(MASTER_KEY), Optional.of(10l), true);
-    when(transactionManager.fetchTransactionsFromPool(anyLong())).thenReturn(transactions);
+    when(transactionManager.fetchTransactionsBySize(anyLong())).thenReturn(transactions);
     mockValid();
 
     maker.produceBlock();
@@ -184,7 +182,7 @@ public class BlockMakerTest {
   @Test
   public void testProduceBlock_withValidTransactionsWithAlsoAnExpenseOneFromTheMiner_shouldCreateStoreAndAddRewardBlock() {
     var transactions = createRandomTransactions(Optional.of(MASTER_KEY), Optional.of(10l), false);
-    when(transactionManager.fetchTransactionsFromPool(anyLong())).thenReturn(transactions);
+    when(transactionManager.fetchTransactionsBySize(anyLong())).thenReturn(transactions);
     mockValid();
 
     maker.produceBlock();
@@ -236,7 +234,7 @@ public class BlockMakerTest {
 
   @Test
   public void testProduceBlock_withEmptyTransactions_shouldCreateRewardOnlyBlock() {
-    when(transactionManager.fetchTransactionsFromPool(anyLong())).thenReturn(new ArrayList<>());
+    when(transactionManager.fetchTransactionsBySize(anyLong())).thenReturn(new ArrayList<>());
     mockValid();
 
     maker.produceBlock();
@@ -272,7 +270,7 @@ public class BlockMakerTest {
   @Test
   public void testProduceBlock_withStorageServiceThrowingException_shouldDoNothing() {
     when(consensusFactory.reachConsensus(anyList())).thenReturn(new Block());
-    when(transactionManager.fetchTransactionsFromPool(anyLong())).thenReturn(new ArrayList<>());
+    when(transactionManager.fetchTransactionsBySize(anyLong())).thenReturn(new ArrayList<>());
     when(storageService.saveInBlockchain(any())).thenThrow(BlockValidationException.class);
 
     maker.produceBlock();
@@ -282,22 +280,20 @@ public class BlockMakerTest {
   public void testProduceBlock_withConsensusFactoryThrowingException_shouldDoNothing() {
     when(consensusFactory.reachConsensus(anyList()))
         .thenThrow(ReachingConsentFailedException.class);
-    when(transactionManager.fetchTransactionsFromPool(anyLong())).thenReturn(new ArrayList<>());
+    when(transactionManager.fetchTransactionsBySize(anyLong())).thenReturn(new ArrayList<>());
 
     maker.produceBlock();
   }
 
 
   private void verifyRegularMocks() {
-    verify(transactionManager).fetchTransactionsFromPool(anyLong());
+    verify(transactionManager).fetchTransactionsBySize(anyLong());
     ArgumentCaptor<TransactionDto> requestCaptor = ArgumentCaptor.forClass(TransactionDto.class);
     verify(transactionManager).createSignedTransaction(requestCaptor.capture());
     TransactionDto request = requestCaptor.getValue();
     assertEquals("verify reward transaction request contains a valid public key", MASTER_KEY,
         request.getPublicKey());
-    verify(compressor, times(1)).compress(any());
-    verify(broadcaster, times(1)).broadcast(any());
-    verify(storageService).saveInBlockchain(any());
+    verify(broadcaster, times(1)).broadcast(any(),any());
     verify(storageService).saveInBlockchain(any());
   }
 

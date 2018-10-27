@@ -1,6 +1,6 @@
 package com.flockinger.groschn.blockchain.exception.wallet;
 
-import com.flockinger.groschn.blockchain.exception.BlockchainException;
+import com.flockinger.groschn.commons.exception.BlockchainException;
 
 public abstract class WalletException extends BlockchainException {
   /**

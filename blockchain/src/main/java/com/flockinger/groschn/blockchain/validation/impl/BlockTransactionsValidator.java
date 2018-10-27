@@ -8,12 +8,12 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
-import com.flockinger.groschn.blockchain.exception.BlockchainException;
 import com.flockinger.groschn.blockchain.exception.validation.AssessmentFailedException;
 import com.flockinger.groschn.blockchain.model.Transaction;
 import com.flockinger.groschn.blockchain.model.TransactionInput;
 import com.flockinger.groschn.blockchain.validation.Assessment;
 import com.flockinger.groschn.blockchain.validation.Validator;
+import com.flockinger.groschn.commons.exception.BlockchainException;
 
 @Component("BlockTransaction_Validator")
 public class BlockTransactionsValidator implements Validator<List<Transaction>>{

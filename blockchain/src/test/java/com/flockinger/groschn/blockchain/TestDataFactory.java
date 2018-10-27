@@ -2,6 +2,7 @@ package com.flockinger.groschn.blockchain;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -16,8 +17,10 @@ import com.flockinger.groschn.blockchain.model.TransactionOutput;
 import com.flockinger.groschn.blockchain.repository.model.StoredTransaction;
 import com.flockinger.groschn.blockchain.repository.model.StoredTransactionInput;
 import com.flockinger.groschn.blockchain.repository.model.StoredTransactionOutput;
-import com.flockinger.groschn.blockchain.repository.model.StoredTransactionPointCut;
 import com.flockinger.groschn.blockchain.validation.Assessment;
+import com.flockinger.groschn.commons.compress.CompressedEntity;
+import com.flockinger.groschn.messaging.model.Message;
+import com.flockinger.groschn.messaging.model.MessagePayload;
 import com.google.common.collect.ImmutableList;
 
 public class TestDataFactory {
@@ -46,19 +49,22 @@ public class TestDataFactory {
   
   public static List<Transaction> fakeTransactions() {
     Transaction tra1 = new Transaction();
-    tra1.setId("2345");
-    tra1.setInputs(ImmutableList.of(fakeInput(86l), fakeInput(14l)));
-    tra1.setOutputs(ImmutableList.of(fakeOutput(27l), fakeOutput(73l)));
+    tra1.setInputs(statementList(fakeInput(86l), fakeInput(14l)));
+    tra1.setOutputs(statementList(fakeOutput(27l), fakeOutput(73l)));
     tra1.setLockTime(934857l);
     
     Transaction tra2 = new Transaction();
-    tra2.setInputs(ImmutableList.of(fakeInput(6l), fakeInput(4l)));
-    tra2.setOutputs(ImmutableList.of(fakeOutput(7l), fakeOutput(3l)));
+    tra2.setInputs(statementList(fakeInput(6l), fakeInput(4l)));
+    tra2.setOutputs(statementList(fakeOutput(7l), fakeOutput(3l)));
     tra2.setLockTime(87687l);
        
     List<Transaction> transactions = new ArrayList<>();
     transactions.addAll(ImmutableList.of(tra1, tra2));
     return transactions;
+  }
+  
+  private static <T extends TransactionOutput> List<T> statementList(T... statements){
+    return Arrays.asList(statements);
   }
   
   public static TransactionInput fakeInput(String amount) {
@@ -130,10 +136,6 @@ public class TestDataFactory {
     input.setPublicKey(pubKey);
     input.setSequenceNumber(sequenceNumber);
     input.setTimestamp(timestamp);
-    StoredTransactionPointCut pointcut = new StoredTransactionPointCut();
-    pointcut.setSequenceNumber(RandomUtils.nextLong(1, 10));
-    pointcut.setTransactionHash(UUID.randomUUID().toString());
-    input.setPreviousOutputTransaction(pointcut);
     input.setSignature(UUID.randomUUID().toString());
     return input;
   }
@@ -194,7 +196,6 @@ public class TestDataFactory {
   
   public static Transaction createRewardTransaction(boolean onlyReward) {
     Transaction transaction = new Transaction();
-    transaction.setId(UUID.randomUUID().toString());
     transaction.setTransactionHash("0FABDD34578");
     List<TransactionInput> inputs = new ArrayList<>();
     TransactionInput input1 = new TransactionInput();
@@ -254,7 +255,6 @@ public class TestDataFactory {
   
   public static Transaction createValidTransaction(String expense1, String expense2, String expense3, String income1) {
     Transaction transaction = new Transaction();
-    transaction.setId(UUID.randomUUID().toString());
     transaction.setTransactionHash("0FABDD34578");
     List<TransactionInput> inputs = new ArrayList<>();
     TransactionInput input1 = new TransactionInput();
@@ -322,5 +322,17 @@ public class TestDataFactory {
       transactions.add(createValidTransaction("anotherone22", "anotherone24", "anotherone21", "someone25"));
     }
     return transactions;
+  }
+  
+  public static Message<MessagePayload> validMessage() {
+    Message<MessagePayload> message = new Message<>();
+    message.setId(UUID.randomUUID().toString());
+    message.setTimestamp(1000l);
+    MessagePayload txMessage = new MessagePayload();
+    CompressedEntity entity = CompressedEntity.build().originalSize(123).entity(new byte[10]);
+    txMessage.setEntity(entity);
+    txMessage.setSenderId(UUID.randomUUID().toString());
+    message.setPayload(txMessage);
+    return message;
   }
 }

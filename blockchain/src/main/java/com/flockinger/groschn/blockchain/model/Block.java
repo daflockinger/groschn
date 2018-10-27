@@ -1,27 +1,28 @@
 package com.flockinger.groschn.blockchain.model;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import com.flockinger.groschn.blockchain.consensus.impl.ProofOfWorkAlgorithm;
 import com.flockinger.groschn.blockchain.consensus.model.ConsensusType;
 import com.flockinger.groschn.blockchain.consensus.model.Consent;
 
-public class Block implements Hashable {
+public class Block implements Hashable<Block> {
   /**
   * 
   */
   private static final long serialVersionUID = -3738919661647370010L;
 
-  private Long position;
-  private String hash;
-  private String lastHash;
-  private String transactionMerkleRoot;
-  private Long timestamp;
-  private Integer version;
+  private Long position = null;
+  private String hash = null;
+  private String lastHash = null;
+  private String transactionMerkleRoot = null;
+  private Long timestamp = null;
+  private Integer version = null;
 
-  private Consent consent;
+  private Consent consent = null;
 
-  private List<Transaction> transactions;
+  private List<Transaction> transactions = null;
 
 
   /**
@@ -39,8 +40,8 @@ public class Block implements Hashable {
   public final static Block GENESIS_BLOCK() {
     Block genesisBlock = new Block();
     genesisBlock.setLastHash("Wer den Groschen nicht ehrt, ist den Schilling nicht wert!");
-    genesisBlock.setHash(
-        "00001b789b2d74adaa9c5e7e82e7f584fa30e6c52aa66683d6b44a456d1e9f9b9ac1f41ccbc76cc89503208e98735789356560e9389fd38664fabdd0bf2c543a");
+    genesisBlock.setHash( //FIXME make that with correct leading zeros!
+        "2c7a509afb7c6675774b75e999e8191c7790161da9843f16b7519cb756200e3cb6d7ea6b8d4078c4805d1205b415b9d83e5d5b0a10e16d9f70e8d1deef47a15e");
     genesisBlock.setTimestamp(484696800000l);
     genesisBlock.setTransactions(new ArrayList<>());
     genesisBlock.setPosition(1l);
@@ -117,5 +118,27 @@ public class Block implements Hashable {
 
   public void setConsent(Consent consent) {
     this.consent = consent;
+  }
+
+  @Override
+  public int compareTo(Block o) {
+    if (this.getPosition() == null && o.getPosition() == null) {
+      return 0;
+    } else if (this.getPosition() == null) {
+      return -1;
+    } else if (o.getPosition() == null) {
+      return 1;
+    }
+    return this.getPosition().compareTo(o.getPosition());
+  }
+
+  @Override
+  public String toString() {
+    if(transactions != null) {
+      Collections.sort(transactions);
+    }
+    return "Block [position=" + position + ", hash=" + hash + ", lastHash=" + lastHash
+        + ", transactionMerkleRoot=" + transactionMerkleRoot + ", timestamp=" + timestamp
+        + ", version=" + version + ", consent=" + consent + ", transactions=" + transactions + "]";
   }
 }

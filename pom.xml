@@ -27,6 +27,7 @@
 	<modules>
         <module>messaging</module>
         <module>blockchain</module>
+        <module>commons</module>
 	</modules>
 
 	<dependencyManagement>

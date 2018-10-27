@@ -1,57 +1,55 @@
 package com.flockinger.groschn.blockchain.blockworks;
 
+import static com.flockinger.groschn.blockchain.TestDataFactory.getFakeBlock;
+import static com.flockinger.groschn.blockchain.TestDataFactory.validMessage;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import java.util.Date;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.test.context.ConfigFileApplicationContextInitializer;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.mock.mockito.MockitoTestExecutionListener;
-import org.springframework.boot.test.mock.mockito.ResetMocksTestExecutionListener;
-import org.springframework.context.annotation.Import;
-import org.springframework.test.context.ActiveProfiles;
+import org.springframework.boot.test.mock.mockito.MockReset;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.TestExecutionListeners;
-import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
-import com.flockinger.groschn.blockchain.TestDataFactory;
+import com.flockinger.groschn.blockchain.BaseCachingTest;
 import com.flockinger.groschn.blockchain.blockworks.impl.FreshBlockListener;
-import com.flockinger.groschn.blockchain.config.CacheConfig;
-import com.flockinger.groschn.blockchain.dto.MessagePayload;
 import com.flockinger.groschn.blockchain.exception.validation.AssessmentFailedException;
+import com.flockinger.groschn.blockchain.messaging.sync.SyncDeterminator;
 import com.flockinger.groschn.blockchain.model.Block;
-import com.flockinger.groschn.blockchain.util.CompressedEntity;
-import com.flockinger.groschn.blockchain.util.CompressionUtils;
+import com.flockinger.groschn.blockchain.repository.model.StoredBlock;
+import com.flockinger.groschn.blockchain.validation.AssessmentFailure;
+import com.flockinger.groschn.commons.compress.CompressionUtils;
+import com.flockinger.groschn.commons.exception.BlockchainException;
 import com.flockinger.groschn.messaging.config.MainTopics;
-import com.flockinger.groschn.messaging.inbound.SubscriptionService;
+import com.flockinger.groschn.messaging.exception.ReceivedMessageInvalidException;
 import com.flockinger.groschn.messaging.model.Message;
+import com.flockinger.groschn.messaging.model.MessagePayload;
+import com.flockinger.groschn.messaging.util.MessagingUtils;
 import com.github.benmanes.caffeine.cache.Cache;
 
-@ActiveProfiles("test")
-@RunWith(SpringRunner.class)
-@ContextConfiguration(classes = {FreshBlockListener.class}, 
-  initializers=ConfigFileApplicationContextInitializer.class)
-@Import(CacheConfig.class)
-@TestExecutionListeners({DependencyInjectionTestExecutionListener.class, MockitoTestExecutionListener.class, ResetMocksTestExecutionListener.class})
-public class FreshBlockListenerTest {
+
+@ContextConfiguration(classes = {FreshBlockListener.class})
+@SuppressWarnings("unchecked")
+public class FreshBlockListenerTest extends BaseCachingTest{
 
   @MockBean
+  private MessagingUtils mockUtils;
+  @MockBean
   private CompressionUtils compressor;
-  @MockBean
-  private SubscriptionService<MessagePayload> subscriptionService;
-  @MockBean
+  @MockBean(reset=MockReset.BEFORE)
   private BlockStorageService blockService;
+  @MockBean
+  private SyncDeterminator blockSyncDeterminator;
   
   @Autowired
   @Qualifier("BlockId_Cache")
@@ -60,16 +58,18 @@ public class FreshBlockListenerTest {
   @Autowired
   private FreshBlockListener listener;
   
+  private Block freshBlock;
   
   @Before
   public void setup() {
     blockIdCache.cleanUp();
+    freshBlock = getFakeBlock();
+    when(mockUtils.extractPayload(any(), any())).thenReturn(Optional.ofNullable(freshBlock));
   }
     
   @Test
   public void testReceiveMessage_withValidBlockAndData_shouldStore() {
-    Block freshBlock = TestDataFactory.getFakeBlock();
-    when(compressor.decompress(any(), any(Integer.class), any())).thenReturn(Optional.ofNullable(freshBlock));
+    when(compressor.decompress(any(), any(Integer.class), any(Class.class))).thenReturn(Optional.ofNullable(freshBlock));
     Message<MessagePayload> message = validMessage();
     
     listener.receiveMessage(message);
@@ -79,12 +79,24 @@ public class FreshBlockListenerTest {
     Block toStoreBlock = blockCaptor.getValue();
     assertNotNull("verify that to store block is not null", toStoreBlock);
     assertEquals("verify that the to stored block is exactly the decompressed one", freshBlock, toStoreBlock);
+    verify(blockSyncDeterminator, times(0)).determineAndSync();
   }
   
   @Test
+  public void testReceiveMessage_withInvalidMessage_shouldDoNothing() {
+    doThrow(ReceivedMessageInvalidException.class).when(mockUtils).assertEntity(any());
+    Message<MessagePayload> message = validMessage();
+    
+    listener.receiveMessage(message);
+    
+    verify(blockService,times(0)).saveInBlockchain(any());
+    verify(blockSyncDeterminator, times(0)).determineAndSync();
+  }
+  
+  
+  @Test
   public void testReceiveMessage_withFillingUpCacheTooMuch_shouldStillWork() {
-    Block freshBlock = TestDataFactory.getFakeBlock();
-    when(compressor.decompress(any(), any(Integer.class), any())).thenReturn(Optional.ofNullable(freshBlock));
+    when(compressor.decompress(any(), any(Integer.class), any(Class.class))).thenReturn(Optional.ofNullable(freshBlock));
     Message<MessagePayload> message = validMessage();
     
     for(int i=0; i < 30; i++) {
@@ -96,12 +108,12 @@ public class FreshBlockListenerTest {
     Block toStoreBlock = blockCaptor.getValue();
     assertNotNull("verify that to store block is not null", toStoreBlock);
     assertEquals("verify that the to stored block is exactly the decompressed one", freshBlock, toStoreBlock);
+    verify(blockSyncDeterminator, times(0)).determineAndSync();
   }
   
   @Test
   public void testReceiveMessage_withSendSameMessageTripple_shouldStoreOnlyOnce() {
-    Block freshBlock = TestDataFactory.getFakeBlock();
-    when(compressor.decompress(any(), any(Integer.class), any())).thenReturn(Optional.ofNullable(freshBlock));
+    when(compressor.decompress(any(), any(Integer.class), any(Class.class))).thenReturn(Optional.ofNullable(freshBlock));
     Message<MessagePayload> message = validMessage();
     
     message.setId("masterID");
@@ -119,131 +131,80 @@ public class FreshBlockListenerTest {
     verify(blockService,times(16)).saveInBlockchain(blockCaptor.capture());
   }
   
-  
   @Test
-  public void testReceiveMessage_withStorageValidationFailed_shouldDoNothing() {
-    Block freshBlock = TestDataFactory.getFakeBlock();
-    when(compressor.decompress(any(), any(Integer.class), any())).thenReturn(Optional.of(freshBlock));
+  public void testReceiveMessage_withStorageValidationFailedMiserably_shouldDoNothing() {
+    when(compressor.decompress(any(), any(Integer.class), any(Class.class))).thenReturn(Optional.of(freshBlock));
     Message<MessagePayload> message = validMessage();
-    when(blockService.saveInBlockchain(any())).thenThrow(AssessmentFailedException.class);
+    when(blockService.saveInBlockchain(any())).thenThrow(BlockchainException.class);
     
     listener.receiveMessage(message);
+    
+    verify(blockSyncDeterminator, times(0)).determineAndSync();
   }
   
   
   @Test
-  public void testReceiveMessage_withNullId_shouldDoNothing() {
+  public void testReceiveMessage_withStorageValidationFailedWithTooHighPosition_shouldResync() {
+    when(compressor.decompress(any(), any(Integer.class), any(Class.class))).thenReturn(Optional.of(freshBlock));
     Message<MessagePayload> message = validMessage();
-    message.setId(null);
-    
+    when(blockService.saveInBlockchain(any())).thenAnswer(new Answer<StoredBlock>() {
+      @Override
+      public StoredBlock answer(InvocationOnMock invocation) throws Throwable {
+        throw new AssessmentFailedException("Block to far in the future", AssessmentFailure.BLOCK_POSITION_TOO_HIGH);
+      }} );
     listener.receiveMessage(message);
     
-    verify(blockService,times(0)).saveInBlockchain(any());
+    verify(blockSyncDeterminator, times(1)).determineAndSync();
   }
   
   @Test
-  public void testReceiveMessage_withNullTimestamp_shouldDoNothing() {
+  public void testReceiveMessage_withStorageValidationFailedWithLastHashWrong_shouldResync() {
+    when(compressor.decompress(any(), any(Integer.class), any(Class.class))).thenReturn(Optional.of(freshBlock));
     Message<MessagePayload> message = validMessage();
-    message.setTimestamp(null);
-    
+    when(blockService.saveInBlockchain(any())).thenAnswer(new Answer<StoredBlock>() {
+      @Override
+      public StoredBlock answer(InvocationOnMock invocation) throws Throwable {
+        throw new AssessmentFailedException("Block last hash wrong", AssessmentFailure.BLOCK_LAST_HASH_WRONG);
+      }} );
     listener.receiveMessage(message);
     
-    verify(blockService,times(0)).saveInBlockchain(any());
+    verify(blockSyncDeterminator, times(1)).determineAndSync();
   }
   
   @Test
-  public void testReceiveMessage_withFutureTimestamp_shouldDoNothing() {
+  public void testReceiveMessage_withStorageValidationFailedSomewhereElse_shouldDoNothing() {
+    when(compressor.decompress(any(), any(Integer.class), any(Class.class))).thenReturn(Optional.of(freshBlock));
     Message<MessagePayload> message = validMessage();
-    message.setTimestamp(new Date().getTime() + 20000l);
-    
+    when(blockService.saveInBlockchain(any())).thenAnswer(new Answer<StoredBlock>() {
+      @Override
+      public StoredBlock answer(InvocationOnMock invocation) throws Throwable {
+        throw new AssessmentFailedException("Something else was not right...", AssessmentFailure.NONE);
+      }} );
     listener.receiveMessage(message);
     
-    verify(blockService,times(0)).saveInBlockchain(any());
+    verify(blockSyncDeterminator, times(0)).determineAndSync();
   }
   
-  @Test
-  public void testReceiveMessage_withNullPayload_shouldDoNothing() {
-    Message<MessagePayload> message = validMessage();
-    message.setPayload(null);
-    
-    listener.receiveMessage(message);
-    
-    verify(blockService,times(0)).saveInBlockchain(any());
-  }
   
   @Test
-  public void testReceiveMessage_withNullBlockMessageEntity_shouldDoNothing() {
+  public void testReceiveMessage_withStorageValidationFailedWithNoFailure_shouldDoNothing() {
+    when(compressor.decompress(any(), any(Integer.class), any(Class.class))).thenReturn(Optional.of(freshBlock));
     Message<MessagePayload> message = validMessage();
-    MessagePayload bm = message.getPayload();
-    bm.setEntity(null);
-    message.setPayload(bm);
-    
+    when(blockService.saveInBlockchain(any())).thenAnswer(new Answer<StoredBlock>() {
+      @Override
+      public StoredBlock answer(InvocationOnMock invocation) throws Throwable {
+        throw new AssessmentFailedException("Something else was not right...");
+      }} );
     listener.receiveMessage(message);
     
-    verify(blockService,times(0)).saveInBlockchain(any());
+    verify(blockSyncDeterminator, times(0)).determineAndSync();
   }
   
-  @Test
-  public void testReceiveMessage_withNullBlockMessageSenderId_shouldDoNothing() {
-    when(compressor.decompress(any(), any(Integer.class), any())).thenReturn(Optional.ofNullable(new Block()));
-    Message<MessagePayload> message = validMessage();
-    MessagePayload bm = message.getPayload();
-    bm.setSenderId(null);
-    message.setPayload(bm);
-    
-    listener.receiveMessage(message);
-    
-    verify(blockService,times(0)).saveInBlockchain(any());
-  }
   
-  @Test
-  public void testReceiveMessage_withZeroCompressedOriginalSize_shouldDoNothing() {
-    when(compressor.decompress(any(), any(Integer.class), any())).thenReturn(Optional.ofNullable(new Block()));
-    Message<MessagePayload> message = validMessage();
-    message.getPayload().getEntity().originalSize(0);
-    
-    listener.receiveMessage(message);
-    
-    verify(blockService,times(0)).saveInBlockchain(any());
-  }
-  
-  @Test
-  public void testReceiveMessage_withEmptyCompressedEntity_shouldDoNothing() {
-    when(compressor.decompress(any(), any(Integer.class), any())).thenReturn(Optional.ofNullable(new Block()));
-    Message<MessagePayload> message = validMessage();
-    message.getPayload().getEntity().entity(new byte[0]);
-    
-    listener.receiveMessage(message);
-    
-    verify(blockService,times(0)).saveInBlockchain(any());
-  }
-  
-  @Test
-  public void testReceiveMessage_withNullCompressedEntity_shouldDoNothing() {
-    when(compressor.decompress(any(), any(Integer.class), any())).thenReturn(Optional.ofNullable(new Block()));
-    Message<MessagePayload> message = validMessage();
-    message.getPayload().getEntity().entity(null);
-    
-    listener.receiveMessage(message);
-    
-    verify(blockService,times(0)).saveInBlockchain(any());
-  }
   
   @Test
   public void testGetSubscribedTopic_shouldBeForBlocks() {
     assertEquals("verify that the fresh block topic is selected", 
-        MainTopics.FRESH_BLOCK.name(), listener.getSubscribedTopic());
-  }
-  
-  private Message<MessagePayload> validMessage() {
-    Message<MessagePayload> message = new Message<>();
-    message.setId(UUID.randomUUID().toString());
-    message.setTimestamp(1000l);
-    MessagePayload blockMessage = new MessagePayload();
-    CompressedEntity entity = CompressedEntity.build().originalSize(123).entity(new byte[10]);
-    blockMessage.setEntity(entity);
-    blockMessage.setSenderId(UUID.randomUUID().toString());
-    message.setPayload(blockMessage);
-    return message;
+        MainTopics.FRESH_BLOCK, listener.getSubscribedTopic());
   }
 }

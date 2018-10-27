@@ -1,6 +1,6 @@
 package com.flockinger.groschn.blockchain.exception.validation;
 
-import com.flockinger.groschn.blockchain.exception.BlockchainException;
+import com.flockinger.groschn.commons.exception.BlockchainException;
 
 public abstract class ValidationException extends BlockchainException {
   /**

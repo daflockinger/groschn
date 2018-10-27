@@ -35,4 +35,31 @@ public class CacheConfig {
         .build();
   }
   
+  @Bean("SyncBlockInfoId_Cache")
+  public Cache<String, String> getSyncBlockInfoIdCache() {
+    return Caffeine.newBuilder()
+        .expireAfterAccess(Duration.ofMillis(expireAfterMilliseconds))
+        .initialCapacity(initCapacity)
+        .maximumSize(maxCapacity)
+        .build();
+  }
+  
+  @Bean("SyncBlockId_Cache")
+  public Cache<String, String> getSyncBlockIdCache() {
+    return Caffeine.newBuilder()
+        .expireAfterAccess(Duration.ofMillis(expireAfterMilliseconds))
+        .initialCapacity(initCapacity)
+        .maximumSize(maxCapacity)
+        .build();
+  }
+  
+  @Bean("SyncTransactionId_Cache")
+  public Cache<String, String> getSyncTransactionIdCache() {
+    return Caffeine.newBuilder()
+        .expireAfterWrite(Duration.ofMillis(expireAfterMilliseconds))
+        .initialCapacity(initCapacity)
+        .maximumSize(maxCapacity)
+        .build();
+  }
+  
 }

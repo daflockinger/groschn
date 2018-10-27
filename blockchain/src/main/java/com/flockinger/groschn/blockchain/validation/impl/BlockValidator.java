@@ -5,18 +5,21 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.flockinger.groschn.blockchain.blockworks.BlockMaker;
 import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
-import com.flockinger.groschn.blockchain.blockworks.HashGenerator;
-import com.flockinger.groschn.blockchain.exception.BlockchainException;
 import com.flockinger.groschn.blockchain.exception.validation.AssessmentFailedException;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.model.Transaction;
-import com.flockinger.groschn.blockchain.util.CompressionUtils;
-import com.flockinger.groschn.blockchain.util.MerkleRootCalculator;
 import com.flockinger.groschn.blockchain.validation.Assessment;
+import com.flockinger.groschn.blockchain.validation.AssessmentFailure;
 import com.flockinger.groschn.blockchain.validation.ConsentValidator;
 import com.flockinger.groschn.blockchain.validation.Validator;
+import com.flockinger.groschn.commons.MerkleRootCalculator;
+import com.flockinger.groschn.commons.compress.CompressionUtils;
+import com.flockinger.groschn.commons.exception.BlockchainException;
+import com.flockinger.groschn.commons.hash.HashGenerator;
 
 @Component
 public class BlockValidator implements Validator<Block> {
@@ -43,8 +46,8 @@ public class BlockValidator implements Validator<Block> {
     try {
       Block lastBlock = blockService.getLatestBlock();
       
-      // 1. check if position is higher than existing one
-      isPositionHigher(value.getPosition(), lastBlock);
+      // 1. check if position is exactly one higher than existing one
+      isPositionExactlyOneHigher(value.getPosition(), lastBlock);
       // 2. check if lastHash is correct 
       verifyLastHash(value.getLastHash(), lastBlock);
       // 4. check if transaction merkleRoot-Hash is correct
@@ -62,6 +65,10 @@ public class BlockValidator implements Validator<Block> {
       // 3. verify if current hash is correctly calculated
       verifyCurrentHash(value);
       isBlockValid.setValid(true);
+    } catch (AssessmentFailedException e) {
+      isBlockValid.setValid(false);
+      isBlockValid.setReasonOfFailure(e.getMessage());
+      isBlockValid.setFailure(e.getFailure());
     } catch (BlockchainException e) {
       isBlockValid.setValid(false);
       isBlockValid.setReasonOfFailure(e.getMessage());
@@ -69,14 +76,21 @@ public class BlockValidator implements Validator<Block> {
     return isBlockValid;
   }
   
-  private void isPositionHigher(Long position, Block block) {    
-    verifyAssessment(position != null && position > block.getPosition(), 
+  private void isPositionExactlyOneHigher(Long position, Block lastBlock) {
+    verifyAssessment(position != null && position > lastBlock.getPosition(), 
         "Incomming block must have a higher position than the latest one!");
+    
+    verifyAssessment(position != null && position <= (lastBlock.getPosition() + 1), 
+        "Incomming block has a too hight position, please resynchronize!", 
+        AssessmentFailure.BLOCK_POSITION_TOO_HIGH);
   }
   
-  private void verifyLastHash(String lastHash, Block block) {
-    block.setHash(null);
-    verifyAssessment(hasher.isHashCorrect(lastHash, block), "Last block hash is wrong!");
+  private void verifyLastHash(String lastHash, Block lastBlock) {
+    var lastBlocksHash = lastBlock.getHash();
+    lastBlock.setHash(null);
+    verifyAssessment(hasher.isHashCorrect(lastHash, lastBlock), "Last block hash is wrong, try reynchronizing!", 
+        AssessmentFailure.BLOCK_LAST_HASH_WRONG);
+    lastBlock.setHash(lastBlocksHash);
   }
   
   private void verifyCurrentHash(Block block) {
@@ -88,7 +102,7 @@ public class BlockValidator implements Validator<Block> {
     verifyAssessment(isHashCorrect, "Block hash is wrong!");
   }
   
-  private void verifyTransactionsMerkleRoot(Block value) {
+  private void verifyTransactionsMerkleRoot(Block value) {    
     String rootHash = merkleRootCalculator.calculateMerkleRootHash(value.getTransactions());
     verifyAssessment(rootHash.equals(value.getTransactionMerkleRoot()), 
         "MerkleRoot-Hash of all transactions is wrong!");
@@ -126,8 +140,11 @@ public class BlockValidator implements Validator<Block> {
   }
   
   private void verifyAssessment(boolean isValid, String errorMessage) {
+    verifyAssessment(isValid, errorMessage, AssessmentFailure.NONE);
+  }
+  private void verifyAssessment(boolean isValid, String errorMessage, AssessmentFailure failure) {
     if(!isValid) {
-      throw new AssessmentFailedException(errorMessage);
+      throw new AssessmentFailedException(errorMessage, failure);
     }
   }
 }
