@@ -1,4 +1,4 @@
-package com.flockinger.groschn.blockchain.messaging;
+package com.flockinger.groschn.messaging.util;
 
 import java.util.Date;
 import java.util.Optional;
@@ -11,10 +11,10 @@ import javax.validation.ValidatorFactory;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import com.flockinger.groschn.blockchain.exception.messaging.ReceivedMessageInvalidException;
 import com.flockinger.groschn.blockchain.model.Hashable;
 import com.flockinger.groschn.commons.compress.CompressedEntity;
 import com.flockinger.groschn.commons.compress.CompressionUtils;
+import com.flockinger.groschn.messaging.exception.ReceivedMessageInvalidException;
 import com.flockinger.groschn.messaging.model.Message;
 import com.flockinger.groschn.messaging.model.MessagePayload;
 

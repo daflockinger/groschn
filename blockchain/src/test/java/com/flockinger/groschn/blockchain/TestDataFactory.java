@@ -2,6 +2,7 @@ package com.flockinger.groschn.blockchain;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -48,18 +49,22 @@ public class TestDataFactory {
   
   public static List<Transaction> fakeTransactions() {
     Transaction tra1 = new Transaction();
-    tra1.setInputs(ImmutableList.of(fakeInput(86l), fakeInput(14l)));
-    tra1.setOutputs(ImmutableList.of(fakeOutput(27l), fakeOutput(73l)));
+    tra1.setInputs(statementList(fakeInput(86l), fakeInput(14l)));
+    tra1.setOutputs(statementList(fakeOutput(27l), fakeOutput(73l)));
     tra1.setLockTime(934857l);
     
     Transaction tra2 = new Transaction();
-    tra2.setInputs(ImmutableList.of(fakeInput(6l), fakeInput(4l)));
-    tra2.setOutputs(ImmutableList.of(fakeOutput(7l), fakeOutput(3l)));
+    tra2.setInputs(statementList(fakeInput(6l), fakeInput(4l)));
+    tra2.setOutputs(statementList(fakeOutput(7l), fakeOutput(3l)));
     tra2.setLockTime(87687l);
        
     List<Transaction> transactions = new ArrayList<>();
     transactions.addAll(ImmutableList.of(tra1, tra2));
     return transactions;
+  }
+  
+  private static <T extends TransactionOutput> List<T> statementList(T... statements){
+    return Arrays.asList(statements);
   }
   
   public static TransactionInput fakeInput(String amount) {

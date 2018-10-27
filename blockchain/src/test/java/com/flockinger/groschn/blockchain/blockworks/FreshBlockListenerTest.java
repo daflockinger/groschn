@@ -23,9 +23,7 @@ import org.springframework.boot.test.mock.mockito.MockReset;
 import org.springframework.test.context.ContextConfiguration;
 import com.flockinger.groschn.blockchain.BaseCachingTest;
 import com.flockinger.groschn.blockchain.blockworks.impl.FreshBlockListener;
-import com.flockinger.groschn.blockchain.exception.messaging.ReceivedMessageInvalidException;
 import com.flockinger.groschn.blockchain.exception.validation.AssessmentFailedException;
-import com.flockinger.groschn.blockchain.messaging.MessagingUtils;
 import com.flockinger.groschn.blockchain.messaging.sync.SyncDeterminator;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.repository.model.StoredBlock;
@@ -33,8 +31,10 @@ import com.flockinger.groschn.blockchain.validation.AssessmentFailure;
 import com.flockinger.groschn.commons.compress.CompressionUtils;
 import com.flockinger.groschn.commons.exception.BlockchainException;
 import com.flockinger.groschn.messaging.config.MainTopics;
+import com.flockinger.groschn.messaging.exception.ReceivedMessageInvalidException;
 import com.flockinger.groschn.messaging.model.Message;
 import com.flockinger.groschn.messaging.model.MessagePayload;
+import com.flockinger.groschn.messaging.util.MessagingUtils;
 import com.github.benmanes.caffeine.cache.Cache;
 
 

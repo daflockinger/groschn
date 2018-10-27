@@ -34,8 +34,8 @@ import com.flockinger.groschn.blockchain.validation.Validator;
 import com.flockinger.groschn.blockchain.wallet.WalletService;
 import com.flockinger.groschn.commons.compress.CompressionUtils;
 import com.flockinger.groschn.commons.hash.HashGenerator;
-import com.flockinger.groschn.commons.serialize.BlockSerializer;
 import com.flockinger.groschn.commons.sign.Signer;
+import com.google.api.client.util.Charsets;
 import com.google.common.collect.ImmutableList;
 
 @Service
@@ -57,8 +57,6 @@ public class TransactionManagerImpl implements TransactionManager {
   @Autowired
   @Qualifier("Transaction_Validator")
   private Validator<Transaction> validator;
-  @Autowired
-  private BlockSerializer serializer;
 
   @Autowired
   public TransactionManagerImpl(MongoDbFactory factory) {
@@ -104,7 +102,8 @@ public class TransactionManagerImpl implements TransactionManager {
   private void signTransactionInput(TransactionInput input, List<TransactionOutput> outputs,
       byte[] privateKey) {
     Collections.sort(outputs);
-    String signature = signer.sign(serializer.serialize(outputs), privateKey);
+    String outputHashBase = outputs.stream().map(Object::toString).collect(Collectors.joining());
+    String signature = signer.sign(outputHashBase.getBytes(Charsets.UTF_8), privateKey);
     input.setSignature(signature);
   }
 

@@ -23,7 +23,6 @@ import com.flockinger.groschn.blockchain.blockworks.impl.BlockMakerImpl;
 import com.flockinger.groschn.blockchain.consensus.impl.ConsensusFactory;
 import com.flockinger.groschn.blockchain.consensus.impl.ProofOfMajorityAlgorithm;
 import com.flockinger.groschn.blockchain.consensus.impl.ProofOfWorkAlgorithm;
-import com.flockinger.groschn.blockchain.messaging.MessagingUtils;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.repository.BlockProcessRepository;
 import com.flockinger.groschn.blockchain.repository.BlockchainRepository;
@@ -44,6 +43,7 @@ import com.flockinger.groschn.commons.hash.HashGenerator;
 import com.flockinger.groschn.messaging.members.NetworkStatistics;
 import com.flockinger.groschn.messaging.model.MessagePayload;
 import com.flockinger.groschn.messaging.outbound.Broadcaster;
+import com.flockinger.groschn.messaging.util.MessagingUtils;
 
 @ContextConfiguration(classes = {BlockValidator.class, BlockchainRepository.class, 
     BlockTransactionsValidator.class, TransactionValidator.class, RewardTransactionValidator.class, 

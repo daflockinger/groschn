@@ -1,4 +1,4 @@
-package com.flockinger.groschn.blockchain.messaging.dto;
+package com.flockinger.groschn.messaging.model;
 
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;

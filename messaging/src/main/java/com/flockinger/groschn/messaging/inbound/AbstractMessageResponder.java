@@ -1,22 +1,23 @@
-package com.flockinger.groschn.blockchain.messaging.sync;
+package com.flockinger.groschn.messaging.inbound;
 
+import java.io.Serializable;
 import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import com.flockinger.groschn.blockchain.exception.messaging.ReceivedMessageInvalidException;
-import com.flockinger.groschn.blockchain.messaging.MessagingUtils;
-import com.flockinger.groschn.blockchain.messaging.dto.SyncRequest;
 import com.flockinger.groschn.commons.exception.BlockchainException;
 import com.flockinger.groschn.messaging.config.MainTopics;
-import com.flockinger.groschn.messaging.inbound.MessageResponder;
+import com.flockinger.groschn.messaging.exception.ReceivedMessageInvalidException;
 import com.flockinger.groschn.messaging.members.NetworkStatistics;
 import com.flockinger.groschn.messaging.model.Message;
 import com.flockinger.groschn.messaging.model.MessagePayload;
+import com.flockinger.groschn.messaging.model.SyncRequest;
+import com.flockinger.groschn.messaging.model.SyncResponse;
+import com.flockinger.groschn.messaging.util.MessagingUtils;
 import com.github.benmanes.caffeine.cache.Cache;
 
-public abstract class GeneralMessageResponder implements MessageResponder<MessagePayload> {
+public abstract class AbstractMessageResponder<T extends Serializable> implements MessageResponder<MessagePayload> {
   @Autowired
   private NetworkStatistics networkStatistics;
   @Autowired
@@ -26,9 +27,11 @@ public abstract class GeneralMessageResponder implements MessageResponder<Messag
   @Override
   public abstract MainTopics getSubscribedTopic();
   
+  protected abstract String getNodeId();
+  
   protected abstract Cache<String, String> getCache();
   
-  protected abstract Message<MessagePayload> createResponse(SyncRequest request);
+  protected abstract SyncResponse<T> createResponse(SyncRequest request);
 
   
   @Override
@@ -41,7 +44,8 @@ public abstract class GeneralMessageResponder implements MessageResponder<Messag
       Optional<SyncRequest> syncRequest = messageUtils.extractPayload(request, SyncRequest.class);
       if (syncRequest.isPresent()) {
         messageUtils.assertEntity(syncRequest.get());
-        response = Optional.ofNullable(createResponse(syncRequest.get()));
+        var responseMessage = messageUtils.packageMessage(createResponse(syncRequest.get()),getNodeId());
+        response = Optional.ofNullable(responseMessage);
       }
     } catch (BlockchainException e) {
       LOG.error("Invalid Syncing-Request received: " + e.getMessage(), e);

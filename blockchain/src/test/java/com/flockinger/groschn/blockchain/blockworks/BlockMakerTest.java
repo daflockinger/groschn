@@ -38,7 +38,6 @@ import com.flockinger.groschn.blockchain.consensus.impl.ConsensusFactory;
 import com.flockinger.groschn.blockchain.dto.TransactionDto;
 import com.flockinger.groschn.blockchain.exception.ReachingConsentFailedException;
 import com.flockinger.groschn.blockchain.exception.validation.BlockValidationException;
-import com.flockinger.groschn.blockchain.messaging.MessagingUtils;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.model.Transaction;
 import com.flockinger.groschn.blockchain.model.TransactionInput;
@@ -48,6 +47,7 @@ import com.flockinger.groschn.blockchain.transaction.TransactionManager;
 import com.flockinger.groschn.blockchain.wallet.WalletService;
 import com.flockinger.groschn.messaging.model.MessagePayload;
 import com.flockinger.groschn.messaging.outbound.Broadcaster;
+import com.flockinger.groschn.messaging.util.MessagingUtils;
 
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes = {BlockMakerImpl.class, MessagingUtils.class})

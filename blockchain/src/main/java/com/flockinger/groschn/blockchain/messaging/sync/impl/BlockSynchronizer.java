@@ -1,6 +1,5 @@
 package com.flockinger.groschn.blockchain.messaging.sync.impl;
 
-import static org.apache.commons.collections4.ListUtils.emptyIfNull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -21,13 +20,13 @@ import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
 import com.flockinger.groschn.blockchain.messaging.dto.BlockInfo;
 import com.flockinger.groschn.blockchain.messaging.dto.BlockInfoResult;
 import com.flockinger.groschn.blockchain.messaging.dto.SyncBatchRequest;
-import com.flockinger.groschn.blockchain.messaging.dto.SyncResponse;
 import com.flockinger.groschn.blockchain.messaging.dto.SyncStatus;
 import com.flockinger.groschn.blockchain.messaging.sync.SyncInquirer;
 import com.flockinger.groschn.blockchain.messaging.sync.SyncKeeper;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.commons.exception.BlockchainException;
 import com.flockinger.groschn.messaging.config.MainTopics;
+import com.flockinger.groschn.messaging.model.SyncResponse;
 import com.github.benmanes.caffeine.cache.Cache;
 
 @Service
@@ -110,7 +109,7 @@ public class BlockSynchronizer implements SyncKeeper {
       }
     }
     return syncResponse.stream().map(response -> 
-    response.isLastPositionReached() || emptyIfNull(response.getEntities()).isEmpty())
+    response.isLastPositionReached() || ListUtils.emptyIfNull(response.getEntities()).isEmpty())
         .findFirst().orElse(true) || !isValidAndStored;
   }
   

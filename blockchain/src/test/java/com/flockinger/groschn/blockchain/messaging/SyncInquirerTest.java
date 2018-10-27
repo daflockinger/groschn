@@ -28,19 +28,20 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.MockReset;
 import org.springframework.test.context.ContextConfiguration;
 import com.flockinger.groschn.blockchain.BaseCachingTest;
-import com.flockinger.groschn.blockchain.exception.messaging.ReceivedMessageInvalidException;
 import com.flockinger.groschn.blockchain.messaging.dto.SyncBatchRequest;
-import com.flockinger.groschn.blockchain.messaging.dto.SyncRequest;
-import com.flockinger.groschn.blockchain.messaging.dto.SyncResponse;
 import com.flockinger.groschn.blockchain.messaging.sync.SyncInquirer;
 import com.flockinger.groschn.blockchain.messaging.sync.impl.SyncInquirerImpl;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.commons.MerkleRootCalculator;
 import com.flockinger.groschn.messaging.config.MainTopics;
+import com.flockinger.groschn.messaging.exception.ReceivedMessageInvalidException;
 import com.flockinger.groschn.messaging.members.NetworkStatistics;
 import com.flockinger.groschn.messaging.model.Message;
 import com.flockinger.groschn.messaging.model.MessagePayload;
+import com.flockinger.groschn.messaging.model.SyncRequest;
+import com.flockinger.groschn.messaging.model.SyncResponse;
 import com.flockinger.groschn.messaging.outbound.Broadcaster;
+import com.flockinger.groschn.messaging.util.MessagingUtils;
 
 @ContextConfiguration(classes = {SyncInquirerImpl.class, MessagingUtils.class})
 public class SyncInquirerTest extends BaseCachingTest{

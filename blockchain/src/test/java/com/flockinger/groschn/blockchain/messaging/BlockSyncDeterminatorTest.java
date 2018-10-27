@@ -4,7 +4,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -23,12 +25,12 @@ import com.flockinger.groschn.blockchain.exception.BlockSynchronizationException
 import com.flockinger.groschn.blockchain.messaging.dto.BlockInfo;
 import com.flockinger.groschn.blockchain.messaging.dto.BlockInfoResult;
 import com.flockinger.groschn.blockchain.messaging.dto.SyncBatchRequest;
-import com.flockinger.groschn.blockchain.messaging.dto.SyncResponse;
 import com.flockinger.groschn.blockchain.messaging.sync.SyncInquirer;
 import com.flockinger.groschn.blockchain.messaging.sync.impl.BlockSyncDeterminator;
 import com.flockinger.groschn.blockchain.messaging.sync.impl.BlockSynchronizer;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.messaging.config.MainTopics;
+import com.flockinger.groschn.messaging.model.SyncResponse;
 
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes = {BlockSyncDeterminator.class})

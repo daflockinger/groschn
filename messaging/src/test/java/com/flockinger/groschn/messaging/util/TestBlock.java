@@ -1,28 +1,25 @@
-package com.flockinger.groschn.blockchain.model;
+package com.flockinger.groschn.messaging.util;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import com.flockinger.groschn.blockchain.consensus.impl.ProofOfWorkAlgorithm;
-import com.flockinger.groschn.blockchain.consensus.model.ConsensusType;
-import com.flockinger.groschn.blockchain.consensus.model.Consent;
+import com.flockinger.groschn.blockchain.model.Hashable;
 
-public class Block implements Hashable<Block> {
+public class TestBlock implements Hashable<TestBlock> {
   /**
   * 
   */
   private static final long serialVersionUID = -3738919661647370010L;
 
-  private Long position = null;
-  private String hash = null;
-  private String lastHash = null;
-  private String transactionMerkleRoot = null;
-  private Long timestamp = null;
-  private Integer version = null;
+  private Long position;
+  private String hash;
+  private String lastHash;
+  private String transactionMerkleRoot;
+  private Long timestamp;
+  private Integer version;
 
-  private Consent consent = null;
+  private TestConsent consent;
 
-  private List<Transaction> transactions = null;
+  private List<TestTransaction> transactions;
 
 
   /**
@@ -37,18 +34,18 @@ public class Block implements Hashable<Block> {
   public final static Long MAX_AMOUNT_MINED_GROSCHN = 650000000l;
 
 
-  public final static Block GENESIS_BLOCK() {
-    Block genesisBlock = new Block();
+  public final static TestBlock GENESIS_BLOCK() {
+    TestBlock genesisBlock = new TestBlock();
     genesisBlock.setLastHash("Wer den Groschen nicht ehrt, ist den Schilling nicht wert!");
-    genesisBlock.setHash( //FIXME make that with correct leading zeros!
-        "2c7a509afb7c6675774b75e999e8191c7790161da9843f16b7519cb756200e3cb6d7ea6b8d4078c4805d1205b415b9d83e5d5b0a10e16d9f70e8d1deef47a15e");
+    genesisBlock.setHash(
+        "253fe5a9b5754af105567ec7fc95fd8970701e6897f76ff77f7e9c3c97836f7b84a4b5813ee10be8462befbe08f301a8b93bf2bbc6a24cba4d7d2b52d50a8e5a");
     genesisBlock.setTimestamp(484696800000l);
     genesisBlock.setTransactions(new ArrayList<>());
     genesisBlock.setPosition(1l);
     genesisBlock.setVersion(1);
-    Consent powConsent = new Consent();
-    powConsent.setType(ConsensusType.PROOF_OF_WORK);
-    powConsent.setDifficulty(ProofOfWorkAlgorithm.DEFAULT_DIFFICULTY);
+    TestConsent powConsent = new TestConsent();
+    powConsent.setType(TestConsensusType.PROOF_OF_WORK);
+    powConsent.setDifficulty(TestConsent.DEFAULT_DIFFICULTY);
     powConsent.setMilliSecondsSpentMining(439l);
     powConsent.setTimestamp(1536407028239l);
     powConsent.setNonce(69532l);
@@ -104,24 +101,24 @@ public class Block implements Hashable<Block> {
     this.version = version;
   }
 
-  public List<Transaction> getTransactions() {
+  public List<TestTransaction> getTransactions() {
     return transactions;
   }
 
-  public void setTransactions(List<Transaction> transactions) {
+  public void setTransactions(List<TestTransaction> transactions) {
     this.transactions = transactions;
   }
 
-  public Consent getConsent() {
+  public TestConsent getConsent() {
     return consent;
   }
 
-  public void setConsent(Consent consent) {
+  public void setConsent(TestConsent consent) {
     this.consent = consent;
   }
 
   @Override
-  public int compareTo(Block o) {
+  public int compareTo(TestBlock o) {
     if (this.getPosition() == null && o.getPosition() == null) {
       return 0;
     } else if (this.getPosition() == null) {
@@ -134,10 +131,7 @@ public class Block implements Hashable<Block> {
 
   @Override
   public String toString() {
-    if(transactions != null) {
-      Collections.sort(transactions);
-    }
-    return "Block [position=" + position + ", hash=" + hash + ", lastHash=" + lastHash
+    return "TestBlock [position=" + position + ", hash=" + hash + ", lastHash=" + lastHash
         + ", transactionMerkleRoot=" + transactionMerkleRoot + ", timestamp=" + timestamp
         + ", version=" + version + ", consent=" + consent + ", transactions=" + transactions + "]";
   }

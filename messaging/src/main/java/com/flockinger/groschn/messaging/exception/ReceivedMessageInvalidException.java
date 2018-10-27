@@ -1,4 +1,4 @@
-package com.flockinger.groschn.blockchain.exception.messaging;
+package com.flockinger.groschn.messaging.exception;
 
 import com.flockinger.groschn.commons.exception.BlockchainException;
 

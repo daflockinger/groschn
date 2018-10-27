@@ -17,7 +17,6 @@ import com.flockinger.groschn.blockchain.consensus.impl.ConsensusFactory;
 import com.flockinger.groschn.blockchain.dto.TransactionDto;
 import com.flockinger.groschn.blockchain.dto.TransactionStatementDto;
 import com.flockinger.groschn.blockchain.exception.validation.transaction.TransactionException;
-import com.flockinger.groschn.blockchain.messaging.MessagingUtils;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.model.Transaction;
 import com.flockinger.groschn.blockchain.model.TransactionInput;
@@ -30,6 +29,7 @@ import com.flockinger.groschn.commons.exception.BlockchainException;
 import com.flockinger.groschn.messaging.config.MainTopics;
 import com.flockinger.groschn.messaging.model.MessagePayload;
 import com.flockinger.groschn.messaging.outbound.Broadcaster;
+import com.flockinger.groschn.messaging.util.MessagingUtils;
 
 @Component
 public class BlockMakerImpl implements BlockMaker {

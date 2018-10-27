@@ -17,10 +17,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import com.flockinger.groschn.blockchain.messaging.MessagingUtils;
 import com.flockinger.groschn.blockchain.messaging.dto.SyncBatchRequest;
-import com.flockinger.groschn.blockchain.messaging.dto.SyncRequest;
-import com.flockinger.groschn.blockchain.messaging.dto.SyncResponse;
 import com.flockinger.groschn.blockchain.messaging.sync.SyncInquirer;
 import com.flockinger.groschn.blockchain.model.Hashable;
 import com.flockinger.groschn.commons.MerkleRootCalculator;
@@ -28,7 +25,10 @@ import com.flockinger.groschn.messaging.config.MainTopics;
 import com.flockinger.groschn.messaging.members.NetworkStatistics;
 import com.flockinger.groschn.messaging.model.Message;
 import com.flockinger.groschn.messaging.model.MessagePayload;
+import com.flockinger.groschn.messaging.model.SyncRequest;
+import com.flockinger.groschn.messaging.model.SyncResponse;
 import com.flockinger.groschn.messaging.outbound.Broadcaster;
+import com.flockinger.groschn.messaging.util.MessagingUtils;
 
 @Service
 public class SyncInquirerImpl implements SyncInquirer {

@@ -1,9 +1,9 @@
 package com.flockinger.groschn.blockchain.messaging.sync.impl;
 
-import static org.apache.commons.collections4.ListUtils.emptyIfNull;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import org.apache.commons.collections4.ListUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,12 +12,12 @@ import org.springframework.stereotype.Service;
 import com.flockinger.groschn.blockchain.exception.TransactionAlreadyClearedException;
 import com.flockinger.groschn.blockchain.exception.validation.AssessmentFailedException;
 import com.flockinger.groschn.blockchain.messaging.dto.SyncBatchRequest;
-import com.flockinger.groschn.blockchain.messaging.dto.SyncResponse;
 import com.flockinger.groschn.blockchain.messaging.sync.FullSyncKeeper;
 import com.flockinger.groschn.blockchain.messaging.sync.SyncInquirer;
 import com.flockinger.groschn.blockchain.model.Transaction;
 import com.flockinger.groschn.blockchain.transaction.TransactionManager;
 import com.flockinger.groschn.messaging.config.MainTopics;
+import com.flockinger.groschn.messaging.model.SyncResponse;
 
 @Service
 public class TransactionPoolFullSynchronizer implements FullSyncKeeper {
@@ -60,7 +60,7 @@ public class TransactionPoolFullSynchronizer implements FullSyncKeeper {
         .forEach(this::storeGoodTransaction);
     return response.stream()
         .map(existingResponse -> existingResponse.isLastPositionReached()
-            || emptyIfNull(existingResponse.getEntities()).isEmpty())
+            || ListUtils.emptyIfNull(existingResponse.getEntities()).isEmpty())
         .findFirst().orElse(true);
   }
 

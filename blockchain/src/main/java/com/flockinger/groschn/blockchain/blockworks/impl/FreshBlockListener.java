@@ -2,33 +2,25 @@ package com.flockinger.groschn.blockchain.blockworks.impl;
 
 import static com.flockinger.groschn.blockchain.validation.AssessmentFailure.BLOCK_LAST_HASH_WRONG;
 import static com.flockinger.groschn.blockchain.validation.AssessmentFailure.BLOCK_POSITION_TOO_HIGH;
-import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
-import com.flockinger.groschn.blockchain.exception.messaging.ReceivedMessageInvalidException;
 import com.flockinger.groschn.blockchain.exception.validation.AssessmentFailedException;
-import com.flockinger.groschn.blockchain.messaging.MessagingUtils;
 import com.flockinger.groschn.blockchain.messaging.sync.SyncDeterminator;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.validation.AssessmentFailure;
-import com.flockinger.groschn.commons.exception.BlockchainException;
 import com.flockinger.groschn.messaging.config.MainTopics;
-import com.flockinger.groschn.messaging.inbound.MessageListener;
-import com.flockinger.groschn.messaging.model.Message;
-import com.flockinger.groschn.messaging.model.MessagePayload;
+import com.flockinger.groschn.messaging.inbound.AbstractMessageListener;
 import com.github.benmanes.caffeine.cache.Cache;
 
 @Service
-public class FreshBlockListener implements MessageListener<MessagePayload> {
+public class FreshBlockListener extends AbstractMessageListener<Block> {
 
   @Autowired
   private BlockStorageService blockService;
-  @Autowired
-  private MessagingUtils messageUtils;
   @Autowired
   private SyncDeterminator blockSyncDeterminator;
   
@@ -39,15 +31,9 @@ public class FreshBlockListener implements MessageListener<MessagePayload> {
   private final static Logger LOG = LoggerFactory.getLogger(FreshBlockListener.class);
   
   @Override
-  public void receiveMessage(Message<MessagePayload> message) {
+  protected void handleMessage(Block block) {
     try {
-      messageUtils.assertEntity(message);
-      assertMessageIsNew(message.getId());
-      Optional<Block> block = messageUtils.extractPayload(message, Block.class);
-      if (block.isPresent()) {
-        LOG.info("Fresh Block received by sender: " + message.getPayload().getSenderId());
-        blockService.saveInBlockchain(block.get());
-      }
+      blockService.saveInBlockchain(block);
     } catch (AssessmentFailedException e) {
       LOG.error("Invalid Block-Message received maybe recoverable: " + e.getMessage(), e);
       // if the validation failed due to an outdated chain or or some faulty blocks in the chain
@@ -55,17 +41,6 @@ public class FreshBlockListener implements MessageListener<MessagePayload> {
       if(isSynchronizationRecoverable(e.getFailure())) {
         blockSyncDeterminator.determineAndSync();
       }
-    } catch (BlockchainException e) {
-      LOG.error("Really invalid Block-Message received: " + e.getMessage(), e);
-    }
-  }
-  
-  private void assertMessageIsNew(String messageId) {
-    Optional<String> existingKey = Optional.ofNullable(blockIdCache.getIfPresent(messageId));
-    if(!existingKey.isPresent()) {
-      blockIdCache.put(messageId, messageId);
-    } else {
-      throw new ReceivedMessageInvalidException("Block Message was already received with ID: " + messageId);
     }
   }
   
@@ -77,5 +52,13 @@ public class FreshBlockListener implements MessageListener<MessagePayload> {
   @Override
   public MainTopics getSubscribedTopic() {
     return MainTopics.FRESH_BLOCK;
+  }
+  @Override
+  protected Cache<String, String> getCache() {
+    return blockIdCache;
+  }
+  @Override
+  protected Class<Block> messageBodyType() {
+    return Block.class;
   }
 }

@@ -1,4 +1,4 @@
-package com.flockinger.groschn.blockchain.messaging;
+package com.flockinger.groschn.messaging.util;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -19,13 +19,12 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
-import com.flockinger.groschn.blockchain.exception.messaging.ReceivedMessageInvalidException;
-import com.flockinger.groschn.blockchain.messaging.dto.SyncRequest;
-import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.commons.compress.CompressedEntity;
 import com.flockinger.groschn.commons.compress.CompressionUtils;
+import com.flockinger.groschn.messaging.exception.ReceivedMessageInvalidException;
 import com.flockinger.groschn.messaging.model.Message;
 import com.flockinger.groschn.messaging.model.MessagePayload;
+import com.flockinger.groschn.messaging.model.SyncRequest;
 
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes = {MessagingUtils.class})
@@ -119,10 +118,10 @@ public class MessagingUtilsTest {
   
   @Test
   public void testExtractPayload_withValidPayload_shouldExtract() {
-    Block freshBlock = new Block();
+    TestBlock freshBlock = new TestBlock();
     when(compressor.decompress(any(), any(Integer.class), any(Class.class))).thenReturn(Optional.ofNullable(freshBlock));
     
-    Optional<Block> extractedBlock = utils.extractPayload(validMessage(), Block.class);
+    Optional<TestBlock> extractedBlock = utils.extractPayload(validMessage(), TestBlock.class);
     assertTrue("verify extracted block exists", extractedBlock.isPresent());
     assertEquals("verify extracted block is correct", freshBlock, extractedBlock.get());
   }
@@ -131,7 +130,7 @@ public class MessagingUtilsTest {
   public void testExtractPayload_withDecompressionFailed_shouldExtract() {
     when(compressor.decompress(any(), any(Integer.class), any())).thenReturn(Optional.empty());
     
-    Optional<Block> extractedBlock = utils.extractPayload(validMessage(), Block.class);
+    Optional<TestBlock> extractedBlock = utils.extractPayload(validMessage(), TestBlock.class);
     assertFalse("verify extracted block exists", extractedBlock.isPresent());
   }
   

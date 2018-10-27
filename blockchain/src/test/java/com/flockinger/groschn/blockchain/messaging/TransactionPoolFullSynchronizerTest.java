@@ -19,12 +19,12 @@ import org.springframework.test.context.junit4.SpringRunner;
 import com.flockinger.groschn.blockchain.exception.TransactionAlreadyClearedException;
 import com.flockinger.groschn.blockchain.exception.validation.AssessmentFailedException;
 import com.flockinger.groschn.blockchain.messaging.dto.SyncBatchRequest;
-import com.flockinger.groschn.blockchain.messaging.dto.SyncResponse;
 import com.flockinger.groschn.blockchain.messaging.sync.SyncInquirer;
 import com.flockinger.groschn.blockchain.messaging.sync.impl.TransactionPoolFullSynchronizer;
 import com.flockinger.groschn.blockchain.model.Transaction;
 import com.flockinger.groschn.blockchain.transaction.TransactionManager;
 import com.flockinger.groschn.messaging.config.MainTopics;
+import com.flockinger.groschn.messaging.model.SyncResponse;
 
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes = {TransactionPoolFullSynchronizer.class})

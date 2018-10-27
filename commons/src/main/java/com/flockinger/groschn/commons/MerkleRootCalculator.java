@@ -6,7 +6,6 @@ import java.util.stream.Collectors;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 import com.flockinger.groschn.blockchain.model.Hashable;
 import com.flockinger.groschn.commons.exception.HashingException;
 import com.flockinger.groschn.commons.hash.HashGenerator;
