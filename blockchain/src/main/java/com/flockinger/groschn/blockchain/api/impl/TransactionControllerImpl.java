@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.flockinger.groschn.blockchain.api.TransactionController;
 import com.flockinger.groschn.blockchain.api.dto.CreateTransactionDto;
 import com.flockinger.groschn.blockchain.api.dto.TransactionIdDto;
-import com.flockinger.groschn.blockchain.api.dto.TransactionStatus;
+import com.flockinger.groschn.blockchain.api.dto.TransactionStatusDto;
 import com.flockinger.groschn.blockchain.api.dto.ViewTransactionDto;
 import io.swagger.annotations.ApiParam;
 
@@ -18,12 +18,12 @@ import io.swagger.annotations.ApiParam;
 public class TransactionControllerImpl implements TransactionController {
 
 
-  public ResponseEntity<TransactionStatus> getTransactionStatus(
+  public ResponseEntity<TransactionStatusDto> getTransactionStatus(
       @ApiParam(value = "Unique identifier of the transaction.",
           required = true) @PathVariable("transaction-id") String transactionId) {
 
 
-    return new ResponseEntity<TransactionStatus>(HttpStatus.NOT_IMPLEMENTED);
+    return new ResponseEntity<TransactionStatusDto>(HttpStatus.NOT_IMPLEMENTED);
   }
 
   public ResponseEntity<List<ViewTransactionDto>> getTransactionsFromPublicKey(

@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
+import com.flockinger.groschn.blockchain.api.dto.TransactionIdDto;
 import com.flockinger.groschn.blockchain.exception.TransactionAlreadyClearedException;
 import com.flockinger.groschn.blockchain.exception.validation.AssessmentFailedException;
 import com.flockinger.groschn.blockchain.messaging.dto.SyncBatchRequest;
@@ -112,8 +113,10 @@ public class TransactionPoolFullSynchronizerTest {
   public void testSynchronize_withStorageReturningInvalid_shouldStopSyncing() {
     when(inquirer.fetchNextBatch(any(), any(Class.class))).thenReturn(getFakeResponse(false,1))
     .thenReturn(getFakeResponse(true, 2));;
-    doNothing().doNothing().doThrow(AssessmentFailedException.class)
-    .when(transactionManager).storeTransaction(any());
+    when(transactionManager.storeTransaction(any()))
+    .thenReturn(new TransactionIdDto())
+    .thenReturn(new TransactionIdDto())
+    .thenThrow(AssessmentFailedException.class);
     
     synchronizer.fullSynchronization();
     
@@ -125,8 +128,10 @@ public class TransactionPoolFullSynchronizerTest {
   public void testSynchronize_withStorageReturningAlreadyCleared_shouldStopSyncing() {
     when(inquirer.fetchNextBatch(any(), any(Class.class))).thenReturn(getFakeResponse(false,1))
     .thenReturn(getFakeResponse(true, 2));
-    doNothing().doNothing().doThrow(TransactionAlreadyClearedException.class)
-    .when(transactionManager).storeTransaction(any());
+    when(transactionManager.storeTransaction(any()))
+    .thenReturn(new TransactionIdDto())
+    .thenReturn(new TransactionIdDto())
+    .thenThrow(TransactionAlreadyClearedException.class);
     
     synchronizer.fullSynchronization();
     

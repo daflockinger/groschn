@@ -11,14 +11,14 @@ import io.swagger.annotations.ApiModelProperty;
 @Validated
 @javax.annotation.Generated(value = "io.swagger.codegen.languages.SpringCodegen", date = "2018-10-27T19:27:44.622Z")
 
-public class TransactionStatus   {
+public class TransactionStatusDto   {
   @JsonProperty("status")
   private String status = null;
 
   @JsonProperty("statusMessage")
   private String statusMessage = null;
 
-  public TransactionStatus status(String status) {
+  public TransactionStatusDto status(String status) {
     this.status = status;
     return this;
   }
@@ -38,7 +38,7 @@ public class TransactionStatus   {
     this.status = status;
   }
 
-  public TransactionStatus statusMessage(String statusMessage) {
+  public TransactionStatusDto statusMessage(String statusMessage) {
     this.statusMessage = statusMessage;
     return this;
   }
@@ -67,7 +67,7 @@ public class TransactionStatus   {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    TransactionStatus transactionStatus = (TransactionStatus) o;
+    TransactionStatusDto transactionStatus = (TransactionStatusDto) o;
     return Objects.equals(this.status, transactionStatus.status) &&
         Objects.equals(this.statusMessage, transactionStatus.statusMessage);
   }

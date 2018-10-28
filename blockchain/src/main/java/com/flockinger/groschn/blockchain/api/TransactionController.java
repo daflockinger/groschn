@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import com.flockinger.groschn.blockchain.api.dto.CreateTransactionDto;
 import com.flockinger.groschn.blockchain.api.dto.TransactionIdDto;
-import com.flockinger.groschn.blockchain.api.dto.TransactionStatus;
+import com.flockinger.groschn.blockchain.api.dto.TransactionStatusDto;
 import com.flockinger.groschn.blockchain.api.dto.ViewTransactionDto;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -20,10 +20,10 @@ public interface TransactionController {
 
 
   @ApiOperation(value = "Get status of the Transaction.", nickname = "getTransactionStatus",
-      notes = "Fetches status information of the Transaction.", response = TransactionStatus.class,
+      notes = "Fetches status information of the Transaction.", response = TransactionStatusDto.class,
       tags = {"Transaction",})
   @ApiResponses(value = {
-      @ApiResponse(code = 200, message = "TransactionStatus.", response = TransactionStatus.class),
+      @ApiResponse(code = 200, message = "TransactionStatus.", response = TransactionStatusDto.class),
       @ApiResponse(code = 400, message = "Bad request (validation failed).",
           response = Error.class),
       @ApiResponse(code = 401, message = "Unauthorized (need to log in / get token)."),
@@ -33,7 +33,7 @@ public interface TransactionController {
       @ApiResponse(code = 500, message = "Internal Server Error.")})
   @RequestMapping(value = "/api/v1/groschn/transaction/status/{transaction-id}",
       produces = {"application/json"}, method = RequestMethod.GET)
-  ResponseEntity<TransactionStatus> getTransactionStatus(
+  ResponseEntity<TransactionStatusDto> getTransactionStatus(
       @ApiParam(value = "Unique identifier of the transaction.",
           required = true) @PathVariable("transaction-id") String transactionId);
 

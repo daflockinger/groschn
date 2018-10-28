@@ -2,7 +2,9 @@ package com.flockinger.groschn.blockchain.model;
 
 import java.util.Collections;
 import java.util.List;
+import javax.validation.constraints.NotEmpty;
 import org.apache.commons.lang3.StringUtils;
+import com.esotericsoftware.kryo.NotNull;
 
 public class Transaction implements Hashable<Transaction> {
   /**
@@ -15,9 +17,12 @@ public class Transaction implements Hashable<Transaction> {
    */
   private Long lockTime = null;
 
+  @NotNull
   private List<TransactionInput> inputs = null;
+  @NotNull
   private List<TransactionOutput> outputs = null;
   
+  @NotEmpty
   private String transactionHash = null;
 
   public String getTransactionHash() {

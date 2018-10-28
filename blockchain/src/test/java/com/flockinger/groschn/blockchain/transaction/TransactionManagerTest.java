@@ -30,10 +30,13 @@ import org.springframework.data.mongodb.MongoDbFactory;
 import org.springframework.test.context.ContextConfiguration;
 import com.flockinger.groschn.blockchain.BaseDbTest;
 import com.flockinger.groschn.blockchain.TestDataFactory;
+import com.flockinger.groschn.blockchain.api.dto.TransactionIdDto;
+import com.flockinger.groschn.blockchain.api.dto.TransactionStatusDto;
 import com.flockinger.groschn.blockchain.dto.TransactionDto;
 import com.flockinger.groschn.blockchain.dto.TransactionStatementDto;
 import com.flockinger.groschn.blockchain.exception.HashingException;
 import com.flockinger.groschn.blockchain.exception.TransactionAlreadyClearedException;
+import com.flockinger.groschn.blockchain.exception.TransactionNotFoundException;
 import com.flockinger.groschn.blockchain.exception.validation.AssessmentFailedException;
 import com.flockinger.groschn.blockchain.model.Transaction;
 import com.flockinger.groschn.blockchain.model.TransactionInput;
@@ -374,7 +377,10 @@ public class TransactionManagerTest extends BaseDbTest {
     Transaction transaction = TestDataFactory.createValidTransaction("ex1", "ex2", "ex3", "in1");
     when(validator.validate(any())).thenReturn(Assessment.build().valid(true));
     
-    manager.storeTransaction(transaction);
+    TransactionIdDto txId = manager.storeTransaction(transaction);
+    
+    assertNotNull("verify returned transactionId entity is not null", txId);
+    assertEquals("verify transactionId contains hash", transaction.getTransactionHash(), txId.getId());
     
     Optional<StoredPoolTransaction> storedTx = poolDao.findAll().stream().findFirst();
     assertTrue("verify stored transaction exists", storedTx.isPresent());
@@ -415,6 +421,98 @@ public class TransactionManagerTest extends BaseDbTest {
     manager.storeTransaction(transaction);
     manager.storeTransaction(transaction);
   }
+  
+  @Test
+  public void testGetStatusOfTransaction_withTxInPool_shouldReturnCorrect() {
+    var transactions = createFakePooledTransactions();
+    transactions.get(0).setTransactionHash("1234");
+    poolDao.saveAll(transactions);
+    
+    TransactionStatusDto status = manager.getStatusOfTransaction("1234");
+    assertNotNull("verify returned status is not null", status);
+    assertEquals("verify correct transaction status", 
+        transactions.get(0).getStatus().name(), status.getStatus());
+    assertEquals("verify correct transaction status message", 
+        transactions.get(0).getStatus().description(), status.getStatusMessage());
+  }
+  
+  @Test
+  public void testGetStatusOfTransaction_withTxInBlockchain_shouldReturnCorrect() {
+    poolDao.saveAll(fakePoolTransactions);
+    blockDao.saveAll(fakeBlocks(new StoredTransactionOutput(),"1234"));
+    
+    TransactionStatusDto status = manager.getStatusOfTransaction("1234");
+    assertNotNull("verify returned status is not null", status);
+    assertEquals("verify correct transaction status", 
+        TransactionStatus.SIX_BLOCKS_UNDER.name(), status.getStatus());
+    assertEquals("verify correct transaction status message", 
+        TransactionStatus.SIX_BLOCKS_UNDER.description(), status.getStatusMessage());
+  }
+  
+  @Test(expected = TransactionNotFoundException.class)
+  public void testGetStatusOfTransaction_withTransactionNowhere_shouldThrowException() {
+    poolDao.saveAll(fakePoolTransactions);
+    blockDao.saveAll(fakeBlocks(null, null));
+    
+    manager.getStatusOfTransaction("1234");
+  }
+  
+  
+  @Test
+  public void testgetTransactionsFromPublicKey_withTransactionsAndBlockTxs_shouldReturnCorrect() {
+    final String pubKey = "monsterOfDesaster";
+    var transactions = createFakePooledTransactions();
+    transactions.get(0).setTransactionHash("1234");
+    transactions.get(0).getOutputs().get(0).setPublicKey(pubKey);
+    transactions.get(1).setTransactionHash("234");
+    transactions.get(1).getInputs().get(0).setPublicKey(pubKey);
+    transactions.get(2).setTransactionHash("1234");
+    transactions.get(2).getOutputs().get(0).setPublicKey(pubKey);
+    poolDao.saveAll(transactions);
+    var blocks = fakeBlocks(null, null);
+    blocks.get(0).getTransactions().get(0).setTransactionHash("1234");
+    blocks.get(0).getTransactions().get(0).getInputs().get(0).setPublicKey(pubKey);
+    blocks.get(1).getTransactions().get(0).setTransactionHash("456");
+    blocks.get(1).getTransactions().get(0).getInputs().get(0).setPublicKey(pubKey);
+    blocks.get(1).getTransactions().get(1).setTransactionHash("789");
+    blocks.get(1).getTransactions().get(1).getOutputs().get(0).setPublicKey(pubKey);
+    blockDao.saveAll(blocks);
+    
+    var pubKeyTxs = manager.getTransactionsFromPublicKey(pubKey);
+    assertNotNull("verify returned transactions are not null", pubKeyTxs);
+    assertEquals("verify correct transaction count for pub key", 4, pubKeyTxs.size());
+    assertNotNull("verify transaction id is not null", pubKeyTxs.get(0).getId());
+    assertNotNull("verify transaction outputs is not null", pubKeyTxs.get(0).getOutputs());
+    assertNotNull("verify transaction output amount is not null", 
+        pubKeyTxs.get(0).getOutputs().get(0).getAmount());
+    assertNotNull("verify transaction output pubKey is not null", 
+        pubKeyTxs.get(0).getOutputs().get(0).getPublicKey());
+    assertNotNull("verify transaction output sequence number is not null", 
+        pubKeyTxs.get(0).getOutputs().get(0).getSequenceNumber());
+    assertNotNull("verify transaction output timestamp is not null", 
+        pubKeyTxs.get(0).getOutputs().get(0).getTimestamp());
+    assertNotNull("verify transaction inputs is not null", pubKeyTxs.get(0).getInputs());
+    assertNotNull("verify transaction output amount is not null", 
+        pubKeyTxs.get(0).getInputs().get(0).getAmount());
+    assertNotNull("verify transaction output pubKey is not null", 
+        pubKeyTxs.get(0).getInputs().get(0).getPublicKey());
+    assertNotNull("verify transaction output sequence number is not null", 
+        pubKeyTxs.get(0).getInputs().get(0).getSequenceNumber());
+    assertNotNull("verify transaction output timestamp is not null", 
+        pubKeyTxs.get(0).getInputs().get(0).getTimestamp());
+    assertNotNull("verify transaction output signature is not null", 
+        pubKeyTxs.get(0).getInputs().get(0).getSignature());
+  }
+  
+  @Test
+  public void testgetTransactionsFromPublicKey_withNoTransactionsDone_shouldReturnCorrect() {
+    final String pubKey = "masterOfDesaster";
+    
+    var pubKeyTxs = manager.getTransactionsFromPublicKey(pubKey);
+    assertNotNull("verify returned transactions are not null", pubKeyTxs);
+    assertEquals("verify correct transaction count for pub key", 0, pubKeyTxs.size());
+  }
+  
   
   
   private List<StoredPoolTransaction> createFakePooledTransactions() {
