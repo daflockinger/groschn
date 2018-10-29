@@ -1,5 +1,6 @@
 package com.flockinger.groschn.blockchain.repository;
 
+import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
@@ -11,5 +12,7 @@ public interface TransactionPoolRepository extends MongoRepository<StoredPoolTra
     
   boolean existsByTransactionHash(String transactionHash);
   
+  Optional<StoredPoolTransaction> findByTransactionHash(String transactionHash);
+    
   Page<StoredPoolTransaction> findByStatusOrderByCreatedAtAsc(TransactionStatus status, Pageable page);
 }
