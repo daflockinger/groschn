@@ -1,6 +1,8 @@
 package com.flockinger.groschn.blockchain.api.dto;
 
 import java.util.Objects;
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 import org.springframework.validation.annotation.Validated;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
@@ -13,15 +15,19 @@ import io.swagger.annotations.ApiModelProperty;
 
 public class TransactionOutputDTO   {
   @JsonProperty("amount")
+  @NotEmpty
   private String amount = null;
 
   @JsonProperty("publicKey")
+  @NotEmpty
   private String publicKey = null;
 
   @JsonProperty("timestamp")
+  @NotNull
   private Long timestamp = null;
 
   @JsonProperty("sequenceNumber")
+  @NotNull
   private Long sequenceNumber = null;
 
   public TransactionOutputDTO amount(String amount) {
