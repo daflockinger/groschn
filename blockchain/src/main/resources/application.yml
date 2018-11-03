@@ -44,7 +44,8 @@ atomix:
     heartbeat-milliseconds: ${ATOMIX_HEARTBEAT_INTERVAL:1000}
     failure-timeout-milliseconds: ${ATOMIX_MULTICAST_FAILURE_TIMEOUT:20000}
     bootstrap-nodes:
-      - {name: 'groschn1', address: 'localhost:1234'}
+      - {name: '${ATOMIX_NODE_ID:groschn1}', address: '${ATOMIX_NODE_ADDR:localhost:1234}'}
+      - {name: '${GATEWAY_1_NODE_ID:}', address: '${GATEWAY_1_NODE_ADDR:}'}
   partition-group:
     number-partitions: ${ATOMIX_PARTITION_GROUP_SIZE:23}
     name: ${ATOMIX_PARTITION_GROUP_NAME:data}

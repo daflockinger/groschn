@@ -8,6 +8,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import com.flockinger.groschn.blockchain.exception.TransactionAlreadyClearedException;
 import com.flockinger.groschn.blockchain.exception.validation.AssessmentFailedException;
@@ -39,6 +41,7 @@ public class TransactionPoolFullSynchronizer implements FullSyncKeeper {
 
 
   //TODO maybe add clearing old raw transactions in pool before full sync!
+  @Retryable(maxAttempts=3,backoff=@Backoff(delay=1000, multiplier=2))
   @Override
   public void fullSynchronization() {
     LOG.debug("Started full Transaction-Pool synchronization.");

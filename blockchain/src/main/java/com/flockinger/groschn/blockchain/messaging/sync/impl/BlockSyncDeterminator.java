@@ -6,7 +6,11 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
 import com.flockinger.groschn.blockchain.exception.BlockSynchronizationException;
@@ -22,6 +26,7 @@ import com.flockinger.groschn.messaging.model.SyncResponse;
 
 @Service
 public class BlockSyncDeterminator implements SyncDeterminator {
+//FIXME redo that service, make it simpler, make it work!!
   
   @Autowired
   private SyncKeeper synchronizer;
@@ -31,6 +36,7 @@ public class BlockSyncDeterminator implements SyncDeterminator {
   private SyncInquirer inquirer;
   
   private final static int BATCH_SIZE = 100;
+  private final static Logger LOG = LoggerFactory.getLogger(BlockSyncDeterminator.class);
   
   private final SyncBatchRequest request = SyncBatchRequest.build()
       .batchSize(BATCH_SIZE)
@@ -38,6 +44,7 @@ public class BlockSyncDeterminator implements SyncDeterminator {
       .maxFetchRetries(5)
       .topic(MainTopics.BLOCK_INFO);
   
+  @Retryable(maxAttempts=10,backoff=@Backoff(delay=1000, multiplier=2))
   @Override
   public void determineAndSync() {
     var latestBlock = blockService.getLatestBlock();
@@ -47,11 +54,14 @@ public class BlockSyncDeterminator implements SyncDeterminator {
       infoResult = determineStartPositionAndInfos(latestBlock.getPosition(), infoResult);
     }
     if(infoResult.getStartPosition() > 0) {
+      LOG.info("Sync point found at position: {}", infoResult.getStartPosition());
       blockService.removeBlocks(infoResult.getStartPosition());
+      LOG.info("Successfully removed wrong blocks.");
       synchronizer.synchronize(infoResult);
+      LOG.info("Successfully finished synchronization!");
     } else {
       throw new BlockSynchronizationException("Unable to Synchronize blocks with other nodes, "
-          + "the majority of them seem to be very corrupt!");
+          + "the majority of them seem to be very corrupt, or I'm the most up to date node!");
     }
   }
   
@@ -59,7 +69,7 @@ public class BlockSyncDeterminator implements SyncDeterminator {
     var blockInfos = getSortedBlockInfosFrom(fromScanPosition);   
     var blocks = blockService.findBlocks(fromScanPosition, BATCH_SIZE);
     Collections.sort(blocks, Comparator.comparingLong(Block::getPosition).reversed());
-    for(int blockCount = 0; blockCount < blocks.size(); blockCount++) {
+    for(int blockCount = 0; blockCount < blocks.size() && blocks.size() <= blockInfos.size(); blockCount++) {
       if(isBlockHashCorrect(blocks.get(blockCount), blockInfos)) {
         infoResult.setStartPosition(blocks.get(blockCount).getPosition() + 1);
         infoResult.getCorrectInfos().addAll(blockInfos.subList(0, blockCount));

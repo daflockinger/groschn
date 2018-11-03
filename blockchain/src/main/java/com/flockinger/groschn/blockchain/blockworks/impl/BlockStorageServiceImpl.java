@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 import org.modelmapper.ModelMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
@@ -29,6 +31,8 @@ public class BlockStorageServiceImpl implements BlockStorageService {
   private ModelMapper mapper;
   @Autowired
   private TransactionManager transactionManager;
+  
+  private final static Logger LOG = LoggerFactory.getLogger(BlockStorageServiceImpl.class);
 
   @PostConstruct
   public void initBlockchain() {
@@ -40,10 +44,12 @@ public class BlockStorageServiceImpl implements BlockStorageService {
 
   @Override
   public StoredBlock saveInBlockchain(Block block) throws ValidationException {
+    LOG.info("Validating block with position {}", block.getPosition());
     validateBlock(block);
     transactionManager.updateTransactionStatuses(block.getTransactions(), TransactionStatus.EMBEDDED_IN_BLOCK);
     StoredBlock storedBlock = mapToStoredBlock(block);
     storedBlock = dao.save(storedBlock);
+    LOG.info("Block successfully stored with position {}", block.getPosition());
     return storedBlock;
   }
 

@@ -1,0 +1,79 @@
+version: '3'
+services:
+  groschn-gateway-1:
+    image: "flockinger/groschn-gateway:latest"
+    ports:
+      - "9001:9001"
+      - "5002:5002"
+    environment: 
+      - APP_PORT=9001
+      - NODE_ID=gateway1
+      - ATOMIX_NODE_ID=gateway1
+      - ATOMIX_NODE_ADDR=groschn-gateway-1:5002
+  mongo:
+    image: "mongo:latest"
+    volumes:
+      - '/var/tmp/groschnMongoData:/data/db'
+  groschn-blockchain-1:
+    image: "flockinger/groschn-blockchain:latest"
+    ports:
+      - "8001:8001"
+      - "5001:5001"
+    links: 
+      - mongo
+      - groschn-gateway-1
+    environment: 
+      - APP_PORT=8001
+      - MONGO_HOST=mongo
+      - MONGO_DB_NAME=groschn1
+      - NODE_ID=groschn1
+      - NODE_PUBLIC_KEY=PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSCyHgmYGQ7vQthECFNuruEVLAhxBHEgrDhpMmQ1kAWFdxJKVvEL5vbP6kkv4puwqB6XWd8zLuhwiUGRX7Qxojj8tKx
+      - NODE_PRIVATE_KEY=3hupFSQNWwiJuQNc68HiWzPgyNpQA2yy9iiwhytMS7rZyZDMGB2EwiB8p1bwmMMX5KjV5AUwLCfYWFH67Vm9viofJAfMt1Vw3zQYwbefxTccGdLR2MKxRM2QZxQWFT3xAwtAD3hDvZfcXHiSiX1a1yNd6fVyrjvp8fXKTLvQgaWcar21LSMn9j8QJ8TPV3yCYrtfp
+      - ATOMIX_NODE_ID=groschn1
+      - ATOMIX_NODE_ADDR=groschn-blockchain-1:5001
+      - GATEWAY_1_NODE_ID=gateway1
+      - GATEWAY_1_NODE_ADDR=groschn-gateway-1:5002
+      - ATOMIX_MANAGEMENT_GROUP_SIZE=1
+      - ATOMIX_MANAGEMENT_DATA_DIRECTORY=/tmp/groschn1
+  groschn-blockchain-2:
+    image: "flockinger/groschn-blockchain:latest"
+    ports:
+      - "8003:8003"
+      - "5003:5003"
+    links: 
+      - mongo
+      - groschn-gateway-1
+    environment: 
+      - APP_PORT=8003
+      - MONGO_HOST=mongo
+      - MONGO_DB_NAME=groschn2
+      - NODE_ID=groschn2
+      - NODE_PUBLIC_KEY=PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSCwQ1A88r9hm5BvaFEzEjhRSet1n7EGVe5aZkTqFMDZvHqR25RdFhENRzzLr6wi27zqMANgK8AbhK5MRmhNYUA1UoE
+      - NODE_PRIVATE_KEY=3hupFSQNWwiJuQNc68HiWzPgyNpQA2yy9iiwhytMS7rZygD2BfWSZ9Jfavj1PwojbEf6ykPznAgrQgYAmDHeaTYhf8SZGPn8187ZZf63YPVE8W4xDsniMQXzi4mDY2VV1DVbadfXYTPgfqD7kKvRzqmvkGQNC2bzKCjPqC64guzrrY4UE5mLkY7AxtEohQ7KwHnix
+      - ATOMIX_NODE_ID=groschn2
+      - ATOMIX_NODE_ADDR=groschn-blockchain-2:5003
+      - GATEWAY_1_NODE_ID=gateway1
+      - GATEWAY_1_NODE_ADDR=groschn-gateway-1:5002
+      - ATOMIX_MANAGEMENT_GROUP_SIZE=1
+      - ATOMIX_MANAGEMENT_DATA_DIRECTORY=/tmp/groschn2
+  groschn-blockchain-3:
+    image: "flockinger/groschn-blockchain:latest"
+    ports:
+      - "8004:8004"
+      - "5004:5004"
+    links: 
+      - mongo
+      - groschn-gateway-1
+    environment: 
+      - APP_PORT=8004
+      - MONGO_HOST=mongo
+      - MONGO_DB_NAME=groschn3
+      - NODE_ID=groschn3
+      - NODE_PUBLIC_KEY=PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSCxvknBRgXLZLkWDXhC9gDhW1yWLbFjTbWhsTnF6QmyvJfBVnCC1a1SxmpZVJn4sSg9ufZyyyA7r8sAwwe5Nn1Sv1h
+      - NODE_PRIVATE_KEY=3hupFSQNWwiJuQNc68HiWzPgyNpQA2yy9iiwhytMS7rZyfAk6gCosgGxAwVMCV3Lgf7kPUYUbRi3YZXbwdzvx3YUTUHbtxfBm5Ky7MTunNzczTDeSgXCzPoFm8y2V54oPVhFdxB1Rcbin58yQHhWonoYujwuPB4f5vWbwjDGx3GVMMjedYbZEfYCp8BFv7nuUi3fh
+      - ATOMIX_NODE_ID=groschn3
+      - ATOMIX_NODE_ADDR=groschn-blockchain-3:5004
+      - GATEWAY_1_NODE_ID=gateway1
+      - GATEWAY_1_NODE_ADDR=groschn-gateway-1:5002
+      - ATOMIX_MANAGEMENT_GROUP_SIZE=1
+      - ATOMIX_MANAGEMENT_DATA_DIRECTORY=/tmp/groschn3

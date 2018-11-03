@@ -11,12 +11,14 @@ import com.flockinger.groschn.blockchain.messaging.dto.BlockInfo;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.messaging.config.MainTopics;
 import com.flockinger.groschn.messaging.inbound.AbstractMessageResponder;
+import com.flockinger.groschn.messaging.inbound.MessageResponder;
+import com.flockinger.groschn.messaging.model.MessagePayload;
 import com.flockinger.groschn.messaging.model.SyncRequest;
 import com.flockinger.groschn.messaging.model.SyncResponse;
 import com.github.benmanes.caffeine.cache.Cache;
 
 @Service
-public class BlockSyncInfoResponder extends AbstractMessageResponder<BlockInfo> {
+public class BlockSyncInfoResponder extends AbstractMessageResponder<BlockInfo> implements MessageResponder<MessagePayload> {
   
   @Autowired
   private BlockStorageService blockService;

@@ -1,7 +1,8 @@
-package com.flockinger.groschn.messaging.inbound;
+package com.flockinger.groschn.messaging.outbound;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.mockito.Mockito.mock;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import org.junit.After;
@@ -20,21 +21,25 @@ import com.flockinger.groschn.commons.serialize.BlockSerializer;
 import com.flockinger.groschn.messaging.BaseAtomixTest;
 import com.flockinger.groschn.messaging.ExecutorConfig;
 import com.flockinger.groschn.messaging.config.MainTopics;
+import com.flockinger.groschn.messaging.inbound.AbstractMessageResponder;
 import com.flockinger.groschn.messaging.inbound.MessageDispatcherTest.DonaldDuckListener;
 import com.flockinger.groschn.messaging.inbound.MessageDispatcherTest.PlutoListener;
+import com.flockinger.groschn.messaging.inbound.MessageResponder;
 import com.flockinger.groschn.messaging.members.NetworkStatistics;
-import com.flockinger.groschn.messaging.model.Message;
 import com.flockinger.groschn.messaging.model.MessagePayload;
+import com.flockinger.groschn.messaging.model.SyncRequest;
+import com.flockinger.groschn.messaging.model.SyncResponse;
+import com.flockinger.groschn.messaging.outbound.impl.BroadcasterImpl;
 import com.flockinger.groschn.messaging.util.MessagingUtils;
+import com.github.benmanes.caffeine.cache.Cache;
 import io.atomix.core.Atomix;
 
 @ActiveProfiles("test2")
-@ContextConfiguration(classes = {MessageDispatcher.class, 
-    DonaldDuckListener.class, PlutoListener.class})
+@ContextConfiguration(classes = {BroadcasterImpl.class, DonaldDuckListener.class, PlutoListener.class})
 @Import(ExecutorConfig.class)
 @TestExecutionListeners({DependencyInjectionTestExecutionListener.class, MockitoTestExecutionListener.class})
-public class MessageDispatcherTest extends BaseAtomixTest {
-  
+public class BroadcasterIntegrationTest extends BaseAtomixTest {
+
   @Autowired
   private Atomix atomix;
   @MockBean
@@ -47,37 +52,57 @@ public class MessageDispatcherTest extends BaseAtomixTest {
   @Test
   public void testInit_shouldHaveCalledCorrectly() {    
     var handlers = (Map<String, BiConsumer>) Whitebox.getInternalState(atomix.getMessagingService(), "handlers");
-    var plutoHandler = handlers.get(MainTopics.FRESH_TRANSACTION.name());
-    var donaldDuckHandler = handlers.get(MainTopics.FRESH_BLOCK.name());
+    var mickeyMouseHandler = handlers.get(MainTopics.SYNC_BLOCKCHAIN.name());
+    var goofyHandler = handlers.get(MainTopics.SYNC_TRANSACTIONS.name());
     
     assertNull("verify totally weird stuff doesn't exist", handlers.get("BlackPete"));
-    assertNotNull("verify first listener was registered", plutoHandler);
-    assertNotNull("verify second listener was registered", donaldDuckHandler);
+    assertNotNull("verify first responder was registered", mickeyMouseHandler);
+    assertNotNull("verify second responder was registered", goofyHandler);
   }
   
   @After
   public void teardown() {
     atomix.stop().join();
   }
-  
+
   @Component
-  public final static class PlutoListener implements MessageListener<MessagePayload> {
-    @Override
-    public void receiveMessage(Message<MessagePayload> message) {      
-    }
+  public final static class MickeyMouseResponder extends AbstractMessageResponder<String> implements MessageResponder<MessagePayload> {
     @Override
     public MainTopics getSubscribedTopic() {
-      return MainTopics.FRESH_TRANSACTION;
+      return MainTopics.SYNC_BLOCKCHAIN;
+    }
+
+    @Override
+    protected String getNodeId() {
+      return "";
+    }
+    @Override
+    protected Cache<String, String> getCache() {
+      return mock(Cache.class);
+    }
+    @Override
+    protected SyncResponse<String> createResponse(SyncRequest request) {
+      return new SyncResponse<>();
     }
   }
   @Component
-  public final static class DonaldDuckListener implements MessageListener<MessagePayload> {
-    @Override
-    public void receiveMessage(Message<MessagePayload> message) {      
-    }
+  public final static class GoofyResponder extends AbstractMessageResponder<String> implements MessageResponder<MessagePayload> {
     @Override
     public MainTopics getSubscribedTopic() {
-      return MainTopics.FRESH_BLOCK;
+      return MainTopics.SYNC_TRANSACTIONS;
+    }
+    
+    @Override
+    protected String getNodeId() {
+      return "";
+    }
+    @Override
+    protected Cache<String, String> getCache() {
+      return mock(Cache.class);
+    }
+    @Override
+    protected SyncResponse<String> createResponse(SyncRequest request) {
+      return new SyncResponse<>();
     }
   }
 }

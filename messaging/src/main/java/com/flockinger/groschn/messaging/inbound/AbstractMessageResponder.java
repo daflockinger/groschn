@@ -35,8 +35,8 @@ public abstract class AbstractMessageResponder<T extends Serializable> implement
 
   
   @Override
-  public Optional<Message<MessagePayload>> respond(Message<MessagePayload> request) {
-    Optional<Message<MessagePayload>> response = Optional.empty();
+  public Message<MessagePayload> respond(Message<MessagePayload> request) {
+    Message<MessagePayload> response = new Message<>();
     try {
       messageUtils.assertEntity(request);
       isMessageFromALegitSender(request.getPayload().getSenderId());
@@ -45,7 +45,7 @@ public abstract class AbstractMessageResponder<T extends Serializable> implement
       if (syncRequest.isPresent()) {
         messageUtils.assertEntity(syncRequest.get());
         var responseMessage = messageUtils.packageMessage(createResponse(syncRequest.get()),getNodeId());
-        response = Optional.ofNullable(responseMessage);
+        response = responseMessage;
       }
     } catch (BlockchainException e) {
       LOG.error("Invalid Syncing-Request received: " + e.getMessage(), e);

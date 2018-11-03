@@ -48,7 +48,7 @@ public class MultiHashGenerator implements HashGenerator {
   
   @Override
   public String generateHash(Hashable<?> hashable) {
-    var hashableBytes = hashable.toString().getBytes(Charsets.UTF_8);//serializer.serialize(hashable);
+    var hashableBytes = hashable.toString().getBytes(Charsets.UTF_8);
     assertHashable(hashableBytes);
     return Hex.toHexString(doubleHash(hashableBytes));
   }
@@ -77,7 +77,7 @@ public class MultiHashGenerator implements HashGenerator {
   @Override
   public <T extends Sequential> byte[] generateListHash(List<T> sortables) throws HashingException {
     Collections.sort(sortables);
-    var hashableBytes = sortables.toString().getBytes(Charsets.UTF_8);//serializer.serialize(sortables);
+    var hashableBytes = sortables.toString().getBytes(Charsets.UTF_8);
     assertHashable(hashableBytes);  
     return doubleHash(hashableBytes);
   }

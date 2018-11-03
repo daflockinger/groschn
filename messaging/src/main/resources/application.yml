@@ -28,6 +28,7 @@ atomix:
     failure-timeout-milliseconds: ${ATOMIX_MULTICAST_FAILURE_TIMEOUT:20000}
     bootstrap-nodes:
       - {name: 'groschn1', address: 'localhost:1234'}
+      - {name: '${GATEWAY_1_NODE_ID:}', address: '${GATEWAY_1_NODE_ADDR:}'}
   partition-group:
     number-partitions: ${ATOMIX_PARTITION_GROUP_SIZE:23}
     name: ${ATOMIX_PARTITION_GROUP_NAME:data}

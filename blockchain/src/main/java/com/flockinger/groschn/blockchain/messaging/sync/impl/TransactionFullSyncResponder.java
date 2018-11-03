@@ -9,12 +9,14 @@ import com.flockinger.groschn.blockchain.model.Transaction;
 import com.flockinger.groschn.blockchain.transaction.TransactionManager;
 import com.flockinger.groschn.messaging.config.MainTopics;
 import com.flockinger.groschn.messaging.inbound.AbstractMessageResponder;
+import com.flockinger.groschn.messaging.inbound.MessageResponder;
+import com.flockinger.groschn.messaging.model.MessagePayload;
 import com.flockinger.groschn.messaging.model.SyncRequest;
 import com.flockinger.groschn.messaging.model.SyncResponse;
 import com.github.benmanes.caffeine.cache.Cache;
 
 @Service("TransactionFullSyncResponder")
-public class TransactionFullSyncResponder extends AbstractMessageResponder<Transaction> {
+public class TransactionFullSyncResponder extends AbstractMessageResponder<Transaction> implements MessageResponder<MessagePayload>{
   @Autowired
   private TransactionManager transactionManager;
   @Autowired

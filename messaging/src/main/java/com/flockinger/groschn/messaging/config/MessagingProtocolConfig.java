@@ -5,6 +5,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -12,6 +13,7 @@ import com.flockinger.groschn.messaging.config.AtomixConfig.AtomixNode;
 import io.atomix.cluster.MemberId;
 import io.atomix.cluster.Node;
 import io.atomix.cluster.discovery.BootstrapDiscoveryProvider;
+import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.core.Atomix;
 import io.atomix.protocols.backup.partition.PrimaryBackupPartitionGroup;
 import io.atomix.protocols.raft.partition.RaftPartitionGroup;
@@ -58,10 +60,16 @@ public class MessagingProtocolConfig {
     
     return atomix;
   }
-  
-  
+    
   private <R> List<R> mapNodes(List<AtomixNode> atomixNodes, Function<AtomixNode, R> mapper) {
-    return atomixNodes.stream().map(mapper).collect(Collectors.toList());
+    return atomixNodes.stream()
+        .filter(this::isNodeEntryNotEmpty)
+        .map(mapper)
+        .collect(Collectors.toList());
+  }
+  
+  private boolean isNodeEntryNotEmpty(AtomixNode atomixNode) {
+    return StringUtils.isNoneEmpty(atomixNode.getAddress(),atomixNode.getName());
   }
   
   private Node mapToNode(AtomixNode atomixNode) {
@@ -73,5 +81,10 @@ public class MessagingProtocolConfig {
   
   private String mapToMember(AtomixNode atomixNode) {
     return atomixNode.getName();
+  }
+  
+  @Bean
+  public ClusterCommunicationService clusterCommunicator() throws Exception {
+    return createAndStartAtomixInstance().getCommunicationService();
   }
 }

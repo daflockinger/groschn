@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 import com.flockinger.groschn.messaging.inbound.MessageDispatcherTest.DonaldDuckListener;
-import com.flockinger.groschn.messaging.inbound.MessageDispatcherTest.GoofyResponder;
+import com.flockinger.groschn.messaging.outbound.BroadcasterIntegrationTest.GoofyResponder;
 
 @ActiveProfiles("test3")
 @RunWith(SpringRunner.class)

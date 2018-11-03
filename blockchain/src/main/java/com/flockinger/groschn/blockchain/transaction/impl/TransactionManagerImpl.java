@@ -4,6 +4,7 @@ import static com.flockinger.groschn.blockchain.repository.model.TransactionStat
 import static com.flockinger.groschn.blockchain.repository.model.TransactionStatus.SIX_BLOCKS_UNDER;
 import static java.lang.Math.abs;
 import static java.lang.Math.max;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -50,7 +51,6 @@ import com.flockinger.groschn.blockchain.wallet.WalletService;
 import com.flockinger.groschn.commons.compress.CompressionUtils;
 import com.flockinger.groschn.commons.hash.HashGenerator;
 import com.flockinger.groschn.commons.sign.Signer;
-import com.google.api.client.util.Charsets;
 import com.google.common.collect.ImmutableList;
 
 @Service
@@ -120,7 +120,7 @@ public class TransactionManagerImpl implements TransactionManager {
       byte[] privateKey) {
     Collections.sort(outputs);
     String outputHashBase = outputs.stream().map(Object::toString).collect(Collectors.joining());
-    String signature = signer.sign(outputHashBase.getBytes(Charsets.UTF_8), privateKey);
+    String signature = signer.sign(outputHashBase.getBytes(StandardCharsets.UTF_8), privateKey);
     input.setSignature(signature);
   }
 
