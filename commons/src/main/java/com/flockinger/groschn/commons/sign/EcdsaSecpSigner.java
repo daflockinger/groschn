@@ -63,6 +63,9 @@ public class EcdsaSecpSigner implements Signer {
    */
   public final static String PROVIDER = BouncyCastleProvider.PROVIDER_NAME;
   
+  
+  private final static String SECURE_RANDOM_ALGORITHM = "SHA1PRNG";
+  
 
   private final Logger LOGGER = LoggerFactory.getLogger(this.getClass());
 
@@ -74,10 +77,6 @@ public class EcdsaSecpSigner implements Signer {
     try {
       Security.addProvider(defaultProvider);
       keyFactory = KeyFactory.getInstance(KEY_FACTORY_ALGORITHM, PROVIDER);
-      generator = KeyPairGenerator.getInstance(KEY_FACTORY_ALGORITHM, PROVIDER);
-      generator.initialize(getSpec(), new SecureRandom());
-    } catch (InvalidAlgorithmParameterException e) {
-      LOGGER.error("Elliptic Curve Algorithm parameters are not valid!", e);
     } catch (NoSuchAlgorithmException e) {
       LOGGER.error("No EC Algorithm available for your system!", e);
     } catch (NoSuchProviderException e) {
@@ -93,10 +92,25 @@ public class EcdsaSecpSigner implements Signer {
     }
   }
 
+  
+
+  
   public KeyPair generateKeyPair() {
+    try {
+      generator = KeyPairGenerator.getInstance(KEY_FACTORY_ALGORITHM, PROVIDER);
+      generator.initialize(getSpec(), SecureRandom.getInstance(SECURE_RANDOM_ALGORITHM));
+    } catch (InvalidAlgorithmParameterException e) {
+      LOGGER.error("Elliptic Curve Algorithm parameters are not valid!", e);
+    } catch (NoSuchAlgorithmException e) {
+      LOGGER.error("No EC Algorithm available for your system!", e);
+    } catch (NoSuchProviderException e) {
+      LOGGER.error("Please register bouncy castle provider before initializing!", e);
+    }
+    
     if (generator == null) {
       throw new CantConfigureSigningAlgorithmException("Cant configure EC algorithm with secp256k1 spec!");
     }
+    
     return generator.generateKeyPair();
   }
 

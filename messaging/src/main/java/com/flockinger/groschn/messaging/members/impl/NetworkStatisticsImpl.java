@@ -2,6 +2,7 @@ package com.flockinger.groschn.messaging.members.impl;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -20,25 +21,19 @@ public class NetworkStatisticsImpl implements NetworkStatistics {
 
   @Override
   public long activeNodeCount() {
-    return Long.valueOf(memberService().getReachableMembers().size());
+    return getFullMembers().count();
   }
 
   @Override
   public List<String> activeNodeIds() {
-    return memberService().getReachableMembers().stream()
-        .filter(this::filterOutGateways)
+    return getFullMembers()
         .map(Member::id)
         .map(MemberId::id).collect(Collectors.toList());
-  }
-  
-  private ClusterMembershipService memberService() {
-    return atomix.getMembershipService();
   }
 
   @Override
   public List<FullNode> activeFullNodes() {
-    return memberService().getReachableMembers().stream()
-        .filter(this::filterOutGateways)
+    return getFullMembers()
         .map(this::mapToFullNode)
         .collect(Collectors.toList());
   }
@@ -49,6 +44,15 @@ public class NetworkStatisticsImpl implements NetworkStatistics {
     node.setHost(member.address().host());
     node.setPort(member.address().port());
     return node;
+  }
+  
+  private Stream<Member> getFullMembers() {
+    return memberService().getReachableMembers().stream()
+        .filter(this::filterOutGateways);
+  }
+  
+  private ClusterMembershipService memberService() {
+    return atomix.getMembershipService();
   }
   
   private boolean filterOutGateways(Member member) {

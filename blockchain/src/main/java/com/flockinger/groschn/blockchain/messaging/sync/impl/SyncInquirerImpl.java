@@ -12,6 +12,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +23,6 @@ import com.flockinger.groschn.blockchain.messaging.dto.SyncBatchRequest;
 import com.flockinger.groschn.blockchain.messaging.sync.SyncInquirer;
 import com.flockinger.groschn.blockchain.model.Hashable;
 import com.flockinger.groschn.commons.MerkleRootCalculator;
-import com.flockinger.groschn.messaging.config.MainTopics;
 import com.flockinger.groschn.messaging.members.NetworkStatistics;
 import com.flockinger.groschn.messaging.model.Message;
 import com.flockinger.groschn.messaging.model.MessagePayload;
@@ -65,39 +66,46 @@ public class SyncInquirerImpl implements SyncInquirer {
   private List<Message<MessagePayload>> fetchMessages(SyncBatchRequest request) {
     var syncPartners = getSyncPartners(request.getIdealReceiveNodeCount() * 2);
     var idealNodeCount = request.getIdealReceiveNodeCount();
-    var minResultsNeeded = (syncPartners.size() >= idealNodeCount) ? idealNodeCount : 1; 
-    MessagePayload payload = createPayload(request);
-    var runningSyncRequests = syncPartners.stream()
-        .map(id -> sendMessageAsync(id, payload, request.getTopic())).collect(toList());
-    var arrivedMessages = new ArrayList<Message<MessagePayload>>();
-    runningSyncRequests.forEach(completableRequest -> completableRequest
-        .thenApply(arrivedMessages::add)            
-        .thenAccept(message -> {           
-          boolean areEnoughMessagesArrived = arrivedMessages.size() >= minResultsNeeded;             
-          if(areEnoughMessagesArrived) {          
-            cancelRunningRequests(runningSyncRequests);              
-          }}));
-    blockUntilDoneAndLogErrors(runningSyncRequests);
+    var minResultsNeeded =
+        (syncPartners.size() >= idealNodeCount) ? idealNodeCount : syncPartners.size();
+    CountDownLatch successLatch = new CountDownLatch(minResultsNeeded);
+    CountDownLatch totalLatch = new CountDownLatch(syncPartners.size());
+    var arrivedMessages = new CopyOnWriteArrayList<Message<MessagePayload>>();
+    syncPartners.stream().forEach(id -> {
+      broadcaster.sendRequest(createMessage(request), id, request.getTopic())
+          .whenComplete((response, error) -> {
+            if (error == null && response != null) {
+              arrivedMessages.add(response);
+              successLatch.countDown();
+            }
+            totalLatch.countDown();
+          });
+    });
+    CompletableFuture.anyOf(CompletableFuture.runAsync(() -> awaitSave(successLatch)),
+        CompletableFuture.runAsync(() -> awaitSave(totalLatch))).join();
     return arrivedMessages.stream().filter(Objects::nonNull).collect(toList());
   }
   
-  private void blockUntilDoneAndLogErrors(List<CompletableFuture<Message<MessagePayload>>> requests) {
-    requests.stream().map(request -> request.handle((req,exception) -> {
-      LOG.error("Requesting sync package failed(probably timeout or offline node): ",exception); 
-      return req;})).forEach(CompletableFuture::join);
+  private Message<MessagePayload> createMessage(SyncBatchRequest request) {
+    Message<MessagePayload> message = new Message<>();
+    message.setPayload(createPayload(request));
+    message.setId(UUID.randomUUID().toString());
+    message.setTimestamp(new Date().getTime());
+    return message;
   }
-    
-  private void cancelRunningRequests(List<CompletableFuture<Message<MessagePayload>>> runningRequests) {
-    runningRequests.stream().filter(this::isRunning).forEach(fut -> fut.cancel(true));;
-  }
-  private boolean isRunning(CompletableFuture<?> future) {
-    return !(future.isDone() || future.isCompletedExceptionally() || future.isCancelled());
+  
+  private void awaitSave(CountDownLatch latch) {
+    try {
+      latch.await();
+    } catch (InterruptedException e) {
+      LOG.warn("Syncing process interrupted, should never happen!");
+    }
   }
   
   private List<String> getSyncPartners(int randomSelectionSize) {
     var nodeIds = networkStatistics.activeNodeIds().stream()
-        .filter(id -> !id.equals(nodeId)).collect(toList());;
-    if(networkStatistics.activeNodeCount() < randomSelectionSize) {
+        .filter(id -> !id.equals(nodeId)).collect(toList());
+    if(nodeIds.size() < randomSelectionSize) {
       return nodeIds;
     } else {
       return selectRandomNodes(nodeIds, randomSelectionSize);
@@ -120,23 +128,19 @@ public class SyncInquirerImpl implements SyncInquirer {
     return messageUtils.packageMessage(request, nodeId).getPayload();
   }
   
-  private CompletableFuture<Message<MessagePayload>> sendMessageAsync(String receiverId, MessagePayload payload, MainTopics topic) {
-    Message<MessagePayload> message = new Message<>();
-    message.setPayload(payload);
-    message.setId(UUID.randomUUID().toString());
-    message.setTimestamp(new Date().getTime());
-    return broadcaster.sendRequest(message, receiverId, topic);
-  }
-  
-  
   private <T extends Hashable<T>> Optional<SyncResponse<T>> findMostLikelyValidResponse(List<Message<MessagePayload>> messages, Class<T> payloadType) {
     return messages.stream()
         .map(message -> messageUtils.extractPayload(message, SyncResponse.class))
         .filter(Optional::isPresent).map(Optional::get).map(response -> (SyncResponse<T>)response)
+        .filter(this::hasEntities)
         .collect(groupingBy(this::merkleRootOfPayloadHashes, toList()))
             .entrySet().stream().map(Entry::getValue)
             .reduce(this::findMajorlyAcceptedBatch).stream()
             .flatMap(Collection::stream).findFirst();
+  }
+  
+  private <T extends Hashable<T>> boolean hasEntities(SyncResponse<T> response) {
+    return response.getEntities() != null && !response.getEntities().isEmpty();
   }
   
   private <T extends Hashable<T>> String merkleRootOfPayloadHashes(SyncResponse<T> response) {

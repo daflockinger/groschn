@@ -2,8 +2,8 @@ package com.flockinger.groschn.blockchain.messaging;
 
 import static com.flockinger.groschn.blockchain.TestDataFactory.validMessage;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
@@ -66,13 +66,13 @@ public class BlockSyncInfoResponderTest extends BaseCachingTest {
     
     var responseMessage = responder.respond(message);
     
-    assertTrue("verify response exists", responseMessage.isPresent());
-    assertNotNull("verify response-message has a timestamp", responseMessage.get().getTimestamp());
-    assertNotNull("verify response-message has a non null payload", responseMessage.get().getPayload());
+    assertNotNull("verify response exists", responseMessage);
+    assertNotNull("verify response-message has a timestamp", responseMessage.getTimestamp());
+    assertNotNull("verify response-message has a non null payload", responseMessage.getPayload());
     assertEquals("verify response-message has a valida sender id", "groschn-master-123", 
-        responseMessage.get().getPayload().getSenderId());
-    assertNotNull("verify response-message has an payload entity", responseMessage.get().getPayload().getEntity());
-    CompressedEntity entity = responseMessage.get().getPayload().getEntity();
+        responseMessage.getPayload().getSenderId());
+    assertNotNull("verify response-message has an payload entity", responseMessage.getPayload().getEntity());
+    CompressedEntity entity = responseMessage.getPayload().getEntity();
     assertTrue("verify that compressed entity is not empty", entity.getEntity().length > 0);
     assertTrue("verify that compressed entity has an original size", entity.getOriginalSize() > 0);
     
@@ -106,13 +106,13 @@ public class BlockSyncInfoResponderTest extends BaseCachingTest {
     
     var responseMessage = responder.respond(message);
     
-    assertTrue("verify response exists", responseMessage.isPresent());
-    assertNotNull("verify response-message has a timestamp", responseMessage.get().getTimestamp());
-    assertNotNull("verify response-message has a non null payload", responseMessage.get().getPayload());
+    assertNotNull("verify response exists", responseMessage);
+    assertNotNull("verify response-message has a timestamp", responseMessage.getTimestamp());
+    assertNotNull("verify response-message has a non null payload", responseMessage.getPayload());
     assertEquals("verify response-message has a valida sender id", "groschn-master-123", 
-        responseMessage.get().getPayload().getSenderId());
-    assertNotNull("verify response-message has an payload entity", responseMessage.get().getPayload().getEntity());
-    CompressedEntity entity = responseMessage.get().getPayload().getEntity();
+        responseMessage.getPayload().getSenderId());
+    assertNotNull("verify response-message has an payload entity", responseMessage.getPayload().getEntity());
+    CompressedEntity entity = responseMessage.getPayload().getEntity();
     assertTrue("verify that compressed entity is not empty", entity.getEntity().length > 0);
     assertTrue("verify that compressed entity has an original size", entity.getOriginalSize() > 0);
     
@@ -132,7 +132,7 @@ public class BlockSyncInfoResponderTest extends BaseCachingTest {
     
     var responseMessage = responder.respond(message);
     
-    assertFalse("verify response is empty", responseMessage.isPresent());
+    assertNull("verify response is empty", responseMessage.getPayload());
   }
   
   @Test
@@ -148,7 +148,7 @@ public class BlockSyncInfoResponderTest extends BaseCachingTest {
     
     var responseMessage = responder.respond(message);
     
-    assertFalse("verify response is empty", responseMessage.isPresent());
+    assertNull("verify response is empty", responseMessage.getPayload());
   }
   
   @Test
@@ -164,7 +164,7 @@ public class BlockSyncInfoResponderTest extends BaseCachingTest {
     
     var responseMessage = responder.respond(message);
     
-    assertFalse("verify response is empty", responseMessage.isPresent());
+    assertNull("verify response is empty", responseMessage.getPayload());
   }
   
   
@@ -182,7 +182,7 @@ public class BlockSyncInfoResponderTest extends BaseCachingTest {
     responder.respond(message);
     var responseMessage = responder.respond(message);
     
-    assertFalse("verify response is empty", responseMessage.isPresent());
+    assertNull("verify response is empty", responseMessage.getPayload());
   }
   
   @Test
@@ -197,7 +197,7 @@ public class BlockSyncInfoResponderTest extends BaseCachingTest {
     
     var responseMessage = responder.respond(message);
     
-    assertFalse("verify response is empty", responseMessage.isPresent());
+    assertNull("verify response is empty", responseMessage.getPayload());
   }
   
   private List<Block> someBlocks(int size) {

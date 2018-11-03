@@ -38,6 +38,15 @@ public class NetworkStatisticsTest {
   }
   
   @Test
+  public void testActiveNodeCount_withRunningAtomix_shouldReturnCorrect() {
+    when(membershipMock.getReachableMembers()).thenReturn(fakeMembers());
+    
+    long nodeCount = statistics.activeNodeCount();
+    
+    assertEquals("verify correct node count", 2l, nodeCount);
+  }
+  
+  @Test
   public void testActiveNodeIds_withRunningAtomix_shouldReturnCorrect() {
     when(membershipMock.getReachableMembers()).thenReturn(fakeMembers());
     

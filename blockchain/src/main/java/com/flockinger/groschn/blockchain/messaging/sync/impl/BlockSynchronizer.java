@@ -64,30 +64,35 @@ public class BlockSynchronizer implements SyncKeeper {
       // Block sync request topic
       .topic(MainTopics.SYNC_BLOCKCHAIN);
   
+  //TODO check this method for concurrency stuff (consider synchronized!) also for the BlockDeterminator
   @Override
   public void synchronize(BlockInfoResult infoResult) {
     var fromPosition = infoResult.getStartPosition();
     var blockInfos = ListUtils.emptyIfNull(infoResult.getCorrectInfos());
-    var totalBatches = Math.round(Math.ceil(blockInfos.size()/BLOCK_REQUEST_PACKAGE_SIZE));
-    Collections.sort(blockInfos);
+    var totalBatches = Math.round(Math.ceil((double)blockInfos.size()/(double)BLOCK_REQUEST_PACKAGE_SIZE));
+    LOG.info("total batches {} blickInfoSize {} ", totalBatches, blockInfos.size());
+    Collections.sort(blockInfos);    
     if(syncStatus().equals(SyncStatus.IN_PROGRESS.name())) {
       LOG.warn("Synchronization still in progress!");
       return;
     }
     setSyncStatus(SyncStatus.IN_PROGRESS);
-    LOG.debug("Started synchronization at position: " + fromPosition);
+    LOG.info("Started synchronization at position: " + fromPosition);
     try {
       boolean hasFinishedSync = false;
+      LOG.info("is For condition met: {}", (0 < totalBatches) && !hasFinishedSync);
       for(int batchCount =0;(batchCount < totalBatches) && !hasFinishedSync; batchCount++) {
+        LOG.info("entered for");
         var relatedInfos = extractPartition(blockInfos, batchCount);
+        LOG.info("got related infos");
         hasFinishedSync = storeBatchOfBlocksAndReturnHasFinished(SyncBatchRequest
             .build(batchRequest).fromPosition(fromPosition), relatedInfos);
-        LOG.debug("Successfully synced and stored Blocks until position: " + fromPosition);
+        LOG.info("Successfully synced and stored Blocks until position: " + fromPosition);
         fromPosition += BLOCK_REQUEST_PACKAGE_SIZE;
       }
     } finally {
       setSyncStatus(SyncStatus.DONE);
-      LOG.debug("Synchronization finished");
+      LOG.info("Synchronization finished");
     }
   }
   
@@ -100,7 +105,9 @@ public class BlockSynchronizer implements SyncKeeper {
     Optional<SyncResponse<Block>> syncResponse = Optional.empty();
     boolean isValidAndStored = false;
     for(int retryCount = 0; retryCount <= BLOCK_FETCH_N_STORE_RETRIES && !isValidAndStored; retryCount++) {
-      syncResponse = inquirer.fetchNextBatch(request, Block.class);      
+      LOG.info("fetching next block batch");
+      syncResponse = inquirer.fetchNextBatch(request, Block.class);
+      LOG.info("done fetching next block batch");
       if(isResponseCorrect(syncResponse, relatedInfos)) {
         isValidAndStored = syncResponse.stream().map(SyncResponse::getEntities)
             .filter(Objects::nonNull)
@@ -117,6 +124,7 @@ public class BlockSynchronizer implements SyncKeeper {
     var respondedBlockInfos = response.stream()
         .map(SyncResponse::getEntities).filter(Objects::nonNull).flatMap(Collection::stream)
         .map(this::mapToInfo).collect(Collectors.toList());
+    LOG.info("Did response validate correct: " + respondedBlockInfos.containsAll(relatedInfos));
     //Only works properly if the added Equals in BlockInfo works!
     return respondedBlockInfos.containsAll(relatedInfos);
   }

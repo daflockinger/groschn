@@ -20,8 +20,10 @@ public class StartupSynchronizator implements InitializingBean {
   @Override
   public void afterPropertiesSet() throws Exception {
     try {
+      LOG.info("Starting startup-synchronization!");
       blockSynchronizer.determineAndSync();
       transactionFullSynchronizer.fullSynchronization();
+      LOG.info("Finished startup-synchronization successfully!");
     } catch (BlockchainException e) {
       LOG.error("Node was unable to Initialize/Synchronize the Blockchain!", e);
     }

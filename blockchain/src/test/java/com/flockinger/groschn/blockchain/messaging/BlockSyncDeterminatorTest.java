@@ -85,6 +85,24 @@ public class BlockSyncDeterminatorTest {
     assertEquals("verify remove position is correct", 101l, removeFrom.longValue());
   }
   
+  @Test(expected = BlockSynchronizationException.class)
+  public void testDetermineAndSync_withOtherNodeHavingSimilarBlocksButWaySmallerChain_shouldThrowException() {
+    var fullFakeBlocks = getFakeBlocks(200);
+    var storedFakeBlocks = fullFakeBlocks.subList(99, 200);
+    var fakeInfos = fullFakeBlocks.subList(101, 102).stream().map(this::mapToInfo).collect(Collectors.toList());
+    
+    Collections.shuffle(fakeInfos);
+    var response = response(fakeInfos);
+    response.get().setLastPositionReached(true);
+    when(inquirer.fetchNextBatch(any(SyncBatchRequest.class), any(Class.class)))
+    .thenReturn(response);
+    
+    when(blockService.findBlocks(anyLong(), anyLong())).thenReturn(storedFakeBlocks);
+    when(blockService.getLatestBlock()).thenReturn(storedFakeBlocks.get(0));
+    
+    determinator.determineAndSync();
+  }
+  
   @Test
   public void testDetermineAndSync_withFreshNodeSyncing_shouldDetermineAndCallSync() {
     var fullFakeBlocks = getFakeBlocks(101);

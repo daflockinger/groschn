@@ -41,6 +41,8 @@ public class FreshBlockListener extends AbstractMessageListener<Block> {
       if(isSynchronizationRecoverable(e.getFailure())) {
         blockSyncDeterminator.determineAndSync();
       }
+    } catch (RuntimeException e) {
+      LOG.error("Something unexpected happened while storing fresh block!", e);
     }
   }
   

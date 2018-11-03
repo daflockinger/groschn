@@ -34,8 +34,6 @@ public class MessagingProtocolConfigTest extends BaseAtomixTest {
         config.getDiscovery().getBootstrapNodes());
     List<AtomixNode> nodes = config.getDiscovery().getBootstrapNodes();
     assertFalse("verify that nodes contain something", nodes.isEmpty());
-    assertTrue("verify nodes have all some contents", nodes.stream().allMatch(node -> 
-      StringUtils.isNotEmpty(node.getAddress()) && StringUtils.isNotEmpty(node.getName())));
     PartitionGroup group = config.getPartitionGroup();
     assertNotNull("verify partitiongroup is not null", group);
     assertNotNull("verify partition number is not null", group.getNumberPartitions());

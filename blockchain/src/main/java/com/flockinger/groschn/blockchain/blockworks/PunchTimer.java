@@ -38,7 +38,11 @@ public class PunchTimer {
       restartOnTimeout(checkIsProcessTimeouted());
     } else {
       LOG.info("Start forging Block.");
-      blockMaker.produceBlock();
+      try {
+        blockMaker.produceBlock();
+      } catch (RuntimeException e) {
+        LOG.error("Something unexpected happened while forging fresh block!", e);
+      }
     }
   }
   
