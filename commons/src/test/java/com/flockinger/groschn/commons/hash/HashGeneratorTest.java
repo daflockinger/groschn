@@ -8,6 +8,14 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.apache.commons.text.similarity.LevenshteinDistance;
 import org.bouncycastle.util.encoders.Hex;
 import org.junit.Test;
@@ -18,8 +26,8 @@ import org.springframework.test.context.junit4.SpringRunner;
 import com.flockinger.groschn.blockchain.model.Hashable;
 import com.flockinger.groschn.commons.TestConfig;
 import com.flockinger.groschn.commons.config.CommonsConfig;
-import com.flockinger.groschn.commons.hash.HashGenerator;
 import com.flockinger.groschn.commons.model.TestBlock;
+import com.flockinger.groschn.commons.model.TestBlockInfo;
 import com.flockinger.groschn.commons.model.TestTransactionOutput;
 import com.google.common.collect.ImmutableList;
 
@@ -79,6 +87,64 @@ public class HashGeneratorTest {
 
     assertNotNull("verify returned hash is not null", generatedHash);
   }
+  
+  /**
+   * Funky multi-threading test, verifies that when accessed by multiple threads at the same time, 
+   * the hashing still works well!
+   */
+  @Test
+  public void testGenerateHash_withMultipleThreads_shouldWorkFine() throws Exception {
+    ExecutorService service = Executors.newFixedThreadPool(10);
+    var hashables = IntStream.range(0, 10).mapToObj(count -> new HashRunnable(hasher, count)).collect(Collectors.toList());
+    
+    service.invokeAll(hashables); // invoke simultaneously
+    Thread.sleep(500); // wait for them to finish
+    
+    var exceptionalExecutions = hashables.stream().map(HashRunnable::exceptional)
+        .filter(Objects::nonNull).collect(Collectors.toList());
+    assertEquals("verify that no thread threw an Exception during multi-threaded hashing", 0 ,exceptionalExecutions.size());
+  }
+  
+  private static class HashRunnable implements Callable<String> {
+    private HashGenerator hasher;
+    private int count;
+    private Throwable throwMe = null;
+    public HashRunnable(HashGenerator hasher, int count) {
+      this.hasher = hasher;
+      this.count = count;
+    }
+    @Override
+    public String call() throws Exception {
+      try {
+        for(int i=0; i < 1000; i++) {
+          if(count % 2 == 0) {
+            hasher.generateHash(randomTestInfo());
+          } else {
+            hasher.generateListHash(infos());
+          }
+        }
+      } catch(Throwable t) {
+        throwMe = t;
+      }
+      return "";
+    }
+    private List<TestTransactionOutput> infos() {
+      var infos = new ArrayList<TestTransactionOutput>();
+      TestTransactionOutput info = new TestTransactionOutput();
+      info.setPublicKey(UUID.randomUUID().toString());
+      infos.add(info);
+      return infos;
+    }
+    private TestBlockInfo randomTestInfo() {
+      TestBlockInfo info = new TestBlockInfo();
+      info.setBlockHash(UUID.randomUUID().toString());
+      return info;
+    }
+    public Throwable exceptional() {
+      return throwMe;
+    }
+  }
+  
   
   @Test
   public void testGenerateListHash_withValidHashablesData_shouldCreateCorrectly()
