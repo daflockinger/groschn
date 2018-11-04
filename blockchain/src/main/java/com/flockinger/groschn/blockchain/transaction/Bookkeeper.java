@@ -8,10 +8,9 @@ public interface Bookkeeper {
   /**
    * Calculates the current block reward.
    * 
-   * @param position
    * @return
    */
-  BigDecimal calculateBlockReward(Long position);
+  BigDecimal calculateCurrentBlockReward();
 
 
   /**

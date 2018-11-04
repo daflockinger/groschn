@@ -3,13 +3,16 @@ package com.flockinger.groschn.blockchain.transaction;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.when;
 import java.math.BigDecimal;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import com.flockinger.groschn.blockchain.TestDataFactory;
+import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
 import com.flockinger.groschn.blockchain.exception.validation.transaction.CheapskateException;
 import com.flockinger.groschn.blockchain.exception.validation.transaction.NegativeTransactionBalanceException;
 import com.flockinger.groschn.blockchain.model.Block;
@@ -23,6 +26,9 @@ import com.google.common.collect.ImmutableList;
 @ContextConfiguration(classes = {BookkeeperImpl.class})
 public class BookkeeperTest {
 
+  @MockBean
+  private BlockStorageService storageMockService;
+  
   @Autowired
   private Bookkeeper keeper;
   
@@ -30,73 +36,80 @@ public class BookkeeperTest {
   
   @Test 
   public void testCalculateBlockReward_withUnderMillionAndOneRange_shouldReturnCorrect() {
-    BigDecimal blockReward = keeper.calculateBlockReward(ONE_MILLION);
+    when(storageMockService.getLatestBlock()).thenReturn(blockWith(ONE_MILLION));
+    
+    BigDecimal blockReward = keeper.calculateCurrentBlockReward();
     assertNotNull("verify block reward is not null", blockReward);
     assertEquals("verify block reward is correct", 100, blockReward.longValueExact());
   }
   
   @Test 
   public void testCalculateBlockReward_withUnderThreeMillionRange_shouldReturnCorrect() {
-    BigDecimal blockReward = keeper.calculateBlockReward(1 + ONE_MILLION);
+    when(storageMockService.getLatestBlock()).thenReturn(blockWith(1 + ONE_MILLION));
+    
+    BigDecimal blockReward = keeper.calculateCurrentBlockReward();
     assertNotNull("verify block reward is not null", blockReward);
     assertEquals("verify block reward is correct", 50, blockReward.longValueExact());
   }
   
   @Test 
   public void testCalculateBlockReward_withUnderSevenMillionRange_shouldReturnCorrect() {
-    BigDecimal blockReward = keeper.calculateBlockReward(1 + 3*ONE_MILLION);
+    when(storageMockService.getLatestBlock()).thenReturn(blockWith(1 + 3*ONE_MILLION));
+    
+    BigDecimal blockReward = keeper.calculateCurrentBlockReward();
     assertNotNull("verify block reward is not null", blockReward);
     assertEquals("verify block reward is correct", 25, blockReward.longValueExact());
   }
   
   @Test 
   public void testCalculateBlockReward_withUnderFifteenMillionRange_shouldReturnCorrect() {
-    BigDecimal blockReward = keeper.calculateBlockReward(1 + 7*ONE_MILLION);
+    when(storageMockService.getLatestBlock()).thenReturn(blockWith(1 + 7*ONE_MILLION));
+    
+    BigDecimal blockReward = keeper.calculateCurrentBlockReward();
     assertNotNull("verify block reward is not null", blockReward);
     assertEquals("verify block reward is correct", 12.5d, blockReward.doubleValue(),0.00000);
   }
   
   @Test 
   public void testCalculateBlockReward_withUnderThirtyOneMillionRange_shouldReturnCorrect() {
-    BigDecimal blockReward = keeper.calculateBlockReward(1 + 15*ONE_MILLION);
+    when(storageMockService.getLatestBlock()).thenReturn(blockWith(1 + 15*ONE_MILLION));
+    
+    BigDecimal blockReward = keeper.calculateCurrentBlockReward();
     assertNotNull("verify block reward is not null", blockReward);
     assertEquals("verify block reward is correct", 6.25d, blockReward.doubleValue(),0.00000);
   }
   
   @Test 
   public void testCalculateBlockReward_withUnderSixtyThreeMillionRange_shouldReturnCorrect() {
-    BigDecimal blockReward = keeper.calculateBlockReward(1 + 31*ONE_MILLION);
+    when(storageMockService.getLatestBlock()).thenReturn(blockWith(1 + 31*ONE_MILLION));
+    
+    BigDecimal blockReward = keeper.calculateCurrentBlockReward();
     assertNotNull("verify block reward is not null", blockReward);
     assertEquals("verify block reward is correct", 3.125d, blockReward.doubleValue(),0.00000);
   }
   
   @Test 
   public void testCalculateBlockReward_withUnderNinetyFiveRange_shouldReturnCorrect() {
-    BigDecimal blockReward = keeper.calculateBlockReward(1 + 63*ONE_MILLION);
+    when(storageMockService.getLatestBlock()).thenReturn(blockWith(1 + 63*ONE_MILLION));
+    
+    BigDecimal blockReward = keeper.calculateCurrentBlockReward();
     assertNotNull("verify block reward is not null", blockReward);
     assertEquals("verify block reward is correct", 1.5625, blockReward.doubleValue(),0.00000);
   }
   
   @Test 
   public void testCalculateBlockReward_withOverNinetyFiveRange_shouldReturnCorrect() {
-    BigDecimal blockReward = keeper.calculateBlockReward(1 + 95*ONE_MILLION);
+    when(storageMockService.getLatestBlock()).thenReturn(blockWith(1 + 95*ONE_MILLION));
+    
+    BigDecimal blockReward = keeper.calculateCurrentBlockReward();
     assertNotNull("verify block reward is not null", blockReward);
     assertEquals("verify block reward is correct", 0, blockReward.longValue());
   }
   
-  /**
-   * Potentially slow test cause it's calculating 100 million times the reward!
-   */
-  @Test 
-  public void testCalculateBlockReward_withTryToGetAllTheGroschnThereIs_shouldBeExactMaxAmount() {
-    BigDecimal iWantItAll = new BigDecimal(0);
-    
-    for(long fakeBlockCount=1; fakeBlockCount <= (100 * ONE_MILLION); fakeBlockCount++) {
-      iWantItAll = iWantItAll.add(keeper.calculateBlockReward(fakeBlockCount));
-    }
-    assertNotNull("verify block rewards are not null", iWantItAll);
-    assertEquals("verify total block reward is exactly max amount of Groschn ever existing", 
-        Block.MAX_AMOUNT_MINED_GROSCHN.longValue(), iWantItAll.longValueExact());
+  private Block blockWith(Long position) {
+    var block = new Block();
+    block.setPosition(position);
+    return block;
   }
   
   

@@ -1,11 +1,6 @@
 package com.flockinger.groschn.blockchain.blockworks.impl;
 
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.Optional;
-import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,18 +8,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import com.flockinger.groschn.blockchain.blockworks.BlockMaker;
 import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
+import com.flockinger.groschn.blockchain.blockworks.RewardGenerator;
 import com.flockinger.groschn.blockchain.consensus.impl.ConsensusFactory;
-import com.flockinger.groschn.blockchain.dto.TransactionDto;
-import com.flockinger.groschn.blockchain.dto.TransactionStatementDto;
-import com.flockinger.groschn.blockchain.exception.validation.transaction.TransactionException;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.model.Transaction;
-import com.flockinger.groschn.blockchain.model.TransactionInput;
-import com.flockinger.groschn.blockchain.model.TransactionOutput;
-import com.flockinger.groschn.blockchain.transaction.Bookkeeper;
 import com.flockinger.groschn.blockchain.transaction.TransactionManager;
-import com.flockinger.groschn.blockchain.transaction.impl.TransactionUtils;
-import com.flockinger.groschn.blockchain.wallet.WalletService;
 import com.flockinger.groschn.commons.exception.BlockchainException;
 import com.flockinger.groschn.messaging.config.MainTopics;
 import com.flockinger.groschn.messaging.model.MessagePayload;
@@ -43,13 +31,9 @@ public class BlockMakerImpl implements BlockMaker {
   @Autowired
   private MessagingUtils messagingUtils;
   @Autowired
-  private Bookkeeper bookkeeper;
-  @Autowired
-  private WalletService wallet;
-  @Autowired
   private Broadcaster<MessagePayload> broadcaster;
   @Autowired
-  private ModelMapper mapper;
+  private RewardGenerator rewardGenerator;
   
   @Value("${atomix.node-id}")
   private String nodeId;
@@ -61,7 +45,7 @@ public class BlockMakerImpl implements BlockMaker {
     List<Transaction> transactions =
         transactionManager.fetchTransactionsBySize(Block.MAX_TRANSACTION_BYTE_SIZE);
     try {
-      addRewardTransaction(transactions);
+      transactions = rewardGenerator.generateRewardTransaction(transactions);
       forgeBlockUnsafe(transactions);
     } catch (BlockchainException e) {
       LOG.error("Something went wrong while creating a new Block", e);
@@ -78,78 +62,6 @@ public class BlockMakerImpl implements BlockMaker {
     var message = messagingUtils.packageMessage(block, nodeId);
     broadcaster.broadcast(message, MainTopics.FRESH_BLOCK);
     LOG.info("Freshly forged Block broadcasted with ID: " + message.getId());
-  }
-
-  private void addRewardTransaction(List<Transaction> transactions) {
-    String publicKey = wallet.getNodePublicKey();
-    TransactionDto baseRewardTransaction = createBaseRewardTransaction(transactions, publicKey);
-    TransactionDto rewardTransaction = new TransactionDto();
-    Optional<Transaction> possibleTransaction = findExpenseTransaction(transactions, publicKey);
-    if (possibleTransaction.isPresent()) {
-      fixStatementsSequenceCount(baseRewardTransaction, possibleTransaction.get());
-      rewardTransaction = mapper.map(possibleTransaction.get(), TransactionDto.class);
-      transactions.remove(possibleTransaction.get());
-    }
-    rewardTransaction.getInputs().addAll(baseRewardTransaction.getInputs());
-    rewardTransaction.getOutputs().addAll(baseRewardTransaction.getOutputs());
-    rewardTransaction.setPublicKey(publicKey);
-    transactions.add(transactionManager.createSignedTransaction(rewardTransaction));
-  }
-
-  private TransactionDto createBaseRewardTransaction(List<Transaction> transactions,
-      String publicKey) {
-    BigDecimal totalChange = transactions.stream().map(this::countTransactionSave)
-        .reduce(BigDecimal::add).orElse(BigDecimal.ZERO);
-    BigDecimal reward = bookkeeper.calculateBlockReward(storageService.getLatestBlock().getPosition());
-    TransactionStatementDto rewardInput = createTransactionStatement(reward, 1l, publicKey);
-    List<TransactionStatementDto> outputs = new ArrayList<>();
-    outputs.add(createTransactionStatement(reward, 1l, publicKey));
-    if (totalChange.compareTo(BigDecimal.ZERO) > 0) {
-      outputs.add(createTransactionStatement(totalChange, 2l, publicKey));
-    }
-    TransactionDto transaction = new TransactionDto();
-    transaction.getInputs().add(rewardInput);
-    transaction.setOutputs(outputs);
-    return transaction;
-  }
-
-  private BigDecimal countTransactionSave(Transaction transaction) {
-    BigDecimal change = BigDecimal.ZERO;
-    try {
-      change = bookkeeper.countChange(transaction);
-    } catch (TransactionException e) {
-      LOG.warn("Skip transaction for change calculation cause it's invalid for it!", e);
-    }
-    return change;
-  }
-
-  private TransactionStatementDto createTransactionStatement(BigDecimal amount, long sequenceNumber,
-      String publicKey) {
-    TransactionStatementDto output = new TransactionStatementDto();
-    output.setAmount(amount.doubleValue());
-    output.setSequenceNumber(sequenceNumber);
-    output.setPublicKey(publicKey);
-    output.setTimestamp(new Date().getTime());
-    return output;
-  }
-
-  private Optional<Transaction> findExpenseTransaction(List<Transaction> transactions,
-      String publicKey) {
-    TransactionUtils utils = TransactionUtils.build(publicKey);
-    return utils.findLatestExpenseTransaction(transactions);
-  }
-
-  private void fixStatementsSequenceCount(TransactionDto rewardTransaction,
-      Transaction existingTransaction) {
-    Long lastInputSequence = existingTransaction.getInputs().stream()
-        .map(TransactionInput::getSequenceNumber).reduce(Long::max).orElse(1l);
-    Long lastOutputSequence = existingTransaction.getOutputs().stream()
-        .map(TransactionOutput::getSequenceNumber).reduce(Long::max).orElse(1l);
-
-    rewardTransaction.getInputs().get(0).setSequenceNumber(lastInputSequence + 1);
-    for (TransactionStatementDto output : rewardTransaction.getOutputs()) {
-      output.setSequenceNumber(++lastOutputSequence);
-    }
   }
 }
 
