@@ -7,7 +7,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
 import com.flockinger.groschn.blockchain.model.Transaction;
 import com.flockinger.groschn.blockchain.model.TransactionInput;
 import com.flockinger.groschn.blockchain.model.TransactionOutput;
@@ -17,9 +16,7 @@ import com.flockinger.groschn.commons.exception.BlockchainException;
 
 @Component("RewardTransaction_Validator")
 public class RewardTransactionValidator extends TransactionValidator {
-
-  @Autowired
-  private BlockStorageService blockService;
+  
   @Autowired
   private Bookkeeper bookKeeper;
 
@@ -33,7 +30,7 @@ public class RewardTransactionValidator extends TransactionValidator {
       verifyAssessment(txAssessment.isValid(), txAssessment.getReasonOfFailure());
       // get Miner's public key and calculate it's correct Reward amount.
       var rewardAmount =
-          bookKeeper.calculateBlockReward(blockService.getLatestBlock().getPosition());
+          bookKeeper.calculateCurrentBlockReward();
       // 2. find publicKey and verify that exactly one was found
       var minerPublicKey = findMinerPublicKey(value, rewardAmount);
       // extract reward transaction Input from the others

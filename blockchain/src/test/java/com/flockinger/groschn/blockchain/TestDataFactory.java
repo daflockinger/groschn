@@ -1,10 +1,15 @@
 package com.flockinger.groschn.blockchain;
 
+import static com.flockinger.groschn.blockchain.TestDataFactory.createRandomTransactionInputWith;
+import static com.flockinger.groschn.blockchain.TestDataFactory.createRandomTransactionOutputWith;
+import static com.flockinger.groschn.blockchain.TestDataFactory.createRandomTransactionWith;
+import static com.flockinger.groschn.blockchain.TestDataFactory.mapToTransaction;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.apache.commons.lang3.RandomUtils;
 import org.modelmapper.ModelMapper;
@@ -192,6 +197,24 @@ public class TestDataFactory {
           createRandomTransactionOutputWith(3),createRandomTransactionOutputWith(4)));
     }
     return transaction;
+  }
+  
+  public static List<Transaction> createRandomTransactions(Optional<String> minerKey,
+      Optional<Long> amount, boolean noInput) {
+    var transactions = new ArrayList<Transaction>();
+    transactions.add(mapToTransaction(createRandomTransactionWith(null, null, null)));
+    transactions.add(mapToTransaction(createRandomTransactionWith(null, null, null)));
+    transactions.add(mapToTransaction(createRandomTransactionWith(null, null, null)));
+    transactions.add(mapToTransaction(createRandomTransactionWith(null, null, null)));
+    transactions.add(mapToTransaction(createRandomTransactionWith(null, null, null)));
+    if (minerKey.isPresent() && amount.isPresent()) {
+      transactions.add(mapToTransaction(createRandomTransactionWith(null,
+          createRandomTransactionOutputWith(2, minerKey.get(), amount.get()),
+          (noInput) ? createRandomTransactionInputWith(2)
+              : createRandomTransactionInputWith(2, minerKey.get(), amount.get()))));
+    }
+    transactions.add(mapToTransaction(createRandomTransactionWith(null, null, null)));
+    return transactions;
   }
   
   public static Transaction createRewardTransaction(boolean onlyReward) {

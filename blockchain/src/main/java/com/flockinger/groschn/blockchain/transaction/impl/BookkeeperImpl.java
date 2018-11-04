@@ -3,7 +3,9 @@ package com.flockinger.groschn.blockchain.transaction.impl;
 import static org.apache.commons.collections4.ListUtils.emptyIfNull;
 import java.math.BigDecimal;
 import java.util.Objects;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
 import com.flockinger.groschn.blockchain.exception.validation.transaction.CheapskateException;
 import com.flockinger.groschn.blockchain.exception.validation.transaction.NegativeTransactionBalanceException;
 import com.flockinger.groschn.blockchain.model.Transaction;
@@ -16,9 +18,13 @@ public class BookkeeperImpl implements Bookkeeper {
 
   private final static Long ONE_MILLION = 1000000l;
   
+  @Autowired
+  private BlockStorageService storageService;
+  
   @Override
-  public BigDecimal calculateBlockReward(Long position) {
+  public BigDecimal calculateCurrentBlockReward() {
     BigDecimal reward = new BigDecimal(0);
+    var position = storageService.getLatestBlock().getPosition();
     /* from             to   block     reward [Groschn]     blocks         total rewards [Groschn]
      *          1   -    1.000.000       100,0000           1.000.000      100.000.000
      *  1.000.001   -    3.000.000        50,0000           2.000.000      100.000.000

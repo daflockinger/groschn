@@ -19,7 +19,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
-import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
 import com.flockinger.groschn.blockchain.exception.HashingException;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.model.Transaction;
@@ -43,18 +42,14 @@ public class RewardTransactionValidatorTest {
   @MockBean
   private WalletService wallet;
   @MockBean
-  private BlockStorageService blockService;
-  @MockBean
   private Bookkeeper bookKeeper;
-  
   
   @Autowired
   private RewardTransactionValidator validator;
   
   @Before
   public void setup() {
-    when(blockService.getLatestBlock()).thenReturn(Block.GENESIS_BLOCK());
-    when(bookKeeper.calculateBlockReward(any())).thenReturn(new BigDecimal("100"));
+    when(bookKeeper.calculateCurrentBlockReward()).thenReturn(new BigDecimal("100"));
   }
     
   @Test
