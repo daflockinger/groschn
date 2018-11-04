@@ -48,4 +48,9 @@ public class BlockInfo implements Hashable<BlockInfo> {
     return Objects.equals(this.getBlockHash(),((BlockInfo)obj).getBlockHash())
     && Objects.equals(this.getPosition(),((BlockInfo)obj).getPosition());
   }
+  
+  @Override
+  public String toString() {
+    return "BlockInfo [blockHash=" + blockHash + ", position=" + position + "]";
+  }
 }

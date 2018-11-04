@@ -27,50 +27,60 @@ import com.google.common.base.Charsets;
  */
 public class MultiHashGenerator implements HashGenerator {
 
-  private final static String SHA3_DIGEST_NAME = MessageDigestUtils.getDigestName(NISTObjectIdentifiers.id_sha3_512);
-  private final static String SHA2_DIGEST_NAME = MessageDigestUtils.getDigestName(NISTObjectIdentifiers.id_sha512);
-  
+  private final static String SHA3_DIGEST_NAME =
+      MessageDigestUtils.getDigestName(NISTObjectIdentifiers.id_sha3_512);
+  private final static String SHA2_DIGEST_NAME =
+      MessageDigestUtils.getDigestName(NISTObjectIdentifiers.id_sha512);
+
   private final MessageDigest sha3Digest;
   private final MessageDigest sha2Digest;
-  
-  
+
   @Autowired
   public MultiHashGenerator(Provider cryptoProvider) {
     try {
       sha3Digest = MessageDigest.getInstance(SHA3_DIGEST_NAME, DEFAULT_PROVIDER_NAME);
       sha2Digest = MessageDigest.getInstance(SHA2_DIGEST_NAME, DEFAULT_PROVIDER_NAME);
     } catch (NoSuchAlgorithmException noAlgorithmException) {
-      throw new HashingException("Essential hashing Algorithm not available!", noAlgorithmException);
+      throw new HashingException("Essential hashing Algorithm not available!",
+          noAlgorithmException);
     } catch (NoSuchProviderException noProviderException) {
       throw new HashingException("Security provider not existing/registered!", noProviderException);
     }
   }
-  
+
   @Override
   public String generateHash(Hashable<?> hashable) {
     var hashableBytes = hashable.toString().getBytes(Charsets.UTF_8);
     assertHashable(hashableBytes);
     return Hex.toHexString(doubleHash(hashableBytes));
   }
-  
-  private byte[] doubleHash(byte[] hashableBytes) {
-    var sha2Hash = hashWithDigest(hashableBytes, sha2Digest);   
+
+  /**
+   * Must be thread-safe, otherwise the hashing arises strange <br>
+   * exceptions (IllegalArgumentException, ArrayIndexOutOfBoundsException,...), <br>
+   * so only one thread a time can execute it!<br>
+   * 
+   * @param hashableBytes
+   * @return
+   */
+  private synchronized byte[] doubleHash(byte[] hashableBytes) {
+    var sha2Hash = hashWithDigest(hashableBytes, sha2Digest);
     return hashWithDigest(sha2Hash, sha3Digest);
   }
-  
+
   private void assertHashable(byte[] hashableBytes) {
-    if(ArrayUtils.isEmpty(hashableBytes)) {
+    if (ArrayUtils.isEmpty(hashableBytes)) {
       throw new HashingException("Hashable bytes must not be empty!");
     }
   }
-  
+
   private byte[] hashWithDigest(byte[] hashableMessage, MessageDigest digest) {
     digest.update(hashableMessage);
     return digest.digest();
   }
 
   @Override
-  public boolean isHashCorrect(String hash, Hashable<?> hashable) {    
+  public boolean isHashCorrect(String hash, Hashable<?> hashable) {
     return StringUtils.equalsIgnoreCase(hash, generateHash(hashable));
   }
 
@@ -78,7 +88,7 @@ public class MultiHashGenerator implements HashGenerator {
   public <T extends Sequential> byte[] generateListHash(List<T> sortables) throws HashingException {
     Collections.sort(sortables);
     var hashableBytes = sortables.toString().getBytes(Charsets.UTF_8);
-    assertHashable(hashableBytes);  
+    assertHashable(hashableBytes);
     return doubleHash(hashableBytes);
   }
 }
