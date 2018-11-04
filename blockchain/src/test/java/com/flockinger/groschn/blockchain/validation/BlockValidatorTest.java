@@ -19,7 +19,9 @@ import org.springframework.test.context.TestPropertySource;
 import com.flockinger.groschn.blockchain.BaseDbTest;
 import com.flockinger.groschn.blockchain.blockworks.BlockMaker;
 import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
+import com.flockinger.groschn.blockchain.blockworks.RewardGenerator;
 import com.flockinger.groschn.blockchain.blockworks.impl.BlockMakerImpl;
+import com.flockinger.groschn.blockchain.blockworks.impl.RewardGeneratorImpl;
 import com.flockinger.groschn.blockchain.consensus.impl.ConsensusFactory;
 import com.flockinger.groschn.blockchain.consensus.impl.ProofOfMajorityAlgorithm;
 import com.flockinger.groschn.blockchain.consensus.impl.ProofOfWorkAlgorithm;
@@ -50,7 +52,7 @@ import com.flockinger.groschn.messaging.util.MessagingUtils;
     TransactionValidationHelper.class, PowConsensusValidator.class, MessagingUtils.class, 
     // those are all needed to create a somewhat real block to verify:
     BlockMakerImpl.class,
-    ConsensusFactory.class, ProofOfWorkAlgorithm.class, ProofOfMajorityAlgorithm.class,
+    ConsensusFactory.class, ProofOfWorkAlgorithm.class, ProofOfMajorityAlgorithm.class, RewardGeneratorImpl.class,
     TransactionManagerImpl.class, TransactionPoolRepository.class, BlockProcessRepository.class, 
     BookkeeperImpl.class, WalletServiceImpl.class, WalletRepository.class}, initializers = ConfigFileApplicationContextInitializer.class)
 @TestPropertySource(locations="classpath:application.yml")

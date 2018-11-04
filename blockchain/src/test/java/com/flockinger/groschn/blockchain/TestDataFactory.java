@@ -110,9 +110,20 @@ public class TestDataFactory {
     return am;
   }
   
+  public static TransactionOutput mapToTransactionOutput(StoredTransactionOutput storedOutput) {
+    return mapper.map(storedOutput, TransactionOutput.class);
+  }
+  
+  public static TransactionInput mapToTransactionInput(StoredTransactionInput storedInput) {
+    return mapper.map(storedInput, TransactionInput.class);
+  }
   
   public static Transaction mapToTransaction(StoredTransaction storedTransaction) {
     return mapper.map(storedTransaction, Transaction.class);
+  }
+  
+  public static StoredTransaction mapToStoredTransaction(Transaction transaction) {
+    return mapper.map(transaction, StoredTransaction.class);
   }
   
   
@@ -217,6 +228,13 @@ public class TestDataFactory {
     return transactions;
   }
   
+  public static Transaction createRewardTransactionWithBalance(Long balance) {
+    var transaction = createRewardTransaction(true);
+    transaction.getInputs().add(mapToTransactionInput(createRandomTransactionInputWith(2, "minerKey", balance)));
+    transaction.getOutputs().add(mapToTransactionOutput(createRandomTransactionOutputWith(3, "minerKey", balance)));
+    return transaction;
+  }
+  
   public static Transaction createRewardTransaction(boolean onlyReward) {
     Transaction transaction = new Transaction();
     transaction.setTransactionHash("0FABDD34578");
@@ -229,17 +247,10 @@ public class TestDataFactory {
     input1.setTimestamp(new Date().getTime() - 4000l);
     inputs.add(input1);
     if(!onlyReward) {
-      TransactionInput input2 = new TransactionInput();
-      input2.setAmount(new BigDecimal("100"));
-      input2.setPublicKey("very-secret2");
-      input2.setSequenceNumber(2l);
-      input2.setSignature("x1x1x1");
-      input2.setTimestamp(new Date().getTime() - 100l);
-      inputs.add(input2);
       TransactionInput input3 = new TransactionInput();
-      input3.setAmount(new BigDecimal("300"));
+      input3.setAmount(new BigDecimal("400"));
       input3.setPublicKey("minerKey");
-      input3.setSequenceNumber(3l);
+      input3.setSequenceNumber(2l);
       input3.setSignature("x2x2x2");
       input3.setTimestamp(new Date().getTime() - 10l);
       inputs.add(input3);
@@ -253,23 +264,17 @@ public class TestDataFactory {
     out1.setTimestamp(new Date().getTime() - 5000l);
     outputs.add(out1);
     if(!onlyReward) {
-      TransactionOutput out2 = new TransactionOutput();
-      out2.setAmount(new BigDecimal("99"));
-      out2.setPublicKey("very-secret2");
-      out2.setSequenceNumber(2l);
-      out2.setTimestamp(new Date().getTime() - 500l);
-      outputs.add(out2);
       TransactionOutput out3 = new TransactionOutput();
-      out3.setAmount(new BigDecimal("300"));
+      out3.setAmount(new BigDecimal("399"));
       out3.setPublicKey("minerKey");
-      out3.setSequenceNumber(3l);
+      out3.setSequenceNumber(2l);
       out3.setTimestamp(new Date().getTime() - 50l);
       outputs.add(out3);
     }
     TransactionOutput out4 = new TransactionOutput(); //change
     out4.setAmount(new BigDecimal("12"));
     out4.setPublicKey("minerKey");
-    out4.setSequenceNumber(onlyReward ? 2l : 4l);
+    out4.setSequenceNumber(onlyReward ? 2l : 3l);
     out4.setTimestamp(new Date().getTime() - 25l);
     outputs.add(out4);
     transaction.setOutputs(outputs);

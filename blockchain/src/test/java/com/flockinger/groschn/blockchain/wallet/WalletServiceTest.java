@@ -2,6 +2,9 @@ package com.flockinger.groschn.blockchain.wallet;
 
 import static com.flockinger.groschn.blockchain.TestDataFactory.createRandomTransactionOutputWith;
 import static com.flockinger.groschn.blockchain.TestDataFactory.createRandomTransactionWith;
+import static com.flockinger.groschn.blockchain.TestDataFactory.createRewardTransaction;
+import static com.flockinger.groschn.blockchain.TestDataFactory.createRewardTransactionWithBalance;
+import static com.flockinger.groschn.blockchain.TestDataFactory.mapToStoredTransaction;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -13,7 +16,6 @@ import java.util.stream.IntStream;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import com.flockinger.groschn.blockchain.BaseDbTest;
@@ -204,6 +206,36 @@ public class WalletServiceTest extends BaseDbTest {
     assertNotNull("verify calculated balance is not null", balance);
     assertEquals("verify balance is correct", 0, balance.intValue());
   }
+  
+  
+  @Test
+  public void testCalculateBalance_withMultiInOutAndRewardTx_shouldCalculateCorrectly() {
+    blockDao.saveAll(createRandomBlocksWithReward(false, true, true, "minerKey"));
+
+    BigDecimal balance = service.calculateBalance("minerKey");
+    final int rewardWithChange = 112;
+
+    assertNotNull("verify calculated balance is not null", balance);
+    assertEquals("verify balance is correct", (14 * 10) + (3 * 10) + rewardWithChange, balance.intValue());
+  }
+  
+  @Test
+  public void testCalculateBalance_withMultiRewardOnlyTransactionBlocks_shouldCalculateCorrectly() {
+    for(int count = 0; count < 10; count++) {
+      var block = new StoredBlock();
+      block.setPosition(count + 1l);
+      var transactions = new ArrayList<StoredTransaction>();
+      transactions.add(mapToStoredTransaction(createRewardTransactionWithBalance(count * 112l)));
+      block.setTransactions(transactions);
+      blockDao.save(block);
+    }
+
+    BigDecimal balance = service.calculateBalance("minerKey");
+    final int rewardWithChange = 112;
+
+    assertNotNull("verify calculated balance is not null", balance);
+    assertEquals("verify balance is correct", 10 * rewardWithChange, balance.intValue());
+  }
 
 
   public List<StoredBlock> createTotallyRandomBlocks() {
@@ -221,6 +253,20 @@ public class WalletServiceTest extends BaseDbTest {
     return blocks;
   }
 
+  
+  public List<StoredBlock> createRandomBlocksWithReward(boolean multipleOut, boolean singleIn,
+      boolean singleOut, String masterPubKey) {
+    var blocks = createRandomBlocksWith(multipleOut, singleIn, singleOut, masterPubKey);
+    
+    for(int blockCount = 0; blockCount < blocks.size(); blockCount++) {
+      if (blockCount % 7 == 0 && singleIn) {
+        var expenseRewardBlock = blocks.get(blockCount);
+        expenseRewardBlock.getTransactions().add(mapToStoredTransaction(createRewardTransaction(true)));
+      }
+    }
+    return blocks;
+  }
+  
 
   public List<StoredBlock> createRandomBlocksWith(boolean multipleOut, boolean singleIn,
       boolean singleOut, String masterPubKey) {

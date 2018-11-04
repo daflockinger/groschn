@@ -59,7 +59,7 @@ public class BlockTransactionsValidatorTest {
   @Test
   public void testValidate_withRewardTxOnlyAndARewardWithNormalTransaction_shouldValidateTrue() {
     List<Transaction> transactions = createBlockTransactions(false, true);
-    transactions.get(0).getOutputs().get(2).setAmount(new BigDecimal("289"));
+    transactions.get(0).getOutputs().get(1).setAmount(new BigDecimal("388"));
 
     Assessment result = validator.validate(transactions);
     
@@ -112,6 +112,44 @@ public class BlockTransactionsValidatorTest {
     assertNotNull("verify that to validate reward is not null", reward);
     assertEquals("verify that to validate reward is correct", "minerKey", reward.getInputs().get(0).getPublicKey());
   }
+  
+  @Test
+  public void testValidate_withhTransactionsHavingMinersExpenseAndARewardOnlyTransaction_shouldValidateTrue() {
+    List<Transaction> transactions = createBlockTransactions(true, false);
+    transactions.add(TestDataFactory.createValidTransaction("special1", "special2", "special3", "special2"));
+    transactions.get(1).getInputs().get(0).setPublicKey("minerKey");
+    transactions.get(1).getOutputs().get(0).setPublicKey("minerKey");
+
+    Assessment result = validator.validate(transactions);
+    
+    assertNotNull("verify result asessment is not null", result);
+    assertEquals("verify that validation resulted correct", true, result.isValid());
+    
+    verify(transactionValidator,times(12)).validate(any());
+    ArgumentCaptor<Transaction> rewardCaptor = ArgumentCaptor.forClass(Transaction.class);
+    verify(rewardTransactionValidator).validate(rewardCaptor.capture());
+    Transaction reward = rewardCaptor.getValue();
+    assertNotNull("verify that to validate reward is not null", reward);
+    assertEquals("verify that to validate reward is correct", "minerKey", reward.getInputs().get(0).getPublicKey());
+  }
+  
+  
+  @Test
+  public void testValidate_withhTransactionsHavingMinersExpenseAndARewardWithBalanceTransaction_shouldValidateFalseCauseDoubleSpend() {
+    List<Transaction> transactions = createBlockTransactions(false, false);
+    transactions.get(1).getInputs().get(0).setPublicKey("minerKey");
+    transactions.get(1).getOutputs().get(0).setPublicKey("minerKey");
+
+    Assessment result = validator.validate(transactions);
+    
+    assertNotNull("verify result asessment is not null", result);
+    assertEquals("verify that validation resulted correct", false, result.isValid());
+    
+    assertTrue("verify that error message is correct", StringUtils
+        .containsIgnoreCase(result.getReasonOfFailure(), "must be unique for all transactions"));
+  }
+  
+  
   
   @Test
   public void testValidate_withMoreOutputThanInputAmount_shouldValidateFalse() {
@@ -227,20 +265,7 @@ public class BlockTransactionsValidatorTest {
     assertTrue("verify that error message is correct", StringUtils
         .containsIgnoreCase(result.getReasonOfFailure(), "transaction-input public-key must be unique for all transactions"));
   }
-  
-  @Test
-  public void testValidate_withDoubleSpendWithAlsoMiningTransaction_shouldValidateFalse() {
-    List<Transaction> transactions = createBlockTransactions(false, false);
-    transactions.get(4).getInputs().get(0).setPublicKey("someone2");
     
-    Assessment result = validator.validate(transactions);
-    
-    assertNotNull("verify result asessment is not null", result);
-    assertEquals("verify that validation resulted correct", false, result.isValid());
-    assertTrue("verify that error message is correct", StringUtils
-        .containsIgnoreCase(result.getReasonOfFailure(), "transaction-input public-key must be unique for all transactions"));
-  }
-  
   @Test
   public void testValidate_withDoubleSpendInOnlyMiningTransaction_shouldValidateTrueCauseItsHandledInRewardValidator() {
     List<Transaction> transactions = createBlockTransactions(false, false);

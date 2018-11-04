@@ -7,6 +7,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import com.flockinger.groschn.blockchain.blockworks.RewardGenerator;
 import com.flockinger.groschn.blockchain.dto.TransactionDto;
 import com.flockinger.groschn.blockchain.dto.TransactionStatementDto;
@@ -17,6 +18,7 @@ import com.flockinger.groschn.blockchain.transaction.TransactionManager;
 import com.flockinger.groschn.blockchain.transaction.impl.TransactionUtils;
 import com.flockinger.groschn.blockchain.wallet.WalletService;
 
+@Component
 public class RewardGeneratorImpl implements RewardGenerator {
 
   @Autowired
@@ -28,16 +30,6 @@ public class RewardGeneratorImpl implements RewardGenerator {
   
   private final static Logger LOG = LoggerFactory.getLogger(RewardGenerator.class);
   
-  //FIXME redo that:
-  // a existing transaction cannot be modified on Output side cause
-  // then it would need to be signed again!!
-  // + change it so that the reward is always in a separate transaction
-  // 2. make sure that the balance calculation can still work with that!
-  // 3. check if the reward-TX validation still works then!
-  //    - rewrite double-spend check in BlockTransactionsValidator (it couldn't work currently!!)
-  //      to check the reward transaction only internally (it can only contain inputs from the miner)
-  //      and only the other transactions externally
-  // + reward detection would still work
   @Override
   public List<Transaction> generateRewardTransaction(List<Transaction> blockTransactions) {
     var transactionsWithReward = new ArrayList<Transaction>();

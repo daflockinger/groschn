@@ -1,6 +1,6 @@
 package com.flockinger.groschn.blockchain.validation;
 
-import static com.flockinger.groschn.blockchain.TestDataFactory.createRewardTransaction;
+import static com.flockinger.groschn.blockchain.TestDataFactory.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -58,16 +58,15 @@ public class RewardTransactionValidatorTest {
     when(hasher.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
     when(hasher.generateListHash(any())).thenReturn(new byte[0]);
     when(signer.isSignatureValid(any(), any(), any())).thenReturn(true);
-    when(wallet.calculateBalance(matches("very-secret2"))).thenReturn(new BigDecimal("100"));
-    when(wallet.calculateBalance(matches("minerKey"))).thenReturn(new BigDecimal("300"));
+    when(wallet.calculateBalance(matches("minerKey"))).thenReturn(new BigDecimal("400"));
     
     Assessment result = validator.validate(transaction);
     assertNotNull("verify assessment is not null", result);
     assertEquals("verify good transaction validated true", true, result.isValid());
     
     verify(hasher).isHashCorrect(any(), any());
-    verify(signer, times(3)).isSignatureValid(any(), any(), any());
-    verify(wallet, times(2)).calculateBalance(any());
+    verify(signer, times(2)).isSignatureValid(any(), any(), any());
+    verify(wallet, times(1)).calculateBalance(any());
   }
   
   @Test
@@ -142,7 +141,7 @@ public class RewardTransactionValidatorTest {
     when(wallet.calculateBalance(matches("very-secret2"))).thenReturn(new BigDecimal("100"));
     when(wallet.calculateBalance(matches("minerKey"))).thenReturn(new BigDecimal("500"));
     
-    transaction.getInputs().get(2).setAmount(new BigDecimal("500"));
+    transaction.getInputs().get(1).setAmount(new BigDecimal("500"));
     
     Assessment result = validator.validate(transaction);
     assertNotNull("verify assessment is not null", result);
@@ -165,57 +164,6 @@ public class RewardTransactionValidatorTest {
         .containsIgnoreCase(result.getReasonOfFailure(), "exactly one"));
   }
   
-  @Test
-  public void testValidate_withFaking2ndRewardDoubleSpend_shouldReturnFalse() {
-    Transaction transaction = createRewardTransaction(false);
-    when(hasher.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
-    when(hasher.generateListHash(any())).thenReturn(new byte[0]);
-    when(signer.isSignatureValid(any(), any(), any())).thenReturn(true);
-    when(wallet.calculateBalance(matches("very-secret2"))).thenReturn(new BigDecimal("100"));
-    when(wallet.calculateBalance(matches("minerKey"))).thenReturn(new BigDecimal("300"));
-    
-    TransactionInput input4 = new TransactionInput();
-    input4.setAmount(new BigDecimal("100"));
-    input4.setPublicKey("very-secret2");
-    input4.setSequenceNumber(4l);
-    input4.setSignature("x1x1x1");
-    input4.setTimestamp(new Date().getTime() - 100l);
-    transaction.getInputs().add(input4);
-    transaction.getOutputs().get(3).setAmount(new BigDecimal("112"));
-        
-    Assessment result = validator.validate(transaction);
-    assertNotNull("verify assessment is not null", result);
-    assertEquals("verify transaction validated false", false, result.isValid());
-    assertTrue("verify correct error message", StringUtils
-        .containsIgnoreCase(result.getReasonOfFailure(), "contains double spend"));
-  }
-  
-  
-  @Test
-  public void testValidate_withCreateSimpleDoubleSpend_shouldReturnFalse() {
-    Transaction transaction = createRewardTransaction(false);
-    when(hasher.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
-    when(hasher.generateListHash(any())).thenReturn(new byte[0]);
-    when(signer.isSignatureValid(any(), any(), any())).thenReturn(true);
-    when(wallet.calculateBalance(matches("very-secret2"))).thenReturn(new BigDecimal("10"));
-    when(wallet.calculateBalance(matches("minerKey"))).thenReturn(new BigDecimal("300"));
-    
-    TransactionInput input4 = new TransactionInput();
-    input4.setAmount(new BigDecimal("10"));
-    input4.setPublicKey("very-secret2");
-    input4.setSequenceNumber(4l);
-    input4.setSignature("x1x1x1");
-    input4.setTimestamp(new Date().getTime() - 100l);
-    transaction.getInputs().add(input4);
-    transaction.getInputs().get(1).setAmount(new BigDecimal("10"));
-    transaction.getOutputs().get(3).setAmount(new BigDecimal("62"));
-        
-    Assessment result = validator.validate(transaction);
-    assertNotNull("verify assessment is not null", result);
-    assertEquals("verify transaction validated false", false, result.isValid());
-    assertTrue("verify correct error message", StringUtils
-        .containsIgnoreCase(result.getReasonOfFailure(), "contains double spend"));
-  }
   
   @Test
   public void testValidate_withMultipleRegularMinerInputs_shouldReturnFalse() {
@@ -223,50 +171,23 @@ public class RewardTransactionValidatorTest {
     when(hasher.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
     when(hasher.generateListHash(any())).thenReturn(new byte[0]);
     when(signer.isSignatureValid(any(), any(), any())).thenReturn(true);
-    when(wallet.calculateBalance(matches("very-secret2"))).thenReturn(new BigDecimal("100"));
-    when(wallet.calculateBalance(matches("minerKey"))).thenReturn(new BigDecimal("300"))
-      .thenReturn(new BigDecimal("300"));
+    when(wallet.calculateBalance(matches("minerKey"))).thenReturn(new BigDecimal("400"))
+      .thenReturn(new BigDecimal("400"));
     
     TransactionInput input4 = new TransactionInput();
-    input4.setAmount(new BigDecimal("300"));
+    input4.setAmount(new BigDecimal("400"));
     input4.setPublicKey("minerKey");
-    input4.setSequenceNumber(4l);
+    input4.setSequenceNumber(3l);
     input4.setSignature("x1x1x1");
     input4.setTimestamp(new Date().getTime() - 100l);
     transaction.getInputs().add(input4);
-    transaction.getOutputs().get(3).setAmount(new BigDecimal("312"));
+    transaction.getOutputs().get(1).setAmount(new BigDecimal("812"));
         
     Assessment result = validator.validate(transaction);
     assertNotNull("verify assessment is not null", result);
     assertEquals("verify transaction validated false", false, result.isValid());
     assertTrue("verify correct error message", StringUtils
         .containsIgnoreCase(result.getReasonOfFailure(), "Besides the reward Transaction"));
-  }
-  
-  @Test
-  public void testValidate_withTwoTimesARewardMinerInputs_shouldReturnFalse() {
-    Transaction transaction = createRewardTransaction(false);
-    when(hasher.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
-    when(hasher.generateListHash(any())).thenReturn(new byte[0]);
-    when(signer.isSignatureValid(any(), any(), any())).thenReturn(true);
-    when(wallet.calculateBalance(matches("very-secret2"))).thenReturn(new BigDecimal("100"));
-    when(wallet.calculateBalance(matches("minerKey"))).thenReturn(new BigDecimal("300"))
-      .thenReturn(new BigDecimal("100"));
-    
-    TransactionInput input4 = new TransactionInput();
-    input4.setAmount(new BigDecimal("100"));
-    input4.setPublicKey("minerKey");
-    input4.setSequenceNumber(4l);
-    input4.setSignature("x1x1x1");
-    input4.setTimestamp(new Date().getTime() - 100l);
-    transaction.getInputs().add(input4);
-    transaction.getOutputs().get(3).setAmount(new BigDecimal("312"));
-        
-    Assessment result = validator.validate(transaction);
-    assertNotNull("verify assessment is not null", result);
-    assertEquals("verify transaction validated false", false, result.isValid());
-    assertTrue("verify correct error message", StringUtils
-        .containsIgnoreCase(result.getReasonOfFailure(), "exactly one miner"));
   }
   
   @Test
@@ -306,11 +227,10 @@ public class RewardTransactionValidatorTest {
     when(hasher.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
     when(hasher.generateListHash(any())).thenReturn(new byte[0]);
     when(signer.isSignatureValid(any(), any(), any())).thenReturn(true);
-    when(wallet.calculateBalance(matches("very-secret2"))).thenReturn(new BigDecimal("100"));
-    when(wallet.calculateBalance(matches("minerKey"))).thenReturn(new BigDecimal("300"));
+    when(wallet.calculateBalance(matches("minerKey"))).thenReturn(new BigDecimal("400"));
     
-    transaction.getOutputs().get(1).setAmount(new BigDecimal("111"));
-    transaction.getOutputs().remove(3);
+    transaction.getOutputs().get(1).setAmount(new BigDecimal("411"));
+    transaction.getOutputs().remove(2);
         
     Assessment result = validator.validate(transaction);
     assertNotNull("verify assessment is not null", result);
@@ -321,6 +241,25 @@ public class RewardTransactionValidatorTest {
   }
   
   
+  @Test
+  public void testValidate_withNonMinerInAndOutput_shouldReturnfalse() {
+    Transaction transaction = createRewardTransaction(false);
+    when(hasher.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
+    when(hasher.generateListHash(any())).thenReturn(new byte[0]);
+    when(signer.isSignatureValid(any(), any(), any())).thenReturn(true);
+    when(wallet.calculateBalance(matches("minerKey"))).thenReturn(new BigDecimal("400"));
+    when(wallet.calculateBalance(matches("someoneHacker"))).thenReturn(BigDecimal.valueOf(12l));
+    
+    transaction.getInputs().add(mapToTransactionInput(createRandomTransactionInputWith(transaction.getInputs().size() + 1, "someoneHacker", 12l)));
+    transaction.getOutputs().add(mapToTransactionOutput(createRandomTransactionOutputWith(transaction.getInputs().size() + 1, "someoneHacker", 12l)));
+    
+    Assessment result = validator.validate(transaction);
+    assertNotNull("verify assessment is not null", result);
+    assertEquals("verify transaction validated false", false, result.isValid());
+    assertTrue("verify correct error message", StringUtils
+        .containsIgnoreCase(result.getReasonOfFailure(), 
+            "other than from the miner"));
+  }
   
   @Test
   public void testValidate_withWrongTransactionHash_shouldReturnFalse() {
@@ -404,7 +343,7 @@ public class RewardTransactionValidatorTest {
     when(wallet.calculateBalance(matches("very-secret2"))).thenReturn(new BigDecimal("100"));
     when(wallet.calculateBalance(matches("minerKey"))).thenReturn(new BigDecimal("300"));
     
-    transaction.getInputs().get(2).setSequenceNumber(4l);
+    transaction.getInputs().get(1).setSequenceNumber(4l);
     
     Assessment result = validator.validate(transaction);
     assertNotNull("verify assessment is not null", result);
@@ -459,7 +398,6 @@ public class RewardTransactionValidatorTest {
     
     transaction.getInputs().get(0).setSequenceNumber(0l);
     transaction.getInputs().get(1).setSequenceNumber(1l);
-    transaction.getInputs().get(2).setSequenceNumber(2l);
     
     Assessment result = validator.validate(transaction);
     assertNotNull("verify assessment is not null", result);

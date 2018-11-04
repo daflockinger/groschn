@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -66,27 +67,39 @@ public class BlockTransactionsValidator implements Validator<List<Transaction>>{
   }
   
   /**
-   * Very important check that Transaction-Inputs are unique on the publicKey Level.
-   * There's no internal verification for the Reward-Transaction since this is already done
-   * in it's Validator.
+   * Very important check that Transaction-Inputs are unique on the publicKey Level for one Block.
+   * The only exception is the miner's publicKey which must be present, but can be listed 2 times
+   * (once for the reward and the second time for the miner's balance) at most.
    * 
    * @param extract
    */
   private void checkDoubleSpendInputs(Map<Boolean, List<Transaction>> extract) {
-    List<String> inputKeys = new ArrayList<String>();
-    inputKeys.addAll(extract.get(NORMAL).stream()
-        .map(Transaction::getInputs).flatMap(Collection::stream)
-        .map(TransactionInput::getPublicKey).collect(Collectors.toList()));
-    // for the reward-transaction duplicity is transaction-internally already checked,
-    // so only the external duplicity (only each unique reward-input-key) is needed for external checking.
-    inputKeys.addAll(extract.get(REWARD).stream() 
-        .map(Transaction::getInputs).flatMap(Collection::stream)
-        .map(TransactionInput::getPublicKey).collect(Collectors.toSet()));
-    Map<String, Long> groupedNormalTransactionPubKeys = inputKeys.stream()
-        .collect(Collectors.groupingBy(key -> key, Collectors.counting()));
-    boolean areKeysUnique = groupedNormalTransactionPubKeys.values().stream().allMatch(pubKeyCount -> pubKeyCount == 1);
-    verifyAssessment(areKeysUnique, "Each transaction-input public-key must be unique for all transactions in one Block!");
+    var normalTransactionKeys = extractInputKeys(extract.get(NORMAL));
+    var minerKeys = extractInputKeys(extract.get(REWARD));
+    var allKeys = new ArrayList<>(normalTransactionKeys);
+    allKeys.addAll(minerKeys);
+    var minerKey = minerKeys.stream().findFirst();
+    long minerKeyOccurrences = allKeys.stream()
+        .filter(key -> minerKey.isPresent())
+        .filter(key -> StringUtils.equals(minerKey.get(), key))
+        .count();
+    boolean isMinerPubKeyNotDoubleSpent = minerKeyOccurrences  > 0 && minerKeyOccurrences <=2;
+    verifyAssessment(areNormalTransactionInputPubKeysUniquene(normalTransactionKeys)
+        && isMinerPubKeyNotDoubleSpent, "Each transaction-input public-key must be unique for all transactions in one Block!");
   }
+  
+  private List<String> extractInputKeys(List<Transaction> transactions) {
+    return transactions.stream()
+        .map(Transaction::getInputs).flatMap(Collection::stream)
+        .map(TransactionInput::getPublicKey).collect(Collectors.toList());
+  }
+  
+  private boolean areNormalTransactionInputPubKeysUniquene(List<String> normalTransactionKeys) {
+    return normalTransactionKeys.stream()
+        .collect(Collectors.groupingBy(key -> key, Collectors.counting()))
+        .values().stream().allMatch(pubKeyCount -> pubKeyCount == 1);
+  }
+ 
   
   private void verifyEqualBalance(List<Transaction> transactions) {
     verifyAssessment(helper.calcualteTransactionBalance(transactions, tx -> true) == 0, 
