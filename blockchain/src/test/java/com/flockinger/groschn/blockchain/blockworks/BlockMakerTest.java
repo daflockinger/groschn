@@ -1,11 +1,13 @@
 package com.flockinger.groschn.blockchain.blockworks;
 
+import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import java.time.Duration;
 import java.util.ArrayList;
 import org.junit.Before;
 import org.junit.Test;
@@ -17,6 +19,8 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import com.flockinger.groschn.blockchain.BaseCachingTest;
 import com.flockinger.groschn.blockchain.TestConfig;
+import com.flockinger.groschn.blockchain.blockworks.dto.BlockGenerationStatus;
+import com.flockinger.groschn.blockchain.blockworks.dto.BlockMakerCommand;
 import com.flockinger.groschn.blockchain.blockworks.impl.BlockMakerImpl;
 import com.flockinger.groschn.blockchain.consensus.impl.ConsensusFactory;
 import com.flockinger.groschn.blockchain.exception.ReachingConsentFailedException;
@@ -26,6 +30,8 @@ import com.flockinger.groschn.blockchain.transaction.TransactionManager;
 import com.flockinger.groschn.messaging.model.MessagePayload;
 import com.flockinger.groschn.messaging.outbound.Broadcaster;
 import com.flockinger.groschn.messaging.util.MessagingUtils;
+import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes = {BlockMakerImpl.class, MessagingUtils.class})
@@ -54,11 +60,15 @@ public class BlockMakerTest extends BaseCachingTest {
   }
 
   @Test
-  public void testProduceBlock_withValidTransactions_shouldCreateStoreAndRewardBlock() {
+  public void testGenerationRestart_withValidTransactions_shouldCreateStoreAndRewardBlock()
+      throws InterruptedException {
     when(transactionManager.fetchTransactionsBySize(anyLong())).thenReturn(new ArrayList<>());
-    when(consensusFactory.reachConsensus(anyList())).thenReturn(new Block());
+    when(consensusFactory.reachConsensus(anyList())).thenReturn(Mono.just(new Block()));
 
-    maker.produceBlock();
+
+    maker.generation(BlockMakerCommand.RESTART);
+
+    StepVerifier.setDefaultTimeout(Duration.ofMillis(200l));
 
     verify(transactionManager).fetchTransactionsBySize(anyLong());
     verify(broadcaster, times(1)).broadcast(any(), any());
@@ -69,20 +79,53 @@ public class BlockMakerTest extends BaseCachingTest {
 
 
   @Test
-  public void testProduceBlock_withStorageServiceThrowingException_shouldDoNothing() {
-    when(consensusFactory.reachConsensus(anyList())).thenReturn(new Block());
+  public void testGenerationRestart_withStorageServiceThrowingException_shouldDoNothing() {
+    when(consensusFactory.reachConsensus(anyList())).thenReturn(Mono.just(new Block()));
     when(transactionManager.fetchTransactionsBySize(anyLong())).thenReturn(new ArrayList<>());
     when(storageService.saveInBlockchain(any())).thenThrow(BlockValidationException.class);
 
-    maker.produceBlock();
+    maker.generation(BlockMakerCommand.RESTART);
   }
 
   @Test
-  public void testProduceBlock_withConsensusFactoryThrowingException_shouldDoNothing() {
+  public void testGenerationRestart_withConsensusFactoryThrowingException_shouldDoNothing() {
     when(consensusFactory.reachConsensus(anyList()))
-        .thenThrow(ReachingConsentFailedException.class);
+        .thenReturn(Mono.error(new ReachingConsentFailedException("")));
     when(transactionManager.fetchTransactionsBySize(anyLong())).thenReturn(new ArrayList<>());
 
-    maker.produceBlock();
+    maker.generation(BlockMakerCommand.RESTART);
+  }
+
+  @Test
+  public void testGenerateStop_withRunningGeneration_shouldStop() {
+    maker.generation(BlockMakerCommand.STOP);
+    verify(consensusFactory).stopFindingConsensus();
+  }
+
+  @Test
+  public void testStatus_withStoppedGen_shouldReturnCorrect() {
+    maker.generation(BlockMakerCommand.STOP);
+    
+    assertEquals("verify correct stop status", BlockGenerationStatus.STOPPED, maker.status());
+  }
+  
+  @Test
+  public void testStatus_withStartedGen_shouldReturnCorrect() {
+    when(consensusFactory.reachConsensus(anyList()))
+         .thenReturn(Mono.delay(Duration.ofMillis(200l)).map(d -> new Block()));
+    
+    maker.generation(BlockMakerCommand.RESTART);
+    
+    assertEquals("verify correct running status", BlockGenerationStatus.RUNNING, maker.status());
+  }
+  
+  @Test
+  public void testStatus_withCompletedGen_shouldReturnCorrect() {
+    when(consensusFactory.reachConsensus(anyList()))
+         .thenReturn(Mono.just(new Block()));
+    
+    maker.generation(BlockMakerCommand.RESTART);
+    
+    assertEquals("verify correct completed status", BlockGenerationStatus.COMPLETE, maker.status());
   }
 }

@@ -9,11 +9,12 @@ import org.springframework.stereotype.Component;
 import com.flockinger.groschn.blockchain.blockworks.BlockMaker;
 import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
 import com.flockinger.groschn.blockchain.blockworks.RewardGenerator;
+import com.flockinger.groschn.blockchain.blockworks.dto.BlockGenerationStatus;
+import com.flockinger.groschn.blockchain.blockworks.dto.BlockMakerCommand;
 import com.flockinger.groschn.blockchain.consensus.impl.ConsensusFactory;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.model.Transaction;
 import com.flockinger.groschn.blockchain.transaction.TransactionManager;
-import com.flockinger.groschn.commons.exception.BlockchainException;
 import com.flockinger.groschn.messaging.config.MainTopics;
 import com.flockinger.groschn.messaging.model.MessagePayload;
 import com.flockinger.groschn.messaging.outbound.Broadcaster;
@@ -34,28 +35,58 @@ public class BlockMakerImpl implements BlockMaker {
   private Broadcaster<MessagePayload> broadcaster;
   @Autowired
   private RewardGenerator rewardGenerator;
-  
+
   @Value("${atomix.node-id}")
   private String nodeId;
 
+  private volatile BlockGenerationStatus status = BlockGenerationStatus.COMPLETE;
+
   private final static Logger LOG = LoggerFactory.getLogger(BlockMaker.class);
 
+
   @Override
-  public void produceBlock() {
-    List<Transaction> transactions =
-        transactionManager.fetchTransactionsBySize(Block.MAX_TRANSACTION_BYTE_SIZE);
-    try {
-      transactions = rewardGenerator.generateRewardTransaction(transactions);
-      forgeBlockUnsafe(transactions);
-    } catch (BlockchainException e) {
-      LOG.error("Something went wrong while creating a new Block", e);
+  public void generation(BlockMakerCommand command) {
+    switch (command) {
+      case RESTART:
+        status = BlockGenerationStatus.RUNNING;
+        restart();
+        break;
+      case STOP:
+        stop();
+        status = BlockGenerationStatus.STOPPED;
+        break;
+      default:
+        break;
     }
   }
 
-  private void forgeBlockUnsafe(List<Transaction> transactions) {
-    Block generatedBlock = consensusFactory.reachConsensus(transactions);
-    broadcastBlock(generatedBlock);
-    storageService.saveInBlockchain(generatedBlock);
+  @Override
+  public BlockGenerationStatus status() {
+    return status;
+  }
+
+  private synchronized void restart() {
+    stop();
+
+    List<Transaction> transactions =
+        transactionManager.fetchTransactionsBySize(Block.MAX_TRANSACTION_BYTE_SIZE);
+    transactions = rewardGenerator.generateRewardTransaction(transactions);
+
+    consensusFactory.reachConsensus(transactions)
+        .doOnSuccess(this::broadcastAndStore)
+        .doOnError(exception -> 
+          LOG.error("Something went wrong while creating a new Block", exception))
+        .doOnTerminate(() -> status = BlockGenerationStatus.COMPLETE)
+        .subscribe();
+  }
+
+  private void broadcastAndStore(Block block) {
+    broadcastBlock(block);
+    storageService.saveInBlockchain(block);
+  }
+
+  private void stop() {
+    consensusFactory.stopFindingConsensus();
   }
 
   private void broadcastBlock(Block block) {

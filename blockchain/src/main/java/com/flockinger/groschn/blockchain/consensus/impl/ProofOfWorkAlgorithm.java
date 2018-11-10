@@ -16,6 +16,7 @@ import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.model.Transaction;
 import com.flockinger.groschn.commons.MerkleRootCalculator;
 import com.flockinger.groschn.commons.hash.HashGenerator;
+import reactor.core.publisher.Mono;
 
 @Component(value = "POW")
 public class ProofOfWorkAlgorithm implements ConsensusAlgorithm {
@@ -45,15 +46,21 @@ public class ProofOfWorkAlgorithm implements ConsensusAlgorithm {
   
   private final Long STARTING_NONCE = 1l;
   
-  private boolean processingConsent = false;
+  private volatile Boolean cancel = false;
   
   
 
   @Override
-  public Block reachConsensus(List<Transaction> transactions) {
-    processingConsent = true;
+  public Mono<Block> reachConsensus(List<Transaction> transactions) {      
+    cancel = false;
+    return Mono.just(transactions)
+        .map(this::createBaseBlock)
+        .flatMap(block -> forgeBlock(block, cancel));
+  }
+  
+  
+  private Block createBaseBlock(List<Transaction> transactions) {    
     Block lastBlock = blockService.getLatestProofOfWorkBlock();
-    
     Block freshBlock = new Block();
     freshBlock.setHash(null);
     freshBlock.setPosition(blockService.getLatestBlock().getPosition() + 1);
@@ -67,10 +74,6 @@ public class ProofOfWorkAlgorithm implements ConsensusAlgorithm {
     consent.setType(ConsensusType.PROOF_OF_WORK);
     consent.setDifficulty(determineNewDifficulty(lastBlock));
     freshBlock.setConsent(consent);
-    
-    forgeBlock(freshBlock);
-    processingConsent = false;
-    
     return freshBlock;
   }
   
@@ -85,13 +88,16 @@ public class ProofOfWorkAlgorithm implements ConsensusAlgorithm {
     return difficulty;
   }
   
-  private void forgeBlock(Block freshBlock) {
+  private Mono<Block> forgeBlock(Block freshBlock, Boolean cancel) {
     StopWatch miningTimer = StopWatch.createStarted();
     Consent consent = freshBlock.getConsent();
     String blockHash = "";
     consent.setTimestamp(new Date().getTime());
     Long nonceCount=STARTING_NONCE;
-    while(!didWorkSucceed(blockHash, consent) && processingConsent) {
+    while(!didWorkSucceed(blockHash, consent)) {
+      if(cancel) {
+        return Mono.empty();
+      }
       if(nonceCount == Long.MAX_VALUE) {
         consent.setTimestamp(new Date().getTime());
         nonceCount = STARTING_NONCE;
@@ -104,6 +110,7 @@ public class ProofOfWorkAlgorithm implements ConsensusAlgorithm {
     }
     miningTimer.stop();
     freshBlock.setHash(blockHash);
+    return Mono.just(freshBlock);
   }
   
   /**
@@ -120,11 +127,6 @@ public class ProofOfWorkAlgorithm implements ConsensusAlgorithm {
 
   @Override
   public void stopFindingConsensus() {
-    processingConsent = false;
-  }
-
-  @Override
-  public boolean isProcessing() {
-    return processingConsent;
+    cancel = true;
   }
 }
