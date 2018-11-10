@@ -3,11 +3,13 @@ package com.flockinger.groschn.blockchain.validation;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import java.math.BigDecimal;
 import java.util.Date;
 import org.apache.commons.lang3.StringUtils;
+import org.awaitility.Awaitility;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -19,7 +21,8 @@ import org.springframework.test.context.TestPropertySource;
 import com.flockinger.groschn.blockchain.BaseDbTest;
 import com.flockinger.groschn.blockchain.blockworks.BlockMaker;
 import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
-import com.flockinger.groschn.blockchain.blockworks.RewardGenerator;
+import com.flockinger.groschn.blockchain.blockworks.dto.BlockGenerationStatus;
+import com.flockinger.groschn.blockchain.blockworks.dto.BlockMakerCommand;
 import com.flockinger.groschn.blockchain.blockworks.impl.BlockMakerImpl;
 import com.flockinger.groschn.blockchain.blockworks.impl.RewardGeneratorImpl;
 import com.flockinger.groschn.blockchain.consensus.impl.ConsensusFactory;
@@ -102,8 +105,11 @@ public class BlockValidatorTest extends BaseDbTest {
     when(storageService.getLatestProofOfWorkBlock()).thenReturn(Block.GENESIS_BLOCK());
     
     if(freshBlock == null) {
-      maker.produceBlock();
+      maker.generation(BlockMakerCommand.RESTART);
       ArgumentCaptor<Block> blockCaptor = ArgumentCaptor.forClass(Block.class);
+      
+      Awaitility.await().until(() -> maker.status().equals(BlockGenerationStatus.COMPLETE));
+      
       verify(storageService).saveInBlockchain(blockCaptor.capture());
       freshBlock = blockCaptor.getValue();
     }
