@@ -123,6 +123,59 @@ public class BlockStorageServiceTest extends BaseDbTest {
   }
   
   @Test
+  public void testStoreUncheckedInBlockchain_withValidBlock_shouldStoreCorrectly() {
+    Block freshBlock = TestDataFactory.getFakeBlock();
+    when(validator.validate(any())).thenReturn(TestDataFactory.fakeAssessment(true));
+    
+    StoredBlock savedBlock = service.saveUnchecked(freshBlock);
+    assertNotNull("verify that returned block is not null", savedBlock);
+    assertNotNull("verify that returned block has an ID", savedBlock.getId());
+
+    Optional<StoredBlock> storedBlock = dao.findById(savedBlock.getId());
+    assertTrue("verify that stored block exists", storedBlock.isPresent());
+    assertEquals("verify correct block consent difficulty", freshBlock.getConsent().getDifficulty(), storedBlock.get().getConsent().getDifficulty());
+    assertEquals("verify correct block consent millisecondsspent", freshBlock.getConsent().getMilliSecondsSpentMining(), storedBlock.get().getConsent().getMilliSecondsSpentMining());
+    assertEquals("verify correct block consent nonce", freshBlock.getConsent().getNonce(), storedBlock.get().getConsent().getNonce());
+    assertEquals("verify correct block consent timestamp", freshBlock.getConsent().getTimestamp(), storedBlock.get().getConsent().getTimestamp());
+    assertEquals("verify correct block consent type", freshBlock.getConsent().getType(), storedBlock.get().getConsent().getType());
+    assertEquals("verify correct block hash ", freshBlock.getHash(), storedBlock.get().getHash());
+    assertEquals("verify correct block last hash",freshBlock.getLastHash(), storedBlock.get().getLastHash());
+    assertEquals("verify correct block position", freshBlock.getPosition(), storedBlock.get().getPosition());
+    assertEquals("verify correct block timestamp", freshBlock.getTimestamp(), storedBlock.get().getTimestamp());
+    assertEquals("verify correct block transactions merkle root", freshBlock.getTransactionMerkleRoot(), storedBlock.get().getTransactionMerkleRoot());
+    assertEquals("verify correct block transaction size", freshBlock.getTransactions().size(), storedBlock.get().getTransactions().size());
+    Transaction firstTransaction = freshBlock.getTransactions().get(0);
+    StoredTransaction firstUncompressedTr = storedBlock.get().getTransactions().get(0);
+    assertEquals("verify correct block first transaction inputs size", firstTransaction.getInputs().size()
+        , firstUncompressedTr.getInputs().size());
+    assertEquals("verify correct block first transaction input amount", firstTransaction.getInputs().get(0).getAmount(), 
+        firstUncompressedTr.getInputs().get(0).getAmount());
+    assertEquals("verify correct block first transaction input pub key", firstTransaction.getInputs().get(0).getPublicKey(), 
+        firstUncompressedTr.getInputs().get(0).getPublicKey());
+    assertEquals("verify correct block first transaction input squence number", firstTransaction.getInputs().get(0).getSequenceNumber(), 
+        firstUncompressedTr.getInputs().get(0).getSequenceNumber());
+    assertEquals("verify correct block first transaction input signature", firstTransaction.getInputs().get(0).getSignature(), 
+        firstUncompressedTr.getInputs().get(0).getSignature());
+    assertEquals("verify correct block first transaction input timestamp", firstTransaction.getInputs().get(0).getTimestamp(), 
+        firstUncompressedTr.getInputs().get(0).getTimestamp());
+    assertEquals("verify correct block first transaction output amount", firstTransaction.getOutputs().get(0).getAmount(), 
+        firstUncompressedTr.getOutputs().get(0).getAmount());
+    assertEquals("verify correct block first transaction output pub key", firstTransaction.getOutputs().get(0).getPublicKey(), 
+        firstUncompressedTr.getOutputs().get(0).getPublicKey());
+    assertEquals("verify correct block first transaction output squence number", firstTransaction.getOutputs().get(0).getSequenceNumber(), 
+        firstUncompressedTr.getOutputs().get(0).getSequenceNumber());
+    assertEquals("verify correct block first transaction output timestamp", firstTransaction.getOutputs().get(0).getTimestamp(), 
+        firstUncompressedTr.getOutputs().get(0).getTimestamp());
+    assertEquals("verify correct block first transaction locktime", firstTransaction.getLockTime().longValue(), 
+        firstUncompressedTr.getLockTime().getTime());
+    assertEquals("verify correct block ", freshBlock.getVersion(), storedBlock.get().getVersion());
+    
+    ArgumentCaptor<TransactionStatus> statusCaptor = ArgumentCaptor.forClass(TransactionStatus.class);
+    verify(transactionManager).updateTransactionStatuses(anyList(), statusCaptor.capture());
+    assertEquals("verify transactions will be updated with correct status", TransactionStatus.EMBEDDED_IN_BLOCK, statusCaptor.getValue());
+  }
+  
+  @Test
   public void testgetLatestBlockPosition_shouldReturnCorrect() {
     when(validator.validate(any())).thenReturn(TestDataFactory.fakeAssessment(true));
     service.saveInBlockchain(TestDataFactory.getFakeBlock());

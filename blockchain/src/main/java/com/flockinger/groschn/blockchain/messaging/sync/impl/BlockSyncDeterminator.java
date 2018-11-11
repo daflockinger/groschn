@@ -41,10 +41,10 @@ public class BlockSyncDeterminator implements SyncDeterminator {
   private final SyncBatchRequest request = SyncBatchRequest.build()
       .batchSize(BATCH_SIZE)
       .idealReceiveNodeCount(11)
-      .maxFetchRetries(5)
+      .maxFetchRetries(3)
       .topic(MainTopics.BLOCK_INFO);
   
-  @Retryable(maxAttempts=10,backoff=@Backoff(delay=1000, multiplier=2))
+  @Retryable(maxAttempts=3,backoff=@Backoff(delay=1000, multiplier=2))
   @Override
   public void determineAndSync() {
     var latestBlock = blockService.getLatestBlock();

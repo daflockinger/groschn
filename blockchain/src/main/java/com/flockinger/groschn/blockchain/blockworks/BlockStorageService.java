@@ -9,6 +9,8 @@ public interface BlockStorageService {
   
   StoredBlock saveInBlockchain(Block block) throws ValidationException;
   
+  StoredBlock saveUnchecked(Block block);
+  
   Block getLatestBlock();
   
   Block getLatestProofOfWorkBlock();

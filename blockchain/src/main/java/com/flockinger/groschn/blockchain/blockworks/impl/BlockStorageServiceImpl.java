@@ -44,13 +44,8 @@ public class BlockStorageServiceImpl implements BlockStorageService {
 
   @Override
   public StoredBlock saveInBlockchain(Block block) throws ValidationException {
-    LOG.info("Validating block with position {}", block.getPosition());
     validateBlock(block);
-    transactionManager.updateTransactionStatuses(block.getTransactions(), TransactionStatus.EMBEDDED_IN_BLOCK);
-    StoredBlock storedBlock = mapToStoredBlock(block);
-    storedBlock = dao.save(storedBlock);
-    LOG.info("Block successfully stored with position {}", block.getPosition());
-    return storedBlock;
+    return saveUnchecked(block);
   }
 
   private void validateBlock(Block block) {
@@ -58,6 +53,15 @@ public class BlockStorageServiceImpl implements BlockStorageService {
     if (!assessment.isValid()) {
       throw new AssessmentFailedException(assessment.getReasonOfFailure(), assessment.getFailure());
     }
+  }
+  
+  @Override
+  public StoredBlock saveUnchecked(Block block) {
+    transactionManager.updateTransactionStatuses(block.getTransactions(), TransactionStatus.EMBEDDED_IN_BLOCK);
+    StoredBlock storedBlock = mapToStoredBlock(block);
+    storedBlock = dao.save(storedBlock);
+    LOG.info("Block successfully stored with position {}", block.getPosition());
+    return storedBlock;
   }
 
   private StoredBlock mapToStoredBlock(Block block) {

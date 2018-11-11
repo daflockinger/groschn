@@ -46,10 +46,8 @@ public class ProofOfWorkAlgorithm implements ConsensusAlgorithm {
   
   private final Long STARTING_NONCE = 1l;
   
-  private volatile Boolean cancel = false;
+  private Boolean cancel = false;
   
-  
-
   @Override
   public Mono<Block> reachConsensus(List<Transaction> transactions) {      
     cancel = false;

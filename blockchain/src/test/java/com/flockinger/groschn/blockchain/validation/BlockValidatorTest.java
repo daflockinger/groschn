@@ -3,13 +3,13 @@ package com.flockinger.groschn.blockchain.validation;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import java.math.BigDecimal;
 import java.util.Date;
 import org.apache.commons.lang3.StringUtils;
 import org.awaitility.Awaitility;
+import org.awaitility.Duration;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -108,7 +108,7 @@ public class BlockValidatorTest extends BaseDbTest {
       maker.generation(BlockMakerCommand.RESTART);
       ArgumentCaptor<Block> blockCaptor = ArgumentCaptor.forClass(Block.class);
       
-      Awaitility.await().until(() -> maker.status().equals(BlockGenerationStatus.COMPLETE));
+      Awaitility.await().atMost(Duration.ONE_MINUTE).until(() -> maker.status().equals(BlockGenerationStatus.COMPLETE));
       
       verify(storageService).saveInBlockchain(blockCaptor.capture());
       freshBlock = blockCaptor.getValue();
