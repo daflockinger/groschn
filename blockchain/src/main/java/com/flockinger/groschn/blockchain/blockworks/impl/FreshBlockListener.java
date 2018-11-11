@@ -9,7 +9,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import com.flockinger.groschn.blockchain.blockworks.BlockMaker;
 import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
-import com.flockinger.groschn.blockchain.blockworks.dto.BlockMakerCommand;
+import static com.flockinger.groschn.blockchain.blockworks.dto.BlockMakerCommand.*;
 import com.flockinger.groschn.blockchain.exception.validation.AssessmentFailedException;
 import com.flockinger.groschn.blockchain.messaging.sync.SyncDeterminator;
 import com.flockinger.groschn.blockchain.model.Block;
@@ -42,9 +42,9 @@ public class FreshBlockListener extends AbstractMessageListener<Block> {
     try {
       var assessMent = validator.validate(block);
       if(assessMent.isValid()) {
-        blockMaker.generation(BlockMakerCommand.STOP);
+        blockMaker.generation(STOP);
         blockService.saveUnchecked(block);
-        blockMaker.generation(BlockMakerCommand.RESTART);
+        blockMaker.generation(RESTART);
       } else {
         throw new AssessmentFailedException(assessMent.getReasonOfFailure(), 
             assessMent.getFailure());

@@ -3,7 +3,6 @@ package com.flockinger.groschn.blockchain.consensus.impl;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,13 +46,11 @@ public class ProofOfWorkAlgorithm implements ConsensusAlgorithm {
   
   private final Long STARTING_NONCE = 1l;
   
-  private AtomicBoolean cancel = new AtomicBoolean(false);
+  private Boolean cancel = false;
   
-  
-
   @Override
   public Mono<Block> reachConsensus(List<Transaction> transactions) {      
-    cancel.set(false);
+    cancel = false;
     return Mono.just(transactions)
         .map(this::createBaseBlock)
         .flatMap(block -> forgeBlock(block, cancel));
@@ -89,14 +86,14 @@ public class ProofOfWorkAlgorithm implements ConsensusAlgorithm {
     return difficulty;
   }
   
-  private Mono<Block> forgeBlock(Block freshBlock, AtomicBoolean cancel) {
+  private Mono<Block> forgeBlock(Block freshBlock, Boolean cancel) {
     StopWatch miningTimer = StopWatch.createStarted();
     Consent consent = freshBlock.getConsent();
     String blockHash = "";
     consent.setTimestamp(new Date().getTime());
     Long nonceCount=STARTING_NONCE;
     while(!didWorkSucceed(blockHash, consent)) {
-      if(cancel.get()) {
+      if(cancel) {
         return Mono.empty();
       }
       if(nonceCount == Long.MAX_VALUE) {
@@ -128,6 +125,6 @@ public class ProofOfWorkAlgorithm implements ConsensusAlgorithm {
 
   @Override
   public void stopFindingConsensus() {
-    cancel.set(true);
+    cancel = true;
   }
 }

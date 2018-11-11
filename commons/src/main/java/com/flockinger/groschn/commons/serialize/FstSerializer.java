@@ -39,7 +39,8 @@ public class FstSerializer implements BlockSerializer {
       throw new SerializationException("Entity cannot be deserialized!", e);
     }
     if(!type.isInstance(deserializedEntity)) {
-      throw new SerializationException("Deserialized entity is not of type " + type.getSimpleName());
+      throw new SerializationException(String.format("Deserialized entity is not of type %s", 
+          type.getSimpleName()));
     }
     return type.cast(deserializedEntity);
   }

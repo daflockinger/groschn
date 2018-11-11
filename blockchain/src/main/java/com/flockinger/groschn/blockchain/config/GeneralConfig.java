@@ -10,8 +10,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 import org.springframework.retry.annotation.EnableRetry;
 import org.springframework.scheduling.TaskScheduler;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.scheduling.concurrent.ConcurrentTaskScheduler;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import com.flockinger.groschn.blockchain.consensus.model.ConsensusType;
 import com.flockinger.groschn.blockchain.consensus.model.Consent;
 import com.flockinger.groschn.blockchain.model.Block;
@@ -24,6 +25,7 @@ import com.flockinger.groschn.commons.serialize.FstSerializer;
 @Configuration
 @EnableScheduling
 @EnableRetry
+@EnableAsync
 @EnableMongoRepositories(basePackages="com.flockinger.groschn.blockchain.repository")
 public class GeneralConfig {
 
@@ -44,7 +46,7 @@ public class GeneralConfig {
   
   @Bean
   public TaskScheduler taskScheduler() {
-      return new ConcurrentTaskScheduler();
+      return new ThreadPoolTaskScheduler();
   }
   
   @Bean

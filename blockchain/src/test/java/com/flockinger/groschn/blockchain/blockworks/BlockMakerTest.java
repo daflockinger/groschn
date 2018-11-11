@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -75,6 +76,24 @@ public class BlockMakerTest extends BaseCachingTest {
     verify(storageService).saveInBlockchain(any());
     verify(rewardGenerator).generateRewardTransaction(any());
     verify(consensusFactory, times(1)).reachConsensus(any());
+  }
+  
+  @Test
+  public void testGenerationRestart_withEmptyConsensusResponse_shouldDoNothing()
+      throws InterruptedException {
+    when(transactionManager.fetchTransactionsBySize(anyLong())).thenReturn(new ArrayList<>());
+    when(consensusFactory.reachConsensus(anyList())).thenReturn(Mono.empty());
+
+
+    maker.generation(BlockMakerCommand.RESTART);
+
+    StepVerifier.setDefaultTimeout(Duration.ofMillis(200l));
+
+    verify(transactionManager).fetchTransactionsBySize(anyLong());
+    verify(rewardGenerator).generateRewardTransaction(any());
+    verify(consensusFactory, times(1)).reachConsensus(any());
+    verify(broadcaster, never()).broadcast(any(), any());
+    verify(storageService, never()).saveInBlockchain(any());
   }
 
 

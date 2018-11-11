@@ -44,7 +44,6 @@ public class BlockStorageServiceImpl implements BlockStorageService {
 
   @Override
   public StoredBlock saveInBlockchain(Block block) throws ValidationException {
-    LOG.info("Validating block with position {}", block.getPosition());
     validateBlock(block);
     return saveUnchecked(block);
   }

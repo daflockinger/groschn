@@ -30,7 +30,7 @@ blockchain:
   messaging:
    response-timeout: 30
    thread-pool:
-     size: 50
+     size: 200
    id-cache:
      expire-after-milliseconds: 600000
      initial-capacity: 1000

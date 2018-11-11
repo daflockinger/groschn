@@ -2,7 +2,9 @@ package com.flockinger.groschn.blockchain.messaging;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -19,7 +21,10 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ContextConfiguration;
 import com.flockinger.groschn.blockchain.BaseCachingTest;
+import com.flockinger.groschn.blockchain.blockworks.BlockMaker;
 import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
+import static com.flockinger.groschn.blockchain.blockworks.dto.BlockMakerCommand.*;
+import com.flockinger.groschn.blockchain.blockworks.dto.BlockMakerCommand;
 import com.flockinger.groschn.blockchain.exception.validation.BlockValidationException;
 import com.flockinger.groschn.blockchain.messaging.dto.BlockInfo;
 import com.flockinger.groschn.blockchain.messaging.dto.BlockInfoResult;
@@ -39,6 +44,8 @@ public class BlockSynchronizerTest extends BaseCachingTest {
   
   @MockBean
   private BlockStorageService blockService;
+  @MockBean
+  private BlockMaker blockMaker;
   @Autowired
   @Qualifier("SyncBlockId_Cache")
   private Cache<String, String> syncBlockIdCache;
@@ -95,6 +102,11 @@ public class BlockSynchronizerTest extends BaseCachingTest {
     assertEquals("verify fourth request start position", 153l, batchRequests.get(3).getFromPosition());
     assertEquals("verify after processing syncing status is on Done", SyncStatus.DONE.name(),
         syncBlockIdCache.getIfPresent(SyncStatus.SYNC_STATUS_CACHE_KEY));
+    
+    var cmdCaptor = ArgumentCaptor.forClass(BlockMakerCommand.class);
+    verify(blockMaker,times(2)).generation(cmdCaptor.capture());
+    assertTrue("verify block generation stop and restart are called before/after sync", 
+        ImmutableList.of(STOP, RESTART).containsAll(cmdCaptor.getAllValues()));
   }
   
   
@@ -116,6 +128,10 @@ public class BlockSynchronizerTest extends BaseCachingTest {
     
     verify(blockService, times(10 * 3)).saveInBlockchain(any());
     verify(inquirer, times(1 * 3)).fetchNextBatch(any(), any());
+    var cmdCaptor = ArgumentCaptor.forClass(BlockMakerCommand.class);
+    verify(blockMaker,times(2)).generation(cmdCaptor.capture());
+    assertTrue("verify block generation stop and restart are called before/after sync", 
+        ImmutableList.of(STOP, RESTART).containsAll(cmdCaptor.getAllValues()));
   }
   
   @Test
@@ -134,6 +150,10 @@ public class BlockSynchronizerTest extends BaseCachingTest {
     
     verify(blockService, times(10 * 3)).saveInBlockchain(any());
     verify(inquirer, times(1 * 3)).fetchNextBatch(any(), any());
+    var cmdCaptor = ArgumentCaptor.forClass(BlockMakerCommand.class);
+    verify(blockMaker,times(2)).generation(cmdCaptor.capture());
+    assertTrue("verify block generation stop and restart are called before/after sync", 
+        ImmutableList.of(STOP, RESTART).containsAll(cmdCaptor.getAllValues()));
   }
   
   @Test
@@ -154,6 +174,10 @@ public class BlockSynchronizerTest extends BaseCachingTest {
     
     verify(blockService, times(10 * 4)).saveInBlockchain(any());
     verify(inquirer, times(1 * 5)).fetchNextBatch(any(), any());
+    var cmdCaptor = ArgumentCaptor.forClass(BlockMakerCommand.class);
+    verify(blockMaker,times(2)).generation(cmdCaptor.capture());
+    assertTrue("verify block generation stop and restart are called before/after sync", 
+        ImmutableList.of(STOP, RESTART).containsAll(cmdCaptor.getAllValues()));
   }
   
   @Test
@@ -176,6 +200,10 @@ public class BlockSynchronizerTest extends BaseCachingTest {
     
     verify(blockService, times(10 * 4)).saveInBlockchain(any());
     verify(inquirer, times(1 * 7)).fetchNextBatch(any(), any());
+    var cmdCaptor = ArgumentCaptor.forClass(BlockMakerCommand.class);
+    verify(blockMaker,times(2)).generation(cmdCaptor.capture());
+    assertTrue("verify block generation stop and restart are called before/after sync", 
+        ImmutableList.of(STOP, RESTART).containsAll(cmdCaptor.getAllValues()));
   }
   
   @Test
@@ -194,6 +222,10 @@ public class BlockSynchronizerTest extends BaseCachingTest {
     
     verify(blockService, times(10 * 3)).saveInBlockchain(any());
     verify(inquirer, times(1 * 3)).fetchNextBatch(any(), any());
+    var cmdCaptor = ArgumentCaptor.forClass(BlockMakerCommand.class);
+    verify(blockMaker,times(2)).generation(cmdCaptor.capture());
+    assertTrue("verify block generation stop and restart are called before/after sync", 
+        ImmutableList.of(STOP, RESTART).containsAll(cmdCaptor.getAllValues()));
   }
   
   @Test
@@ -208,6 +240,10 @@ public class BlockSynchronizerTest extends BaseCachingTest {
     
     verify(blockService, times(0)).saveInBlockchain(any());
     verify(inquirer, times(0)).fetchNextBatch(any(), any());
+    var cmdCaptor = ArgumentCaptor.forClass(BlockMakerCommand.class);
+    verify(blockMaker,times(2)).generation(cmdCaptor.capture());
+    assertTrue("verify block generation stop and restart are called before/after sync", 
+        ImmutableList.of(STOP, RESTART).containsAll(cmdCaptor.getAllValues()));
   }
   
   @Test
@@ -223,6 +259,10 @@ public class BlockSynchronizerTest extends BaseCachingTest {
     
     verify(blockService, times(0)).saveInBlockchain(any());
     verify(inquirer, times(21)).fetchNextBatch(any(), any());
+    var cmdCaptor = ArgumentCaptor.forClass(BlockMakerCommand.class);
+    verify(blockMaker,times(2)).generation(cmdCaptor.capture());
+    assertTrue("verify block generation stop and restart are called before/after sync", 
+        ImmutableList.of(STOP, RESTART).containsAll(cmdCaptor.getAllValues()));
   }
   
   
@@ -253,6 +293,11 @@ public class BlockSynchronizerTest extends BaseCachingTest {
     assertEquals("verify second request start position", 133l, batchRequests.get(2).getFromPosition());
     assertEquals("verify third request start position", 143l, batchRequests.get(3).getFromPosition());
     assertEquals("verify fourth request start position", 153l, batchRequests.get(4).getFromPosition());
+    
+    var cmdCaptor = ArgumentCaptor.forClass(BlockMakerCommand.class);
+    verify(blockMaker,times(2)).generation(cmdCaptor.capture());
+    assertTrue("verify block generation stop and restart are called before/after sync", 
+        ImmutableList.of(STOP, RESTART).containsAll(cmdCaptor.getAllValues()));
   }
   
   @Test
@@ -270,6 +315,10 @@ public class BlockSynchronizerTest extends BaseCachingTest {
 
     verify(blockService, times(21)).saveInBlockchain(any());
     verify(inquirer, times(21)).fetchNextBatch(any(), any());
+    var cmdCaptor = ArgumentCaptor.forClass(BlockMakerCommand.class);
+    verify(blockMaker,times(2)).generation(cmdCaptor.capture());
+    assertTrue("verify block generation stop and restart are called before/after sync", 
+        ImmutableList.of(STOP, RESTART).containsAll(cmdCaptor.getAllValues()));
   }
   
   @Test
@@ -286,6 +335,7 @@ public class BlockSynchronizerTest extends BaseCachingTest {
     
     verify(blockService, times(0)).saveInBlockchain(any());
     verify(inquirer, times(0)).fetchNextBatch(any(), any(Class.class));
+    verify(blockMaker,never()).generation(any());
   }
   
   @Test

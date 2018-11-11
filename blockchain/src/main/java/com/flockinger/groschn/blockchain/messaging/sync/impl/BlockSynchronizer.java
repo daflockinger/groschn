@@ -1,5 +1,7 @@
 package com.flockinger.groschn.blockchain.messaging.sync.impl;
 
+import static com.flockinger.groschn.blockchain.blockworks.dto.BlockMakerCommand.RESTART;
+import static com.flockinger.groschn.blockchain.blockworks.dto.BlockMakerCommand.STOP;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -73,21 +75,20 @@ public class BlockSynchronizer implements SyncKeeper {
     var fromPosition = infoResult.getStartPosition();
     var blockInfos = ListUtils.emptyIfNull(infoResult.getCorrectInfos());
     var totalBatches = Math.round(Math.ceil((double)blockInfos.size()/(double)BLOCK_REQUEST_PACKAGE_SIZE));
-    LOG.info("total batches {} blickInfoSize {} ", totalBatches, blockInfos.size());
+    LOG.info("total batches {} blockInfoSize {} ", totalBatches, blockInfos.size());
     Collections.sort(blockInfos);    
     if(syncStatus().equals(SyncStatus.IN_PROGRESS.name())) {
       LOG.warn("Synchronization still in progress!");
       return;
+    } else {
+      blockMaker.generation(STOP);
     }
     setSyncStatus(SyncStatus.IN_PROGRESS);
-    LOG.info("Started synchronization at position: " + fromPosition);
     try {
       boolean hasFinishedSync = false;
-      LOG.info("is For condition met: {}", (0 < totalBatches) && !hasFinishedSync);
+      LOG.info("Start from {} and is For condition met: {}", fromPosition, (0 < totalBatches) && !hasFinishedSync);
       for(int batchCount =0;(batchCount < totalBatches) && !hasFinishedSync; batchCount++) {
-        LOG.info("entered for");
         var relatedInfos = extractPartition(blockInfos, batchCount);
-        LOG.info("got related infos");
         hasFinishedSync = storeBatchOfBlocksAndReturnHasFinished(SyncBatchRequest
             .build(batchRequest).fromPosition(fromPosition), relatedInfos);
         LOG.info("Successfully synced and stored Blocks until position: " + fromPosition);
@@ -96,6 +97,7 @@ public class BlockSynchronizer implements SyncKeeper {
     } finally {
       setSyncStatus(SyncStatus.DONE);
       LOG.info("Synchronization finished");
+      blockMaker.generation(RESTART);
     }
   }
   
@@ -148,7 +150,7 @@ public class BlockSynchronizer implements SyncKeeper {
       }
       allStoredSuccessful = true;
     } catch(BlockchainException e) {
-      LOG.error("Received invalid Block during Block-Synchronization!", e);
+      LOG.warn("Received invalid Block during Block-Synchronization cause: {}", e.getMessage());
     }
     return allStoredSuccessful;
   }

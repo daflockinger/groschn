@@ -26,7 +26,7 @@ public class PunchTimer {
   private Integer processTimeout;
 
   @Scheduled(initialDelayString = "${blockchain.punch-timer.initial-delay}",
-      fixedDelayString = "${blockchain.punch-timer.punch-rate}")
+      fixedRateString = "${blockchain.punch-timer.punch-rate}")
   public void checkMiningProcess() {
     if (isStillSynchronizingBlockchain() || isRunningOrStopped()) {
       return;
