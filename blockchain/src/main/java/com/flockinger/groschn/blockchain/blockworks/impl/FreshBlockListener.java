@@ -7,11 +7,14 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import com.flockinger.groschn.blockchain.blockworks.BlockMaker;
 import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
+import com.flockinger.groschn.blockchain.blockworks.dto.BlockMakerCommand;
 import com.flockinger.groschn.blockchain.exception.validation.AssessmentFailedException;
 import com.flockinger.groschn.blockchain.messaging.sync.SyncDeterminator;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.validation.AssessmentFailure;
+import com.flockinger.groschn.blockchain.validation.impl.BlockValidator;
 import com.flockinger.groschn.messaging.config.MainTopics;
 import com.flockinger.groschn.messaging.inbound.AbstractMessageListener;
 import com.github.benmanes.caffeine.cache.Cache;
@@ -21,6 +24,10 @@ public class FreshBlockListener extends AbstractMessageListener<Block> {
 
   @Autowired
   private BlockStorageService blockService;
+  @Autowired
+  private BlockValidator validator;
+  @Autowired
+  private BlockMaker blockMaker;
   @Autowired
   private SyncDeterminator blockSyncDeterminator;
   
@@ -33,7 +40,15 @@ public class FreshBlockListener extends AbstractMessageListener<Block> {
   @Override
   protected void handleMessage(Block block) {
     try {
-      blockService.saveInBlockchain(block);
+      var assessMent = validator.validate(block);
+      if(assessMent.isValid()) {
+        blockMaker.generation(BlockMakerCommand.STOP);
+        blockService.saveUnchecked(block);
+        blockMaker.generation(BlockMakerCommand.RESTART);
+      } else {
+        throw new AssessmentFailedException(assessMent.getReasonOfFailure(), 
+            assessMent.getFailure());
+      }
     } catch (AssessmentFailedException e) {
       LOG.error("Invalid Block-Message received maybe recoverable: " + e.getMessage(), e);
       // if the validation failed due to an outdated chain or or some faulty blocks in the chain

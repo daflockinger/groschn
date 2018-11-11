@@ -40,4 +40,9 @@ public class Assessment {
   public void setFailure(AssessmentFailure failure) {
     this.failure = failure;
   }
+  
+  public Assessment failure(AssessmentFailure failure) {
+    this.failure = failure;
+    return this;
+  }
 }

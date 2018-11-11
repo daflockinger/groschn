@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import com.flockinger.groschn.blockchain.blockworks.BlockMaker;
 import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
 import com.flockinger.groschn.blockchain.messaging.dto.BlockInfo;
 import com.flockinger.groschn.blockchain.messaging.dto.BlockInfoResult;
@@ -34,6 +35,8 @@ public class BlockSynchronizer implements SyncKeeper {
   
   @Autowired
   private BlockStorageService blockService;
+  @Autowired
+  private BlockMaker blockMaker;
   @Autowired
   @Qualifier("SyncBlockId_Cache")
   private Cache<String, String> syncBlockIdCache;
