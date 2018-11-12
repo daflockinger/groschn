@@ -87,7 +87,9 @@ public class BlockMakerImpl implements BlockMaker {
     } catch (BlockchainException e) {
       LOG.error("Cannot consent/send/store fresh Block cause: {}", e.getMessage());
     } finally {
-      status = BlockGenerationStatus.COMPLETE;
+      if(!BlockGenerationStatus.STOPPED.equals(status)) {
+        status = BlockGenerationStatus.COMPLETE;
+      }
     }
   }
 
