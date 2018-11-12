@@ -1,6 +1,7 @@
 package com.flockinger.groschn.blockchain.consensus;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
@@ -9,8 +10,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
-import org.awaitility.Awaitility;
-import org.awaitility.Duration;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -32,8 +31,6 @@ import com.flockinger.groschn.blockchain.model.TransactionInput;
 import com.flockinger.groschn.blockchain.model.TransactionOutput;
 import com.flockinger.groschn.commons.config.CommonsConfig;
 import com.google.common.collect.ImmutableList;
-import reactor.core.publisher.Mono;
-import reactor.test.StepVerifier;
 
 
 @RunWith(SpringRunner.class)
@@ -57,30 +54,28 @@ public class ProofOfWorkAlgorithmTest {
     when(mockStorage.getLatestProofOfWorkBlock()).thenReturn(fakeBlock(29999l, 0));
     mockOverallLastPosition();
 
-    var forgedBlockMono = powAlgo.reachConsensus(fakeTransactions(9, false));
+    var forgedBlock = powAlgo.reachConsensus(fakeTransactions(9, false)).get();
 
-    StepVerifier.create(forgedBlockMono).assertNext(forgedBlock -> {
-      assertNotNull("verify that created block is not null", forgedBlock);
-      assertEquals("verify correct block position", 101, forgedBlock.getPosition().longValue());
-      assertEquals("verify block ",
-          "0000cff71b99932db819f909cd56bc01c24b5ceefea2405a4d118fa18a208598c321a6e74b6ec75343318d18a253d866caa66a7a83cb7f241d295e3451115938",
-          forgedBlock.getLastHash());
-      assertNotNull("verify block hash is there", forgedBlock.getHash());
-      assertNotNull("verify block has timestamp", forgedBlock.getTimestamp());
-      assertNotNull("verify block has merkle root", forgedBlock.getTransactionMerkleRoot());
-      assertEquals("verify correct block version", 1, forgedBlock.getVersion().intValue());
-      assertNotNull("verify block transactions are not null", forgedBlock.getTransactions());
-      assertEquals("verify block transactions count", 9, forgedBlock.getTransactions().size());
-      assertNotNull("verify block has a consent", forgedBlock.getConsent());
-      assertTrue("verify consent is a proof of work consent",
-          forgedBlock.getConsent() instanceof Consent);
-      Consent consent = (Consent) forgedBlock.getConsent();
-      assertEquals("verify consent difficulty increased", 2, consent.getDifficulty().intValue());
-      assertNotNull("verify consent has time spent value", consent.getMilliSecondsSpentMining());
-      assertNotNull("verify consent has nonce", consent.getNonce());
-      assertNotNull("verify consent has timestamp", consent.getTimestamp());
-      assertEquals("verify correct consent type", ConsensusType.PROOF_OF_WORK, consent.getType());
-    });
+    assertNotNull("verify that created block is not null", forgedBlock);
+    assertEquals("verify correct block position", 101, forgedBlock.getPosition().longValue());
+    assertEquals("verify block ",
+        "0000cff71b99932db819f909cd56bc01c24b5ceefea2405a4d118fa18a208598c321a6e74b6ec75343318d18a253d866caa66a7a83cb7f241d295e3451115938",
+        forgedBlock.getLastHash());
+    assertNotNull("verify block hash is there", forgedBlock.getHash());
+    assertNotNull("verify block has timestamp", forgedBlock.getTimestamp());
+    assertNotNull("verify block has merkle root", forgedBlock.getTransactionMerkleRoot());
+    assertEquals("verify correct block version", 1, forgedBlock.getVersion().intValue());
+    assertNotNull("verify block transactions are not null", forgedBlock.getTransactions());
+    assertEquals("verify block transactions count", 9, forgedBlock.getTransactions().size());
+    assertNotNull("verify block has a consent", forgedBlock.getConsent());
+    assertTrue("verify consent is a proof of work consent",
+        forgedBlock.getConsent() instanceof Consent);
+    Consent consent = (Consent) forgedBlock.getConsent();
+    assertEquals("verify consent difficulty increased", 2, consent.getDifficulty().intValue());
+    assertNotNull("verify consent has time spent value", consent.getMilliSecondsSpentMining());
+    assertNotNull("verify consent has nonce", consent.getNonce());
+    assertNotNull("verify consent has timestamp", consent.getTimestamp());
+    assertEquals("verify correct consent type", ConsensusType.PROOF_OF_WORK, consent.getType());
   }
 
 
@@ -88,20 +83,16 @@ public class ProofOfWorkAlgorithmTest {
   public void testReachConsensus_withDoingItTwice_shouldReturnCorrect() {
     when(mockStorage.getLatestProofOfWorkBlock()).thenReturn(fakeBlock(29999l, 0));
     mockOverallLastPosition();
-    var forgedBlock = powAlgo.reachConsensus(fakeTransactions(9, false));
+    var block = powAlgo.reachConsensus(fakeTransactions(9, false)).get();
 
-    StepVerifier.create(forgedBlock).assertNext(block -> {
-      when(mockStorage.getLatestProofOfWorkBlock()).thenReturn(block);
-      Block lastBlock = new Block();
-      lastBlock.setPosition(101l);
-      when(mockStorage.getLatestBlock()).thenReturn(lastBlock);
+    when(mockStorage.getLatestProofOfWorkBlock()).thenReturn(block);
+    Block lastBlock = new Block();
+    lastBlock.setPosition(101l);
+    when(mockStorage.getLatestBlock()).thenReturn(lastBlock);
 
-      var secondBlock = powAlgo.reachConsensus(fakeTransactions(9, false));
-      StepVerifier.create(secondBlock).assertNext(secBlock -> {
-        assertEquals("verify that last hash of second forged block is equal to hash of first block",
-            block.getHash(), secBlock.getLastHash());
-      });
-    });
+    var secondBlock = powAlgo.reachConsensus(fakeTransactions(9, false)).get();
+    assertEquals("verify that last hash of second forged block is equal to hash of first block",
+        block.getHash(), secondBlock.getLastHash());
   }
 
   private void mockOverallLastPosition() {
@@ -115,9 +106,8 @@ public class ProofOfWorkAlgorithmTest {
     when(mockStorage.getLatestProofOfWorkBlock()).thenReturn(fakeBlock(30001l, 0));
     mockOverallLastPosition();
 
-    var forgedBlockMono = powAlgo.reachConsensus(fakeTransactions(9, false));
+    var forgedBlock = powAlgo.reachConsensus(fakeTransactions(9, false)).get();
 
-    StepVerifier.create(forgedBlockMono).assertNext(forgedBlock -> {
       assertNotNull("verify that created block is not null", forgedBlock);
       assertEquals("verify correct block position", 101, forgedBlock.getPosition().longValue());
       assertEquals("verify block ",
@@ -136,7 +126,6 @@ public class ProofOfWorkAlgorithmTest {
       assertEquals("verify consent difficulty decreased", 0, consent.getDifficulty().intValue());
       assertNotNull("verify consent has timestamp", consent.getTimestamp());
       assertEquals("verify correct consent type", ConsensusType.PROOF_OF_WORK, consent.getType());
-    });
   }
 
   @Test
@@ -144,9 +133,8 @@ public class ProofOfWorkAlgorithmTest {
     when(mockStorage.getLatestProofOfWorkBlock()).thenReturn(fakeBlock(30000l, 0));
     mockOverallLastPosition();
 
-    var forgedBlockMono = powAlgo.reachConsensus(fakeTransactions(9, false));
+    var forgedBlock = powAlgo.reachConsensus(fakeTransactions(9, false)).get();
 
-    StepVerifier.create(forgedBlockMono).assertNext(forgedBlock -> {
       assertNotNull("verify that created block is not null", forgedBlock);
       assertEquals("verify correct block position", 101, forgedBlock.getPosition().longValue());
       assertEquals("verify block ",
@@ -168,9 +156,6 @@ public class ProofOfWorkAlgorithmTest {
       assertNotNull("verify consent has nonce", consent.getNonce());
       assertNotNull("verify consent has timestamp", consent.getTimestamp());
       assertEquals("verify correct consent type", ConsensusType.PROOF_OF_WORK, consent.getType());
-
-    });
-
   }
 
 
@@ -181,9 +166,7 @@ public class ProofOfWorkAlgorithmTest {
     Whitebox.setInternalState((ProofOfWorkAlgorithm) powAlgo, "STARTING_NONCE",
         Long.MAX_VALUE - 10);
 
-    var forgedBlockMono = powAlgo.reachConsensus(fakeTransactions(9, false));
-
-    StepVerifier.create(forgedBlockMono).assertNext(forgedBlock -> {
+    var forgedBlock = powAlgo.reachConsensus(fakeTransactions(9, false)).get();
 
       assertNotNull("verify that created block is not null", forgedBlock);
       assertEquals("verify correct block position", 101, forgedBlock.getPosition().longValue());
@@ -206,21 +189,20 @@ public class ProofOfWorkAlgorithmTest {
       assertNotNull("verify consent has nonce", consent.getNonce());
       assertNotNull("verify consent has timestamp", consent.getTimestamp());
       assertEquals("verify correct consent type", ConsensusType.PROOF_OF_WORK, consent.getType());
-
-    });
   }
 
-  @Test(timeout = 1000)
+  @Test
   public void testStopFindingConsensus_withRunningConsensusFinding_shouldStop()
       throws InterruptedException {
     when(mockStorage.getLatestProofOfWorkBlock()).thenReturn(fakeBlock(30000l, 12));
-    mockOverallLastPosition();    
-    var block = powAlgo.reachConsensus(fakeTransactions(9, false));
+    mockOverallLastPosition();
     
-    Thread.sleep(100l);
+    new Thread(() -> {
+      var block = powAlgo.reachConsensus(fakeTransactions(9, false));
+      assertFalse("verify block of stopped conesnsus is empty", block.isPresent());
+    }).start();
+    
     powAlgo.stopFindingConsensus();
-    
-    StepVerifier.create(block).verifyComplete();
   }
 
 

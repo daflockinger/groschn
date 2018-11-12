@@ -73,22 +73,21 @@ public class BlockMakerImpl implements BlockMaker {
     List<Transaction> transactions =
         transactionManager.fetchTransactionsBySize(Block.MAX_TRANSACTION_BYTE_SIZE);
     transactions = rewardGenerator.generateRewardTransaction(transactions);
-    LOG.info("Restarting Block generation");
-    consensusFactory.reachConsensus(transactions)
-        .subscribe(this::broadcastAndStore, 
-            exception -> LOG.error("Something went wrong while creating a new Block", exception), 
-            () -> status = BlockGenerationStatus.COMPLETE, 
-            sub -> sub.request(1l));
+    LOG.info("Restarting Block generation");;
+    broadcastAndStore(transactions);
   }
 
-  private void broadcastAndStore(Block block) {
-    if(block != null) {
-      try {
-        broadcastBlock(block);
-        storageService.saveInBlockchain(block);
-      } catch (BlockchainException e) {
-        LOG.warn("Cannot send/store fresh Block cause: {}", e.getMessage());
+  private void broadcastAndStore(List<Transaction> transactions) {
+    try {
+      var block = consensusFactory.reachConsensus(transactions);
+      if (block.isPresent()) {
+        broadcastBlock(block.get());
+        storageService.saveInBlockchain(block.get());
       }
+    } catch (BlockchainException e) {
+      LOG.error("Cannot consent/send/store fresh Block cause: {}", e.getMessage());
+    } finally {
+      status = BlockGenerationStatus.COMPLETE;
     }
   }
 

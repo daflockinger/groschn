@@ -6,6 +6,7 @@ import java.util.concurrent.Executors;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
+import org.springframework.scheduling.annotation.EnableAsync;
 import com.flockinger.groschn.blockchain.consensus.model.ConsensusType;
 import com.flockinger.groschn.blockchain.consensus.model.Consent;
 import com.flockinger.groschn.blockchain.model.Block;
@@ -15,6 +16,7 @@ import com.flockinger.groschn.blockchain.model.TransactionOutput;
 import com.flockinger.groschn.commons.serialize.BlockSerializer;
 import com.flockinger.groschn.commons.serialize.FstSerializer;
 
+@EnableAsync
 public class TestConfig {
   
   @Value("${blockchain.messaging.thread-pool.size:20}")
