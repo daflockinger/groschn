@@ -3,3 +3,5 @@ jdk:
 - openjdk10
 script:
 - mvn test -B
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
