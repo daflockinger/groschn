@@ -4,9 +4,7 @@ import static com.flockinger.groschn.blockchain.consensus.impl.ProofOfWorkAlgori
 import static com.flockinger.groschn.blockchain.consensus.impl.ProofOfWorkAlgorithm.MINING_RATE_MILLISECONDS;
 import java.util.Date;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
 import com.flockinger.groschn.blockchain.consensus.model.ConsensusType;
 import com.flockinger.groschn.blockchain.consensus.model.Consent;
 import com.flockinger.groschn.blockchain.exception.validation.AssessmentFailedException;
@@ -17,16 +15,12 @@ import com.flockinger.groschn.commons.exception.BlockchainException;
 
 @Component("ProofOfWork_Validator")
 public class PowConsensusValidator implements ConsentValidator {
-  
-  @Autowired
-  private BlockStorageService blockService;
-  
+    
   @Override
-  public Assessment validate(Block value) {
+  public Assessment validate(Block value, Block lastBlock) {
     Assessment isConsensusCorrect = new Assessment();
     Consent consent = value.getConsent();
     try {
-      Block lastBlock = blockService.getLatestProofOfWorkBlock();
       // 1. was difficulty applied correctly -> enough zeros on hash
       wasDifficultyAppliedCorrectly(value);
       // 2. was difficulty adjusted correctly from last time

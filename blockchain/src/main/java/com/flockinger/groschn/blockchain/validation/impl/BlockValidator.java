@@ -31,7 +31,7 @@ public class BlockValidator implements Validator<Block> {
   private List<ConsentValidator> consensusValidators;
   
   @Autowired
-  private BlockStorageService blockService;
+  protected BlockStorageService blockService;
   @Autowired
   private HashGenerator hasher;
   @Autowired
@@ -44,7 +44,7 @@ public class BlockValidator implements Validator<Block> {
     Assessment isBlockValid = new Assessment();
     // Validations for a new Block:
     try {
-      Block lastBlock = blockService.getLatestBlock();
+      Block lastBlock = getLastBlock(value.getPosition());
       
       // 1. check if position is exactly one higher than existing one
       isPositionExactlyOneHigher(value.getPosition(), lastBlock);
@@ -59,7 +59,7 @@ public class BlockValidator implements Validator<Block> {
       // 7. check max transaction size
       checkTransactionSize(value.getTransactions());
       // 8. call consent validation
-      validateConsensus(value);
+      validateConsensus(value, lastBlock);
       // 9. call transaction validations
       validateTransactions(value.getTransactions());
       // 3. verify if current hash is correctly calculated
@@ -74,6 +74,10 @@ public class BlockValidator implements Validator<Block> {
       isBlockValid.setReasonOfFailure(e.getMessage());
     }   
     return isBlockValid;
+  }
+  
+  protected Block getLastBlock(long newBlockPosition) {
+    return blockService.getLatestBlock();
   }
   
   private void isPositionExactlyOneHigher(Long position, Block lastBlock) {
@@ -125,10 +129,10 @@ public class BlockValidator implements Validator<Block> {
         "Max compressed transaction size exceeded: " + compressedSize);
   }
   
-  private void validateConsensus(Block block) {
+  private void validateConsensus(Block block, Block lastBlock) {
     ConsentValidator consentValidator = consensusValidators.stream().filter(validator -> validator.type()
         .equals(block.getConsent().getType())).findFirst().get();
-    verifyAssessment(consentValidator.validate(block));
+    verifyAssessment(consentValidator.validate(block, lastBlock));
   }
   
   private void validateTransactions(List<Transaction> transactions) {

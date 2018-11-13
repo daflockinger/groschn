@@ -86,6 +86,15 @@ public class BlockStorageServiceImpl implements BlockStorageService {
   }
   
   @Override
+  public Block getLatestProofOfWorkBlockBelowPosition(Long position) {
+    long realPosition = Math.max(2, position);
+    return dao
+        .findFirstByPositionLessThanAndConsentTypeOrderByPositionDesc(realPosition, ConsensusType.PROOF_OF_WORK)
+        .stream().map(this::mapToBlock)
+        .findFirst().get();
+  }
+  
+  @Override
   public List<Block> findBlocks(long fromPosition, long quantity) {
     var from = Math.max(fromPosition, 1);
     var until = Math.max(from + quantity, 0);

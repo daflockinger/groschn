@@ -209,6 +209,56 @@ public class BlockStorageServiceTest extends BaseDbTest {
         ConsensusType.PROOF_OF_WORK, lastBlock.getConsent().getType());
   }
   
+  
+  @Test
+  public void testGetLatestProofOfWorkBlockBelowPosition_filledChain_shouldReturnCorrect() {
+    dao.saveAll(fakeBlocks(23l,50l,54l,98l,101l));
+    
+    Block lastBlock = service.getLatestProofOfWorkBlockBelowPosition(98l);
+    assertNotNull("verify last block is not null", lastBlock);
+    assertEquals("verify last block has correct position", 54l, 
+        lastBlock.getPosition().longValue());
+    assertEquals("verify last block is of right consensus type", 
+        ConsensusType.PROOF_OF_WORK, lastBlock.getConsent().getType());
+  }
+  
+  @Test
+  public void testGetLatestProofOfWorkBlockBelowPosition_filledChainButLowerPos_shouldReturnCorrect() {
+    dao.saveAll(fakeBlocks(23l,50l,54l,98l,101l));
+    
+    Block lastBlock = service.getLatestProofOfWorkBlockBelowPosition(54l);
+    assertNotNull("verify last block is not null", lastBlock);
+    assertEquals("verify last block has correct position", 23l, 
+        lastBlock.getPosition().longValue());
+    assertEquals("verify last block is of right consensus type", 
+        ConsensusType.PROOF_OF_WORK, lastBlock.getConsent().getType());
+  }
+  
+  @Test
+  public void testGetLatestProofOfWorkBlockBelowPosition_withEmptyChain_shouldReturnGenesisBlock() {
+    ((BlockStorageServiceImpl)service).initBlockchain();
+    
+    Block lastBlock = service.getLatestProofOfWorkBlockBelowPosition(5l);
+    assertNotNull("verify last block is not null", lastBlock);
+    assertEquals("verify last block has correct position", 1l, 
+        lastBlock.getPosition().longValue());
+    assertEquals("verify last block is of right consensus type", 
+        ConsensusType.PROOF_OF_WORK, lastBlock.getConsent().getType());
+  }
+  
+  @Test
+  public void testGetLatestProofOfWorkBlockBelowPosition_withEmptyChainAndTooLowNumber_shouldReturnGenesisBlock() {
+    ((BlockStorageServiceImpl)service).initBlockchain();
+    
+    Block lastBlock = service.getLatestProofOfWorkBlockBelowPosition(0l);
+    assertNotNull("verify last block is not null", lastBlock);
+    assertEquals("verify last block has correct position", 1l, 
+        lastBlock.getPosition().longValue());
+    assertEquals("verify last block is of right consensus type", 
+        ConsensusType.PROOF_OF_WORK, lastBlock.getConsent().getType());
+  }
+  
+  
   @Test
   public void testFindBlocks_withValidPositionAndQuandity_shouldWork() {
     dao.saveAll(fakeBlocks(3l,2l,1l,4l,5l));
