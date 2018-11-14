@@ -1,12 +1,18 @@
 package com.flockinger.groschn.blockchain;
 
 import java.util.ArrayList;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
+import org.springframework.retry.annotation.EnableRetry;
+import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import com.flockinger.groschn.blockchain.consensus.model.ConsensusType;
 import com.flockinger.groschn.blockchain.consensus.model.Consent;
 import com.flockinger.groschn.blockchain.model.Block;
@@ -16,11 +22,14 @@ import com.flockinger.groschn.blockchain.model.TransactionOutput;
 import com.flockinger.groschn.commons.serialize.BlockSerializer;
 import com.flockinger.groschn.commons.serialize.FstSerializer;
 
-@EnableAsync //FIXME maybe use that only when really needed!
-public class TestConfig {
-  
-  @Value("${blockchain.messaging.thread-pool.size:20}")
+@Configuration
+@EnableRetry
+@EnableMongoRepositories(basePackages="com.flockinger.groschn.blockchain.repository")
+public class GeneralTestConfig {
+
+  @Value("${blockchain.messaging.thread-pool.size}")
   private Integer threadPoolSize;
+  
   
   @Bean
   public ModelMapper mapper() {
@@ -28,9 +37,14 @@ public class TestConfig {
   }
   
   @Bean
-  public ExecutorService executor() {
-    ExecutorService executorService = Executors.newFixedThreadPool(threadPoolSize);
+  public Executor executor() {
+    Executor executorService = Executors.newFixedThreadPool(threadPoolSize);
     return executorService;
+  }
+  
+  @Bean
+  public TaskScheduler taskScheduler() {
+      return new ThreadPoolTaskScheduler();
   }
   
   @Bean

@@ -13,6 +13,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.apache.commons.collections4.ListUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -69,10 +70,10 @@ public class BlockSynchronizerTest extends BaseCachingTest {
     
     BlockInfoResult infoResult = new BlockInfoResult();
     infoResult.setStartPosition(123l);
-    infoResult.getCorrectInfos().addAll(getFakeResponse(false,123l).get().getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
-    infoResult.getCorrectInfos().addAll(getFakeResponse(false,133l).get().getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
-    infoResult.getCorrectInfos().addAll(getFakeResponse(false,143l).get().getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
-    infoResult.getCorrectInfos().addAll(getFakeResponse(true,153l).get().getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    infoResult.getCorrectInfos().addAll(getFakeResponse(false,123l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    infoResult.getCorrectInfos().addAll(getFakeResponse(false,133l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    infoResult.getCorrectInfos().addAll(getFakeResponse(false,143l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    infoResult.getCorrectInfos().addAll(getFakeResponse(true,153l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
     Collections.shuffle(infoResult.getCorrectInfos());
     synchronizer.synchronize(infoResult);
     
@@ -121,9 +122,9 @@ public class BlockSynchronizerTest extends BaseCachingTest {
     
     BlockInfoResult infoResult = new BlockInfoResult();
     infoResult.setStartPosition(123l);
-    infoResult.getCorrectInfos().addAll(getFakeResponse(false,123l).get().getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
-    infoResult.getCorrectInfos().addAll(getFakeResponse(false,133l).get().getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
-    infoResult.getCorrectInfos().addAll(getFakeResponse(false,143l).get().getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    infoResult.getCorrectInfos().addAll(getFakeResponse(false,123l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    infoResult.getCorrectInfos().addAll(getFakeResponse(false,133l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    infoResult.getCorrectInfos().addAll(getFakeResponse(false,143l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
     synchronizer.synchronize(infoResult);
     
     verify(blockService, times(10 * 3)).saveInBlockchain(any());
@@ -143,9 +144,9 @@ public class BlockSynchronizerTest extends BaseCachingTest {
     
     BlockInfoResult infoResult = new BlockInfoResult();
     infoResult.setStartPosition(123l);
-    infoResult.getCorrectInfos().addAll(getFakeResponse(false,123l).get().getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
-    infoResult.getCorrectInfos().addAll(getFakeResponse(false,133l).get().getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
-    infoResult.getCorrectInfos().addAll(getFakeResponse(false,143l).get().getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    infoResult.getCorrectInfos().addAll(getFakeResponse(false,123l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    infoResult.getCorrectInfos().addAll(getFakeResponse(false,133l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    infoResult.getCorrectInfos().addAll(getFakeResponse(false,143l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
     synchronizer.synchronize(infoResult);
     
     verify(blockService, times(10 * 3)).saveInBlockchain(any());
@@ -166,10 +167,10 @@ public class BlockSynchronizerTest extends BaseCachingTest {
     
     BlockInfoResult infoResult = new BlockInfoResult();
     infoResult.setStartPosition(123l);
-    infoResult.getCorrectInfos().addAll(getFakeResponse(false,123l).get().getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
-    infoResult.getCorrectInfos().addAll(getFakeResponse(false,133l).get().getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
-    infoResult.getCorrectInfos().addAll(getFakeResponse(false,143l).get().getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
-    infoResult.getCorrectInfos().addAll(getFakeResponse(false,153l).get().getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    infoResult.getCorrectInfos().addAll(getFakeResponse(false,123l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    infoResult.getCorrectInfos().addAll(getFakeResponse(false,133l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    infoResult.getCorrectInfos().addAll(getFakeResponse(false,143l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    infoResult.getCorrectInfos().addAll(getFakeResponse(false,153l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
     synchronizer.synchronize(infoResult);
     
     verify(blockService, times(10 * 4)).saveInBlockchain(any());
@@ -192,10 +193,10 @@ public class BlockSynchronizerTest extends BaseCachingTest {
     
     BlockInfoResult infoResult = new BlockInfoResult();
     infoResult.setStartPosition(123l);
-    infoResult.getCorrectInfos().addAll(getFakeResponse(false,123l).get().getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
-    infoResult.getCorrectInfos().addAll(getFakeResponse(false,133l).get().getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
-    infoResult.getCorrectInfos().addAll(getFakeResponse(false,143l).get().getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
-    infoResult.getCorrectInfos().addAll(getFakeResponse(false,153l).get().getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    infoResult.getCorrectInfos().addAll(getFakeResponse(false,123l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    infoResult.getCorrectInfos().addAll(getFakeResponse(false,133l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    infoResult.getCorrectInfos().addAll(getFakeResponse(false,143l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    infoResult.getCorrectInfos().addAll(getFakeResponse(false,153l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
     synchronizer.synchronize(infoResult);
     
     verify(blockService, times(10 * 4)).saveInBlockchain(any());
@@ -210,14 +211,14 @@ public class BlockSynchronizerTest extends BaseCachingTest {
   @SuppressWarnings("unchecked")
   public void testSynchronize_withLastTotallyEmptyInsteadResponseFromInquirer_shouldWorkWell() {
     when(inquirer.fetchNextBatch(any(SyncBatchRequest.class), any(Class.class))).thenReturn(getFakeResponse(false,123l))
-    .thenReturn(getFakeResponse(false,133l)).thenReturn(getFakeResponse(false,143l)).thenReturn(Optional.empty());
+    .thenReturn(getFakeResponse(false,133l)).thenReturn(getFakeResponse(false,143l)).thenReturn(new ArrayList<>());
     when(blockService.saveInBlockchain(any())).thenReturn(new StoredBlock());
     
     BlockInfoResult infoResult = new BlockInfoResult();
     infoResult.setStartPosition(123l);
-    infoResult.getCorrectInfos().addAll(getFakeResponse(false,123l).get().getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
-    infoResult.getCorrectInfos().addAll(getFakeResponse(false,133l).get().getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
-    infoResult.getCorrectInfos().addAll(getFakeResponse(false,143l).get().getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    infoResult.getCorrectInfos().addAll(getFakeResponse(false,123l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    infoResult.getCorrectInfos().addAll(getFakeResponse(false,133l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    infoResult.getCorrectInfos().addAll(getFakeResponse(false,143l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
     synchronizer.synchronize(infoResult);
     
     verify(blockService, times(10 * 3)).saveInBlockchain(any());
@@ -254,7 +255,7 @@ public class BlockSynchronizerTest extends BaseCachingTest {
     
     BlockInfoResult infoResult = new BlockInfoResult();
     infoResult.setStartPosition(123l);
-    infoResult.getCorrectInfos().addAll(getFakeResponse(false,123l).get().getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    infoResult.getCorrectInfos().addAll(getFakeResponse(false,123l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
     synchronizer.synchronize(infoResult);
     
     verify(blockService, times(0)).saveInBlockchain(any());
@@ -276,10 +277,10 @@ public class BlockSynchronizerTest extends BaseCachingTest {
     
     BlockInfoResult infoResult = new BlockInfoResult();
     infoResult.setStartPosition(123l);
-    infoResult.getCorrectInfos().addAll(getFakeResponse(false,123l).get().getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
-    infoResult.getCorrectInfos().addAll(getFakeResponse(false,133l).get().getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
-    infoResult.getCorrectInfos().addAll(getFakeResponse(false,143l).get().getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
-    infoResult.getCorrectInfos().addAll(getFakeResponse(true,153l).get().getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    infoResult.getCorrectInfos().addAll(getFakeResponse(false,123l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    infoResult.getCorrectInfos().addAll(getFakeResponse(false,133l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    infoResult.getCorrectInfos().addAll(getFakeResponse(false,143l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    infoResult.getCorrectInfos().addAll(getFakeResponse(true,153l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
     synchronizer.synchronize(infoResult);
 
     verify(blockService, times(41)).saveInBlockchain(any());
@@ -308,9 +309,9 @@ public class BlockSynchronizerTest extends BaseCachingTest {
     
     BlockInfoResult infoResult = new BlockInfoResult();
     infoResult.setStartPosition(123l);
-    infoResult.getCorrectInfos().addAll(getFakeResponse(false,123l).get().getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
-    infoResult.getCorrectInfos().addAll(getFakeResponse(false,133l).get().getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
-    infoResult.getCorrectInfos().addAll(getFakeResponse(false,143l).get().getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    infoResult.getCorrectInfos().addAll(getFakeResponse(false,123l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    infoResult.getCorrectInfos().addAll(getFakeResponse(false,133l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    infoResult.getCorrectInfos().addAll(getFakeResponse(false,143l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
     synchronizer.synchronize(infoResult);
 
     verify(blockService, times(21)).saveInBlockchain(any());
@@ -357,7 +358,7 @@ public class BlockSynchronizerTest extends BaseCachingTest {
   }
  
   
-  Optional<SyncResponse<Block>> getFakeResponse(boolean isLast, long startPos) {
+  List<SyncResponse<Block>> getFakeResponse(boolean isLast, long startPos) {
     var blocks = new ArrayList<Block>();
     var block1 = new Block();
     block1.setPosition(123l);
@@ -384,12 +385,12 @@ public class BlockSynchronizerTest extends BaseCachingTest {
     return getFakeResponse(isLast, startPos, blocks);
   }
   
-  Optional<SyncResponse<Block>> getFakeResponse(boolean isLast, long startPos, List<Block> blocks) {
+  List<SyncResponse<Block>> getFakeResponse(boolean isLast, long startPos, List<Block> blocks) {
     var response = new SyncResponse<Block>();
     response.setEntities(blocks);
     response.setLastPositionReached(isLast);
     response.setStartingPosition(startPos);
-    return Optional.ofNullable(response);
+    return ListUtils.emptyIfNull(ImmutableList.of(response));
   }
   
   private BlockInfo mapToInfo(Block block) {

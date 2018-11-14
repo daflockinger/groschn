@@ -1,8 +1,8 @@
 package com.flockinger.groschn.blockchain.messaging;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.times;
@@ -10,7 +10,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -20,8 +19,6 @@ import java.util.stream.IntStream;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -34,7 +31,6 @@ import com.flockinger.groschn.blockchain.messaging.dto.SyncBatchRequest;
 import com.flockinger.groschn.blockchain.messaging.sync.SyncInquirer;
 import com.flockinger.groschn.blockchain.messaging.sync.impl.SyncInquirerImpl;
 import com.flockinger.groschn.blockchain.model.Block;
-import com.flockinger.groschn.commons.MerkleRootCalculator;
 import com.flockinger.groschn.commons.config.CommonsConfig;
 import com.flockinger.groschn.messaging.config.MainTopics;
 import com.flockinger.groschn.messaging.members.NetworkStatistics;
@@ -53,8 +49,6 @@ public class SyncInquirerTest2 {
   private Broadcaster<MessagePayload> broadcaster;
   @MockBean(reset=MockReset.BEFORE)
   private NetworkStatistics networkStatistics;
-  @MockBean(reset=MockReset.BEFORE)
-  private MerkleRootCalculator merkleCalculator;
   @Autowired
   private MessagingUtils utils;
   
@@ -69,7 +63,7 @@ public class SyncInquirerTest2 {
   
   @Before
   public void setup() {
-    exec = Executors.newScheduledThreadPool(100);
+    exec = Executors.newScheduledThreadPool(10);
   }
   
   @Test
@@ -79,13 +73,7 @@ public class SyncInquirerTest2 {
     request.setFromPosition(2);
     when(networkStatistics.activeNodeCount()).thenReturn(20l);
     when(networkStatistics.activeNodeIds()).thenReturn(generateNodeIds(20));
-    when(merkleCalculator.calculateMerkleRootHash(any())).thenAnswer(new Answer<String>() {
-      @Override
-      public String answer(InvocationOnMock invocation) throws Throwable {
-        var blocks = (List<Block>)invocation.getArgument(0);
-        return blocks.size() != 10 ? "fake" : "realOne";
-      }});
-    
+        
     when(broadcaster.sendRequest(any(), anyString(), any(MainTopics.class)))
     .thenReturn(fakeFuture(1,2)).thenReturn(fakeFuture(1,2)).thenReturn(exceptionalFuture())
     .thenReturn(exceptionalFuture()).thenReturn(exceptionalFuture()).thenReturn(exceptionalFuture())
@@ -95,14 +83,13 @@ public class SyncInquirerTest2 {
     .thenReturn(exceptionalFuture()).thenReturn(exceptionalFuture()).thenReturn(exceptionalFuture())
     .thenReturn(exceptionalFuture()).thenReturn(exceptionalFuture());
     
-    Optional<SyncResponse<Block>> response = inquirer.fetchNextBatch(request, Block.class);
-    assertTrue("verify response is there", response.isPresent());
-    assertEquals("verify correct starting position", 2l, response.get().getStartingPosition().longValue());
-    assertNotNull("verify entities are not null", response.get().getEntities());
-    assertEquals("verify correct amount responded entities", 10, response.get().getEntities().size());
+    List<SyncResponse<Block>> responses = inquirer.fetchNextBatch(request, Block.class);
+    assertFalse("verify response is there", responses.isEmpty());
+    assertEquals("verify correct starting position", 2l, responses.get(0).getStartingPosition().longValue());
+    assertNotNull("verify entities are not null", responses.get(0).getEntities());
+    assertEquals("verify correct amount responded entities", 10, responses.get(0).getEntities().size());
     
     verify(broadcaster,times(6)).sendRequest(any(), anyString(), any(MainTopics.class));
-    verify(merkleCalculator, times(2)).calculateMerkleRootHash(any());
     verify(networkStatistics, times(1)).activeNodeIds();
   }
   
@@ -114,26 +101,19 @@ public class SyncInquirerTest2 {
     request.setFromPosition(2);
     when(networkStatistics.activeNodeCount()).thenReturn(4l);
     when(networkStatistics.activeNodeIds()).thenReturn(generateNodeIds(4));
-    when(merkleCalculator.calculateMerkleRootHash(any())).thenAnswer(new Answer<String>() {
-      @Override
-      public String answer(InvocationOnMock invocation) throws Throwable {
-        var blocks = (List<Block>)invocation.getArgument(0);
-        return blocks.size() != 10 ? "fake" : "realOne";
-      }});
-    
+        
     when(broadcaster.sendRequest(any(), anyString(), any(MainTopics.class)))
     .thenReturn(fakeFuture(1,2)).thenReturn(exceptionalFuture()).thenReturn(fakeFuture(1,2))
     .thenReturn(exceptionalFuture());
     
     
-    Optional<SyncResponse<Block>> response = inquirer.fetchNextBatch(request, Block.class);
-    assertTrue("verify response is there", response.isPresent());
-    assertEquals("verify correct starting position", 2l, response.get().getStartingPosition().longValue());
-    assertNotNull("verify entities are not null", response.get().getEntities());
-    assertEquals("verify correct amount responded entities", 10, response.get().getEntities().size());
+    List<SyncResponse<Block>> responses = inquirer.fetchNextBatch(request, Block.class);
+    assertFalse("verify response is there", responses.isEmpty());
+    assertEquals("verify correct starting position", 2l, responses.get(0).getStartingPosition().longValue());
+    assertNotNull("verify entities are not null", responses.get(0).getEntities());
+    assertEquals("verify correct amount responded entities", 10, responses.get(0).getEntities().size());
     
     verify(broadcaster,times(3)).sendRequest(any(), anyString(), any(MainTopics.class));
-    verify(merkleCalculator, times(2)).calculateMerkleRootHash(any());
     verify(networkStatistics, times(1)).activeNodeIds();
   }
   

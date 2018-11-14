@@ -1,12 +1,12 @@
 package com.flockinger.groschn.blockchain.messaging;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.atLeast;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -23,8 +23,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -37,7 +35,6 @@ import com.flockinger.groschn.blockchain.messaging.dto.SyncBatchRequest;
 import com.flockinger.groschn.blockchain.messaging.sync.SyncInquirer;
 import com.flockinger.groschn.blockchain.messaging.sync.impl.SyncInquirerImpl;
 import com.flockinger.groschn.blockchain.model.Block;
-import com.flockinger.groschn.commons.MerkleRootCalculator;
 import com.flockinger.groschn.commons.config.CommonsConfig;
 import com.flockinger.groschn.messaging.config.MainTopics;
 import com.flockinger.groschn.messaging.exception.ReceivedMessageInvalidException;
@@ -58,8 +55,6 @@ public class SyncInquirerTest {
   private Broadcaster<MessagePayload> broadcaster;
   @MockBean(reset=MockReset.BEFORE)
   private NetworkStatistics networkStatistics;
-  @MockBean(reset=MockReset.BEFORE)
-  private MerkleRootCalculator merkleCalculator;
   @Autowired
   private MessagingUtils utils;
   
@@ -84,23 +79,17 @@ public class SyncInquirerTest {
     request.setFromPosition(2);
     when(networkStatistics.activeNodeCount()).thenReturn(20l);
     when(networkStatistics.activeNodeIds()).thenReturn(generateNodeIds(20));
-    when(merkleCalculator.calculateMerkleRootHash(any())).thenAnswer(new Answer<String>() {
-      @Override
-      public String answer(InvocationOnMock invocation) throws Throwable {
-        var blocks = (List<Block>)invocation.getArgument(0);
-        return blocks.size() != 10 ? "fake" : "realOne";
-      }});
     
     when(broadcaster.sendRequest(any(), anyString(), any(MainTopics.class)))
-    .thenReturn(fakeFuture(1,2)).thenReturn(fakeFuture(1,9, 15, false)).thenReturn(fakeFuture(1,2))
-    .thenReturn(fakeFuture(20,13)).thenReturn(fakeFuture(90,15)).thenReturn(fakeFuture(20,19));
+    .thenReturn(fakeFuture(1,2)).thenReturn(fakeFuture(1,2)).thenReturn(fakeFuture(1,2))
+    .thenReturn(fakeFuture(20,2)).thenReturn(fakeFuture(90,2)).thenReturn(fakeFuture(20,2));
     
     
-    Optional<SyncResponse<Block>> response = inquirer.fetchNextBatch(request, Block.class);
-    assertTrue("verify response is there", response.isPresent());
-    assertEquals("verify correct starting position", 2l, response.get().getStartingPosition().longValue());
-    assertNotNull("verify entities are not null", response.get().getEntities());
-    assertEquals("verify correct amount responded entities", 10, response.get().getEntities().size());
+    List<SyncResponse<Block>> responses = inquirer.fetchNextBatch(request, Block.class);
+    assertFalse("verify responses are there", responses.isEmpty());
+    assertEquals("verify correct starting position", 2l, responses.get(0).getStartingPosition().longValue());
+    assertNotNull("verify entities are not null", responses.get(0).getEntities());
+    assertEquals("verify correct amount responded entities", 10, responses.get(0).getEntities().size());
     
     var requestCaptor = ArgumentCaptor.forClass(Message.class);
    
@@ -113,40 +102,8 @@ public class SyncInquirerTest {
     assertEquals("verify non null request has correct batch size", 10l, 
         firstSentSyncReq.get().getRequestPackageSize().longValue());
     
-    verify(merkleCalculator, atLeast(3)).calculateMerkleRootHash(any());
     verify(networkStatistics, times(1)).activeNodeIds();
   }
-  
-  @Test
-  public void testFetchNextBatch_withMoreValidCompetingResults_shouldFetchAndPickMajorityOne() {
-    SyncBatchRequest request = SyncBatchRequest.build().batchSize(10)
-        .idealReceiveNodeCount(3).maxFetchRetries(3).topic(MainTopics.SYNC_BLOCKCHAIN);
-    request.setFromPosition(2);
-    when(networkStatistics.activeNodeCount()).thenReturn(20l);
-    when(networkStatistics.activeNodeIds()).thenReturn(generateNodeIds(20));
-    when(merkleCalculator.calculateMerkleRootHash(any())).thenAnswer(new Answer<String>() {
-      @Override
-      public String answer(InvocationOnMock invocation) throws Throwable {
-        var blocks = (List<Block>)invocation.getArgument(0);
-        return blocks.size() == 10 ? "twooiis" : "threeiis";
-      }});
-    
-    when(broadcaster.sendRequest(any(), anyString(), any(MainTopics.class)))
-    .thenReturn(fakeFuture(10,2)).thenReturn(fakeFuture(10,3, 14, false)).thenReturn(fakeFuture(10,3, 14, false))
-    .thenReturn(fakeFuture(1,2)).thenReturn(fakeFuture(5,2)).thenReturn(exceptionalFuture());
-    
-    
-    Optional<SyncResponse<Block>> response = inquirer.fetchNextBatch(request, Block.class);
-    assertTrue("verify response is there", response.isPresent());
-    assertEquals("verify correct starting position", 2l, response.get().getStartingPosition().longValue());
-    assertNotNull("verify entities are not null", response.get().getEntities());
-    assertEquals("verify correct amount responded entities", 10, response.get().getEntities().size());
-    
-    verify(broadcaster, times(6)).sendRequest(any(), anyString(), any(MainTopics.class));
-    verify(merkleCalculator, atLeast(3)).calculateMerkleRootHash(any());
-    verify(networkStatistics, times(1)).activeNodeIds();
-  }
-  
   
   @Test
   public void testFetchNextBatch_witOnlyOneResponses_shouldFetchAndPickThatOne() {
@@ -155,25 +112,18 @@ public class SyncInquirerTest {
     request.setFromPosition(2);
     when(networkStatistics.activeNodeCount()).thenReturn(20l);
     when(networkStatistics.activeNodeIds()).thenReturn(generateNodeIds(20));
-    when(merkleCalculator.calculateMerkleRootHash(any())).thenAnswer(new Answer<String>() {
-      @Override
-      public String answer(InvocationOnMock invocation) throws Throwable {
-        var blocks = (List<Block>)invocation.getArgument(0);
-        return blocks.size() != 10 ? "fake" : "realOne";
-      }});
-    
+       
     when(broadcaster.sendRequest(any(), anyString(), any(MainTopics.class)))
     .thenReturn(exceptionalFuture()).thenReturn(fakeFuture(1,2)).thenReturn(exceptionalFuture())
     .thenReturn(exceptionalFuture()).thenReturn(exceptionalFuture()).thenReturn(exceptionalFuture());
     
-    Optional<SyncResponse<Block>> response = inquirer.fetchNextBatch(request, Block.class);
-    assertTrue("verify response is there", response.isPresent());
-    assertEquals("verify correct starting position", 2l, response.get().getStartingPosition().longValue());
-    assertNotNull("verify entities are not null", response.get().getEntities());
-    assertEquals("verify correct amount responded entities", 10, response.get().getEntities().size());
+    List<SyncResponse<Block>> responses = inquirer.fetchNextBatch(request, Block.class);
+    assertFalse("verify response is there", responses.isEmpty());
+    assertEquals("verify correct starting position", 2l, responses.get(0).getStartingPosition().longValue());
+    assertNotNull("verify entities are not null", responses.get(0).getEntities());
+    assertEquals("verify correct amount responded entities", 10, responses.get(0).getEntities().size());
     
     verify(broadcaster,times(6)).sendRequest(any(), anyString(), any(MainTopics.class));
-    verify(merkleCalculator, times(1)).calculateMerkleRootHash(any());
     verify(networkStatistics, times(1)).activeNodeIds();
   }
   
@@ -185,18 +135,10 @@ public class SyncInquirerTest {
     request.setFromPosition(2);
     when(networkStatistics.activeNodeCount()).thenReturn(20l);
     when(networkStatistics.activeNodeIds()).thenReturn(generateNodeIds(20));
-    when(merkleCalculator.calculateMerkleRootHash(any())).thenAnswer(new Answer<String>() {
-      @Override
-      public String answer(InvocationOnMock invocation) throws Throwable {
-        var blocks = (List<Block>)invocation.getArgument(0);
-        return blocks.size() != 10 ? "fake" : "realOne";
-      }});
-    
+       
     when(broadcaster.sendRequest(any(), anyString(), any(MainTopics.class))).thenReturn(fakeFuture(1,2,0,false));
     
     inquirer.fetchNextBatch(request, Block.class);
-  
-    verify(merkleCalculator, never()).calculateMerkleRootHash(any());
   }
   
   
@@ -207,8 +149,6 @@ public class SyncInquirerTest {
     request.setFromPosition(2);
     when(networkStatistics.activeNodeCount()).thenReturn(20l);
     when(networkStatistics.activeNodeIds()).thenReturn(generateNodeIds(20));
-    when(merkleCalculator.calculateMerkleRootHash(any())).thenReturn("realOne")
-        .thenReturn("fakeOne").thenReturn("realOne");
     
     when(broadcaster.sendRequest(any(), anyString(), any(MainTopics.class)))
     .thenReturn(emptyFuture(1)).thenReturn(emptyFuture(1)).thenReturn(emptyFuture(1))
@@ -218,14 +158,13 @@ public class SyncInquirerTest {
     .thenReturn(fakeFuture(1,2)).thenReturn(fakeFuture(1,2)).thenReturn(fakeFuture(1,2))
     .thenReturn(fakeFuture(10,2)).thenReturn(fakeFuture(10,2)).thenReturn(fakeFuture(10,2));
     
-    Optional<SyncResponse<Block>> response = inquirer.fetchNextBatch(request, Block.class);
-    assertTrue("verify response is there", response.isPresent());
-    assertEquals("verify correct starting position", 2l, response.get().getStartingPosition().longValue());
-    assertNotNull("verify entities are not null", response.get().getEntities());
-    assertEquals("verify correct amount responded entities", 10, response.get().getEntities().size());
+    List<SyncResponse<Block>> responses = inquirer.fetchNextBatch(request, Block.class);
+    assertFalse("verify response is there", responses.isEmpty());
+    assertEquals("verify correct starting position", 2l, responses.get(0).getStartingPosition().longValue());
+    assertNotNull("verify entities are not null", responses.get(0).getEntities());
+    assertEquals("verify correct amount responded entities", 10, responses.get(0).getEntities().size());
     
     verify(broadcaster,times(18)).sendRequest(any(), anyString(), any(MainTopics.class));
-    verify(merkleCalculator, atLeast(3)).calculateMerkleRootHash(any());
     verify(networkStatistics, times(3)).activeNodeIds();
   }
   
@@ -237,13 +176,7 @@ public class SyncInquirerTest {
     request.setFromPosition(2);
     when(networkStatistics.activeNodeCount()).thenReturn(100l);
     when(networkStatistics.activeNodeIds()).thenReturn(generateNodeIds(100));
-    when(merkleCalculator.calculateMerkleRootHash(any())).thenAnswer(new Answer<String>() {
-      @Override
-      public String answer(InvocationOnMock invocation) throws Throwable {
-        var blocks = (List<Block>)invocation.getArgument(0);
-        return blocks.size() != 10 ? "fake" : "realOne";
-      }});
-    
+        
     when(broadcaster.sendRequest(any(), anyString(), any(MainTopics.class)))
     .thenReturn(fakeFuture(1,2)).thenReturn(fakeFuture(1,9, 15, false)).thenReturn(fakeFuture(1,2))
     .thenReturn(fakeFuture(10,13)).thenReturn(fakeFuture(10,15)).thenReturn(fakeFuture(10,19));

@@ -27,6 +27,7 @@ import com.flockinger.groschn.blockchain.messaging.dto.SyncStatus;
 import com.flockinger.groschn.blockchain.messaging.sync.SyncInquirer;
 import com.flockinger.groschn.blockchain.messaging.sync.SyncKeeper;
 import com.flockinger.groschn.blockchain.model.Block;
+import com.flockinger.groschn.blockchain.model.Hashable;
 import com.flockinger.groschn.commons.exception.BlockchainException;
 import com.flockinger.groschn.messaging.config.MainTopics;
 import com.flockinger.groschn.messaging.model.SyncResponse;
@@ -111,7 +112,7 @@ public class BlockSynchronizer implements SyncKeeper {
     boolean isValidAndStored = false;
     for(int retryCount = 0; retryCount <= BLOCK_FETCH_N_STORE_RETRIES && !isValidAndStored; retryCount++) {
       LOG.info("fetching next block batch");
-      syncResponse = inquirer.fetchNextBatch(request, Block.class);
+      syncResponse = fetchLongestResponse(request);
       LOG.info("done fetching next block batch");
       if(isResponseCorrect(syncResponse, relatedInfos)) {
         isValidAndStored = syncResponse.stream().map(SyncResponse::getEntities)
@@ -123,6 +124,15 @@ public class BlockSynchronizer implements SyncKeeper {
     return syncResponse.stream().map(response -> 
     response.isLastPositionReached() || ListUtils.emptyIfNull(response.getEntities()).isEmpty())
         .findFirst().orElse(true) || !isValidAndStored;
+  }
+  
+  private Optional<SyncResponse<Block>> fetchLongestResponse(SyncBatchRequest request) {
+    return inquirer.fetchNextBatch(request, Block.class).stream()
+        .reduce(this::getBiggerBatch);
+  }
+  
+  private <T extends Hashable<T>> SyncResponse<T> getBiggerBatch(SyncResponse<T> batchOne, SyncResponse<T> batchTwo) {
+    return (batchOne.getEntities().size() >= batchTwo.getEntities().size()) ? batchOne : batchTwo;
   }
   
   private boolean isResponseCorrect(Optional<SyncResponse<Block>> response, List<BlockInfo> relatedInfos) {

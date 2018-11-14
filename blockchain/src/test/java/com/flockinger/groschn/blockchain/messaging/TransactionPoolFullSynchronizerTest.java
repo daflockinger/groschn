@@ -2,13 +2,12 @@ package com.flockinger.groschn.blockchain.messaging;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+import org.apache.commons.collections4.ListUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -26,6 +25,7 @@ import com.flockinger.groschn.blockchain.model.Transaction;
 import com.flockinger.groschn.blockchain.transaction.TransactionManager;
 import com.flockinger.groschn.messaging.config.MainTopics;
 import com.flockinger.groschn.messaging.model.SyncResponse;
+import com.google.common.collect.ImmutableList;
 
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes = {TransactionPoolFullSynchronizer.class})
@@ -101,7 +101,7 @@ public class TransactionPoolFullSynchronizerTest {
   public void testSynchronize_withTotallyEmptyLastResponse_shouldDoFullSynchronization() {
     when(inquirer.fetchNextBatch(any(), any(Class.class))).thenReturn(getFakeResponse(false,1))
     .thenReturn(getFakeResponse(false,2)).thenReturn(getFakeResponse(false,3))
-    .thenReturn(Optional.empty());
+    .thenReturn(new ArrayList<>());
     
     synchronizer.fullSynchronization();
     
@@ -140,7 +140,7 @@ public class TransactionPoolFullSynchronizerTest {
   }
   
   
-  Optional<SyncResponse<Transaction>> getFakeResponse(boolean isLast, long startPos) {
+  List<SyncResponse<Transaction>> getFakeResponse(boolean isLast, long startPos) {
     int txCount = isLast ? 80 : 100;
     var transactions = new ArrayList<Transaction>();
     for(int count = 0; count < txCount; count++) {
@@ -149,11 +149,11 @@ public class TransactionPoolFullSynchronizerTest {
     return getFakeResponse(isLast, startPos, transactions);
   }
 
-  Optional<SyncResponse<Transaction>> getFakeResponse(boolean isLast, long startPos, List<Transaction> transactions) {
+  List<SyncResponse<Transaction>> getFakeResponse(boolean isLast, long startPos, List<Transaction> transactions) {
     var response = new SyncResponse<Transaction>();
     response.setEntities(transactions);
     response.setLastPositionReached(isLast);
     response.setStartingPosition(startPos);
-    return Optional.ofNullable(response);
+    return ListUtils.emptyIfNull(ImmutableList.of(response));
   }
 }
