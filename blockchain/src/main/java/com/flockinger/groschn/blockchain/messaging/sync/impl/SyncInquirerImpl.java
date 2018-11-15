@@ -49,7 +49,6 @@ public class SyncInquirerImpl implements SyncInquirer {
   @Value("${atomix.node-id}")
   private String nodeId;
   
-  private final static Logger LOG = LoggerFactory.getLogger(SyncInquirerImpl.class);
   public SecureRandom randomizer = new SecureRandom();
 
   
@@ -70,10 +69,6 @@ public class SyncInquirerImpl implements SyncInquirer {
   
   private List<Message<MessagePayload>> fetchMessages(SyncBatchRequest request) {
     var syncPartners = getSyncPartners(request.getIdealReceiveNodeCount() * 2);
-   // var idealNodeCount = request.getIdealReceiveNodeCount();
-   // var minResultsNeeded =
-  //      (syncPartners.size() >= idealNodeCount) ? idealNodeCount : syncPartners.size();
-   
     var requests = syncPartners.stream()
         .collect(Collectors.toMap(Function.identity(), it -> request))
         .entrySet().stream().collect(Collectors.toList());
@@ -85,36 +80,7 @@ public class SyncInquirerImpl implements SyncInquirer {
     var request = requestEntity.getValue();
     return broadcaster.sendRequest(createMessage(request), requestEntity.getKey(), request.getTopic());
   }
-  
-  private Mono<Message<MessagePayload>> sendRequest(SyncBatchRequest request, String receiverId) {
-    return Mono.fromFuture(broadcaster
-        .sendRequest(createMessage(request), receiverId, request.getTopic()))
-        .retry(request.getMaxFetchRetries());
-  }
-  
- /* private List<Message<MessagePayload>> fetchMessages(SyncBatchRequest request) {
-    var syncPartners = getSyncPartners(request.getIdealReceiveNodeCount() * 2);
-    var idealNodeCount = request.getIdealReceiveNodeCount();
-    var minResultsNeeded =
-        (syncPartners.size() >= idealNodeCount) ? idealNodeCount : syncPartners.size();
-    CountDownLatch successLatch = new CountDownLatch(minResultsNeeded);
-    CountDownLatch totalLatch = new CountDownLatch(syncPartners.size());
-    var arrivedMessages = new CopyOnWriteArrayList<Message<MessagePayload>>();
-    syncPartners.stream().forEach(id -> {
-      broadcaster.sendRequest(createMessage(request), id, request.getTopic())
-          .whenComplete((response, error) -> {
-            if (error == null && response != null) {
-              arrivedMessages.add(response);
-              successLatch.countDown();
-            }
-            totalLatch.countDown();
-          });
-    });
-    CompletableFuture.anyOf(CompletableFuture.runAsync(() -> awaitSave(successLatch)),
-        CompletableFuture.runAsync(() -> awaitSave(totalLatch))).join();
-    return arrivedMessages.stream().filter(Objects::nonNull).collect(toList());
-  }*/
-  
+    
   private Message<MessagePayload> createMessage(SyncBatchRequest request) {
     Message<MessagePayload> message = new Message<>();
     message.setPayload(createPayload(request));
@@ -122,14 +88,6 @@ public class SyncInquirerImpl implements SyncInquirer {
     message.setTimestamp(new Date().getTime());
     return message;
   }
-  /*
-  private void awaitSave(CountDownLatch latch) {
-    try {
-      latch.await();
-    } catch (InterruptedException e) {
-      LOG.warn("Syncing process interrupted, should never happen!");
-    }
-  }*/
   
   private List<String> getSyncPartners(int randomSelectionSize) {
     var nodeIds = networkStatistics.activeNodeIds().stream()
