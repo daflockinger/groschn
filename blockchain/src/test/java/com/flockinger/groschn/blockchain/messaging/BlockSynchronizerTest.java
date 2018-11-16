@@ -13,7 +13,11 @@ import static org.mockito.Mockito.when;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.apache.commons.collections4.ListUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -342,6 +346,41 @@ public class BlockSynchronizerTest extends BaseCachingTest {
     verify(blockService, times(0)).saveInBlockchain(any());
     verify(inquirer, times(0)).fetchNextBatch(any(), any(Class.class));
     verify(blockMaker,never()).generation(any());
+  }
+  
+  @Test
+  @SuppressWarnings("unchecked")
+  public void testSynchronize_whenRequestingSyncTwiceAtTheSameTime_shouldOnlyCallOnce() throws Exception {
+    when(inquirer.fetchNextBatch(any(SyncBatchRequest.class), any(Class.class))).thenReturn(getFakeResponse(true,153l));
+    when(blockService.saveInBlockchain(any())).thenReturn(new StoredBlock());
+    
+    BlockInfoResult infoResult = new BlockInfoResult();
+    infoResult.setStartPosition(153l);
+    infoResult.getCorrectInfos().addAll(getFakeResponse(false,153l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    Collections.shuffle(infoResult.getCorrectInfos());
+    
+    ExecutorService service = Executors.newFixedThreadPool(10);
+    var hashables = IntStream.range(0, 4).mapToObj(count -> new SyncRunnable(infoResult, synchronizer)).collect(Collectors.toList());
+    service.invokeAll(hashables); // invoke simultaneously
+    Thread.sleep(200);
+    
+    verify(blockService, times(10)).saveInBlockchain(any());
+    verify(inquirer, times(1)).fetchNextBatch(any(), any(Class.class));
+    verify(blockMaker, times(2)).generation(any());
+  }
+  
+  private static class SyncRunnable implements Callable<String> {
+    private BlockInfoResult infoResult;
+    private BlockSynchronizer synchronizer;
+    public SyncRunnable(BlockInfoResult infoResult, BlockSynchronizer synchronizer) {
+      this.infoResult = infoResult;
+      this.synchronizer = synchronizer;
+    }
+    @Override
+    public String call() throws Exception {
+      synchronizer.synchronize(infoResult);
+      return "";
+    }
   }
   
   @Test

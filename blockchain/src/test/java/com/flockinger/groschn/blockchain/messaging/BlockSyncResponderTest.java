@@ -162,6 +162,7 @@ public class BlockSyncResponderTest extends BaseCachingTest {
     message.getPayload().setEntity(compressor.compress(request));
     var notNiceBlocks = someBlocks(12);
     notNiceBlocks.get(3).setHash("evil3");
+    notNiceBlocks.get(5).setPosition(300000l);
     notNiceBlocks.get(7).setHash("hash30");
     when(blockService.findBlocks(anyLong(), anyLong())).thenReturn(notNiceBlocks);
     when(networkStatistics.activeNodeIds()).thenReturn(ImmutableList.of("groschn-master-123", "pfennig-master"));

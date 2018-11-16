@@ -71,35 +71,41 @@ public class BlockSynchronizer implements SyncKeeper {
       // Block sync request topic
       .topic(MainTopics.SYNC_BLOCKCHAIN);
   
-  //TODO check this method for concurrency stuff (consider synchronized!) also for the BlockDeterminator
   @Override
-  public void synchronize(BlockInfoResult infoResult) {
-    var fromPosition = infoResult.getStartPosition();
-    var blockInfos = ListUtils.emptyIfNull(infoResult.getCorrectInfos());
-    var totalBatches = Math.round(Math.ceil((double)blockInfos.size()/(double)BLOCK_REQUEST_PACKAGE_SIZE));
-    LOG.info("total batches {} blockInfoSize {} ", totalBatches, blockInfos.size());
-    Collections.sort(blockInfos);    
-    if(syncStatus().equals(SyncStatus.IN_PROGRESS.name())) {
-      LOG.warn("Synchronization still in progress!");
-      return;
-    } else {
-      blockMaker.generation(STOP);
-    }
-    setSyncStatus(SyncStatus.IN_PROGRESS);
-    try {
-      boolean hasFinishedSync = false;
-      LOG.info("Start from {} and is For condition met: {}", fromPosition, (0 < totalBatches) && !hasFinishedSync);
-      for(int batchCount =0;(batchCount < totalBatches) && !hasFinishedSync; batchCount++) {
-        var relatedInfos = extractPartition(blockInfos, batchCount);
-        hasFinishedSync = storeBatchOfBlocksAndReturnHasFinished(SyncBatchRequest
-            .build(batchRequest).fromPosition(fromPosition).headers(mapToHeaders(relatedInfos)), relatedInfos);
-        LOG.info("Successfully synced and stored Blocks until position: " + fromPosition);
-        fromPosition += BLOCK_REQUEST_PACKAGE_SIZE;
+  public void synchronize(BlockInfoResult infoResult) { 
+    synchronized (this) {
+      if(syncStatus().equals(SyncStatus.IN_PROGRESS.name())) {
+        LOG.warn("Synchronization still in progress!");
+        return;
+      } else {
+        blockMaker.generation(STOP);
       }
+      setSyncStatus(SyncStatus.IN_PROGRESS);
+    }
+    try {
+      doSynchronize(infoResult);
     } finally {
       setSyncStatus(SyncStatus.DONE);
       LOG.info("Synchronization finished");
       blockMaker.generation(RESTART);
+    }
+  }
+  
+  private void doSynchronize(BlockInfoResult infoResult) {
+    var fromPosition = infoResult.getStartPosition();
+    var blockInfos = ListUtils.emptyIfNull(infoResult.getCorrectInfos());
+    var totalBatches = Math.round(Math.ceil((double)blockInfos.size()/(double)BLOCK_REQUEST_PACKAGE_SIZE));
+    LOG.info("total batches {} blockInfoSize {} ", totalBatches, blockInfos.size());
+    Collections.sort(blockInfos);  
+    
+    boolean hasFinishedSync = false;
+    LOG.info("Start from {} and is For condition met: {}", fromPosition, (0 < totalBatches) && !hasFinishedSync);
+    for(int batchCount =0;(batchCount < totalBatches) && !hasFinishedSync; batchCount++) {
+      var relatedInfos = extractPartition(blockInfos, batchCount);
+      hasFinishedSync = storeBatchOfBlocksAndReturnHasFinished(SyncBatchRequest
+          .build(batchRequest).fromPosition(fromPosition).headers(mapToHeaders(relatedInfos)), relatedInfos);
+      LOG.info("Successfully synced and stored Blocks until position: " + fromPosition);
+      fromPosition += BLOCK_REQUEST_PACKAGE_SIZE;
     }
   }
   
