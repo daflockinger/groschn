@@ -22,6 +22,8 @@ import org.apache.commons.collections4.ListUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -351,7 +353,13 @@ public class BlockSynchronizerTest extends BaseCachingTest {
   @Test
   @SuppressWarnings("unchecked")
   public void testSynchronize_whenRequestingSyncTwiceAtTheSameTime_shouldOnlyCallOnce() throws Exception {
-    when(inquirer.fetchNextBatch(any(SyncBatchRequest.class), any(Class.class))).thenReturn(getFakeResponse(true,153l));
+    when(inquirer.fetchNextBatch(any(SyncBatchRequest.class), any(Class.class)))
+    .thenAnswer(new Answer<List<SyncResponse<Block>>>() {
+      @Override
+      public List<SyncResponse<Block>> answer(InvocationOnMock invocation) throws Throwable {
+        Thread.sleep(200);
+        return getFakeResponse(true,153l);
+      }});
     when(blockService.saveInBlockchain(any())).thenReturn(new StoredBlock());
     
     BlockInfoResult infoResult = new BlockInfoResult();
