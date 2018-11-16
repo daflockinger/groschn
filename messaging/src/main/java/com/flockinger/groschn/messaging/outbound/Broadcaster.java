@@ -2,6 +2,7 @@ package com.flockinger.groschn.messaging.outbound;
 
 import java.io.Serializable;
 import java.util.concurrent.CompletableFuture;
+import com.flockinger.groschn.blockchain.model.Hashable;
 import com.flockinger.groschn.messaging.config.MainTopics;
 import com.flockinger.groschn.messaging.model.Message;
 
@@ -18,7 +19,7 @@ public interface Broadcaster<T extends Serializable> {
    * @param message
    * @param topic
    */
-  void broadcast(Message<T> message, MainTopics topic);
+  <T extends Hashable<T>> void  broadcast(T uncompressedEntity, String senderId, MainTopics topic);
   
   
   /**

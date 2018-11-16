@@ -11,12 +11,14 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import com.flockinger.groschn.blockchain.model.Hashable;
 import com.flockinger.groschn.commons.serialize.BlockSerializer;
 import com.flockinger.groschn.messaging.config.MainTopics;
 import com.flockinger.groschn.messaging.inbound.MessageResponder;
 import com.flockinger.groschn.messaging.model.Message;
 import com.flockinger.groschn.messaging.model.MessagePayload;
 import com.flockinger.groschn.messaging.outbound.Broadcaster;
+import com.flockinger.groschn.messaging.util.MessagingUtils;
 import io.atomix.cluster.MemberId;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
 
@@ -35,6 +37,8 @@ public class BroadcasterImpl implements Broadcaster<MessagePayload> {
   private Executor pooledExecutor;
   @Autowired
   private List<MessageResponder<MessagePayload>> responders;
+  @Autowired
+  private MessagingUtils utils;
   
   @PostConstruct
   public void init() {
@@ -45,10 +49,9 @@ public class BroadcasterImpl implements Broadcaster<MessagePayload> {
     }
   }
   
-  
   @Override
-  public void broadcast(Message<MessagePayload> message, MainTopics topic) {
-    clusterCommunicationService.broadcast(topic.name(), message, serializer::serialize);
+  public <T extends Hashable<T>> void broadcast(T uncompressedEntity, String senderId, MainTopics topic) {
+    clusterCommunicationService.broadcast(topic.name(), utils.packageMessage(uncompressedEntity, senderId), serializer::serialize);
   }
 
   @Override
@@ -63,5 +66,4 @@ public class BroadcasterImpl implements Broadcaster<MessagePayload> {
   private Function<byte[], Message<MessagePayload>> decoder() {
     return payload -> (Message<MessagePayload>)serializer.deserialize(payload, Message.class);
   }
-  
 }

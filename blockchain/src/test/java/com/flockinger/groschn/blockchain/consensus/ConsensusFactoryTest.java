@@ -15,8 +15,8 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
+import com.flockinger.groschn.blockchain.GeneralTestConfig;
 import com.flockinger.groschn.blockchain.config.CryptoConfig;
-import com.flockinger.groschn.blockchain.config.GeneralConfig;
 import com.flockinger.groschn.blockchain.consensus.impl.ConsensusFactory;
 import com.flockinger.groschn.blockchain.consensus.impl.ProofOfMajorityAlgorithm;
 import com.flockinger.groschn.blockchain.exception.ReachingConsentFailedException;
@@ -28,7 +28,7 @@ import com.flockinger.groschn.messaging.members.NetworkStatistics;
 @RunWith(SpringRunner.class)
 @ActiveProfiles("test")
 @DataMongoTest
-@Import({GeneralConfig.class, CryptoConfig.class})
+@Import({GeneralTestConfig.class, CryptoConfig.class})
 @ContextConfiguration(classes = {ConsensusFactory.class, BlockProcessRepository.class})
 public class ConsensusFactoryTest {
 

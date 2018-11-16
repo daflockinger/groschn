@@ -70,7 +70,7 @@ public class BlockMakerTest extends BaseCachingTest {
     maker.generation(BlockMakerCommand.RESTART);
     
     verify(transactionManager, timeout(500)).fetchTransactionsBySize(anyLong());
-    verify(broadcaster, timeout(500).times(1)).broadcast(any(), any());
+    verify(broadcaster, timeout(500).times(1)).broadcast(any(), any(), any());
     verify(storageService, timeout(500).times(1)).saveInBlockchain(any());
     verify(rewardGenerator, timeout(500)).generateRewardTransaction(any());
     verify(consensusFactory, timeout(500).times(1)).reachConsensus(any());
@@ -88,7 +88,7 @@ public class BlockMakerTest extends BaseCachingTest {
     verify(transactionManager, timeout(500)).fetchTransactionsBySize(anyLong());
     verify(rewardGenerator, timeout(500)).generateRewardTransaction(any());
     verify(consensusFactory, timeout(500).times(1)).reachConsensus(any());
-    verify(broadcaster, never()).broadcast(any(), any());
+    verify(broadcaster, never()).broadcast(any(),any(), any());
     verify(storageService, never()).saveInBlockchain(any());
   }
 

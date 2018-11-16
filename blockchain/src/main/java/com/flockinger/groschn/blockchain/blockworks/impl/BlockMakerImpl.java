@@ -32,8 +32,6 @@ public class BlockMakerImpl implements BlockMaker {
   @Autowired
   private BlockStorageService storageService;
   @Autowired
-  private MessagingUtils messagingUtils;
-  @Autowired
   private Broadcaster<MessagePayload> broadcaster;
   @Autowired
   private RewardGenerator rewardGenerator;
@@ -99,9 +97,7 @@ public class BlockMakerImpl implements BlockMaker {
   }
 
   private void broadcastBlock(Block block) {
-    var message = messagingUtils.packageMessage(block, nodeId);
-    broadcaster.broadcast(message, MainTopics.FRESH_BLOCK);
-    LOG.info("Freshly forged Block broadcasted with ID: " + message.getId());
+    broadcaster.broadcast(block, nodeId, MainTopics.FRESH_BLOCK);
   }
 }
 

@@ -13,13 +13,14 @@ import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import com.flockinger.groschn.blockchain.exception.TransactionAlreadyClearedException;
 import com.flockinger.groschn.blockchain.exception.validation.AssessmentFailedException;
-import com.flockinger.groschn.blockchain.messaging.dto.SyncBatchRequest;
 import com.flockinger.groschn.blockchain.messaging.sync.FullSyncKeeper;
-import com.flockinger.groschn.blockchain.messaging.sync.SyncInquirer;
+import com.flockinger.groschn.blockchain.model.Hashable;
 import com.flockinger.groschn.blockchain.model.Transaction;
 import com.flockinger.groschn.blockchain.transaction.TransactionManager;
 import com.flockinger.groschn.messaging.config.MainTopics;
+import com.flockinger.groschn.messaging.model.SyncBatchRequest;
 import com.flockinger.groschn.messaging.model.SyncResponse;
+import com.flockinger.groschn.messaging.sync.SyncInquirer;
 
 @Service
 public class TransactionPoolFullSynchronizer implements FullSyncKeeper {
@@ -57,14 +58,22 @@ public class TransactionPoolFullSynchronizer implements FullSyncKeeper {
   }
 
   private boolean storeBatchReturnHasFinished(SyncBatchRequest request) {
-    Optional<SyncResponse<Transaction>> response = Optional.empty();
-    response = inquirer.fetchNextBatch(request, Transaction.class);
+    Optional<SyncResponse<Transaction>> response = fetchLongestResponse(request);
     response.stream().map(SyncResponse::getEntities).filter(Objects::nonNull)
         .forEach(this::storeGoodTransaction);
     return response.stream()
         .map(existingResponse -> existingResponse.isLastPositionReached()
             || ListUtils.emptyIfNull(existingResponse.getEntities()).isEmpty())
         .findFirst().orElse(true);
+  }
+  
+  private Optional<SyncResponse<Transaction>> fetchLongestResponse(SyncBatchRequest request) {
+    return inquirer.fetchNextBatch(request, Transaction.class).stream()
+        .reduce(this::getBiggerBatch);
+  }
+  
+  private <T extends Hashable<T>> SyncResponse<T> getBiggerBatch(SyncResponse<T> batchOne, SyncResponse<T> batchTwo) {
+    return (batchOne.getEntities().size() >= batchTwo.getEntities().size()) ? batchOne : batchTwo;
   }
 
   private void storeGoodTransaction(List<Transaction> transactions) {

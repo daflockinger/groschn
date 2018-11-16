@@ -29,8 +29,6 @@ public class TransactionControllerImpl implements TransactionController {
   @Autowired
   private TransactionManager manager;
   @Autowired
-  private MessagingUtils messageUtils;
-  @Autowired
   private Broadcaster<MessagePayload> broadcaster;
   @Autowired
   private ModelMapper mapper;
@@ -58,7 +56,7 @@ public class TransactionControllerImpl implements TransactionController {
     
     var transaction = mapper.map(createTransaction, Transaction.class);
     var id = manager.storeTransaction(transaction);
-    broadcaster.broadcast(messageUtils.packageMessage(transaction, nodeId), MainTopics.FRESH_TRANSACTION);
+    broadcaster.broadcast(transaction, nodeId, MainTopics.FRESH_TRANSACTION);
     return new ResponseEntity<TransactionIdDto>(id, HttpStatus.CREATED);
   }
 }
