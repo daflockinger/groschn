@@ -24,7 +24,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
 import com.flockinger.groschn.commons.compress.CompressedEntity;
-import com.flockinger.groschn.commons.serialize.BlockSerializer;
+import com.flockinger.groschn.commons.compress.CompressionUtils;
 import com.flockinger.groschn.messaging.ExecutorConfig;
 import com.flockinger.groschn.messaging.config.MainTopics;
 import com.flockinger.groschn.messaging.inbound.MessageDispatcher;
@@ -32,11 +32,13 @@ import com.flockinger.groschn.messaging.inbound.MessageResponder;
 import com.flockinger.groschn.messaging.model.Message;
 import com.flockinger.groschn.messaging.model.MessagePayload;
 import com.flockinger.groschn.messaging.outbound.impl.BroadcasterImpl;
+import com.flockinger.groschn.messaging.util.MessagingUtils;
+import com.flockinger.groschn.messaging.util.TestBlock;
 import io.atomix.cluster.MemberId;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
 
 @RunWith(SpringRunner.class)
-@ContextConfiguration(classes = {BroadcasterImpl.class, BroadcasterTest.GarfieldResponder.class})
+@ContextConfiguration(classes = {BroadcasterImpl.class, BroadcasterTest.GarfieldResponder.class, MessagingUtils.class, CompressionUtils.class})
 @Import(ExecutorConfig.class)
 @TestPropertySource(properties="blockchain.messaging.response-timeout=10")
 @TestExecutionListeners({DependencyInjectionTestExecutionListener.class, MockitoTestExecutionListener.class})
@@ -48,24 +50,15 @@ public class BroadcasterTest {
   @MockBean
   private ClusterCommunicationService clusterCommunicationService;
   @MockBean
-  private BlockSerializer serializer;
-  @MockBean
   private MessageDispatcher mockDispatcher;
-
   
   @Test
   @SuppressWarnings("unchecked")
   public void testBroadcast_withNormalEntity_shouldCallSend() {
-    var message = new Message<MessagePayload>();
-    message.setId(UUID.randomUUID().toString());
-    var somePayLoad = new MessagePayload();
-    somePayLoad.setSenderId("GarfieldRespondergroschn1");
-    var compressedEntity = new CompressedEntity();
-    somePayLoad.setEntity(compressedEntity.originalSize(1).entity(new byte[1]));
-    message.setPayload(somePayLoad);
-    message.setTimestamp(123l);
+    var testBlock = new TestBlock();
+    testBlock.setHash("1234");
     
-    broadcaster.broadcast(message, MainTopics.BLOCK_INFO);
+    broadcaster.broadcast(testBlock, "GarfieldRespondergroschn1", MainTopics.BLOCK_INFO);
     
     var subjectCaptor = ArgumentCaptor.forClass(String.class);
     var messageCaptor = ArgumentCaptor.forClass(Message.class);
@@ -74,11 +67,11 @@ public class BroadcasterTest {
     assertNotNull("verify that encoder is not null", encoderCaptor.getValue());
     assertEquals("verify that the topic is correct", MainTopics.BLOCK_INFO.name(), subjectCaptor.getValue());
     var sentMessage = (Message<MessagePayload>)messageCaptor.getValue();
-    assertEquals("verify that the message has correct ID", message.getId(), sentMessage.getId());
+    assertNotNull("verify that the message has an ID", sentMessage.getId());
     assertNotNull("verify that the message has a timestamp", sentMessage.getTimestamp());
     var payload = sentMessage.getPayload();
     assertNotNull("verify that the payload is not null", payload);
-    assertEquals("verify that the message has", somePayLoad.getSenderId(), payload.getSenderId());
+    assertNotNull("verify that the message has a sender id",payload.getSenderId());
     assertNotNull("verify that the compressed entity is not null", payload.getEntity());
     assertTrue("verify that compressent entity has some size", payload.getEntity().getOriginalSize() > 0);
     assertNotNull("verify that compressent entity is not empty", payload.getEntity().getEntity());
@@ -95,9 +88,7 @@ public class BroadcasterTest {
     somePayLoad.setEntity(compressedEntity.originalSize(1).entity(new byte[1]));
     message.setPayload(somePayLoad);
     message.setTimestamp(123l);
-    when(clusterCommunicationService.send(any(), any(), any(),any(),any(), any())).thenReturn(CompletableFuture.supplyAsync(() -> new byte[0]));
-    when(serializer.deserialize(any(), any(Class.class))).thenReturn(new Message<MessagePayload>());
-    
+    when(clusterCommunicationService.send(any(), any(), any(),any(),any(), any())).thenReturn(CompletableFuture.supplyAsync(() -> new byte[0]));    
     
     var response = broadcaster.sendRequest(message, "anotherGroschn", MainTopics.BLOCK_INFO);
     
@@ -124,5 +115,6 @@ public class BroadcasterTest {
       return MainTopics.NONE;
     }
   }
+  
   
 }

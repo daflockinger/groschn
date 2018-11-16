@@ -1,4 +1,4 @@
-package com.flockinger.groschn.blockchain.messaging;
+package com.flockinger.groschn.messaging.sync;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -6,8 +6,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.atLeast;
-import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -31,30 +29,24 @@ import org.springframework.boot.test.mock.mockito.MockReset;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
-import com.flockinger.groschn.blockchain.TestConfig;
-import com.flockinger.groschn.blockchain.messaging.dto.SyncBatchRequest;
-import com.flockinger.groschn.blockchain.messaging.sync.ConcurrentMessenger;
-import com.flockinger.groschn.blockchain.messaging.sync.SyncInquirer;
-import com.flockinger.groschn.blockchain.messaging.sync.impl.SyncInquirerImpl;
-import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.commons.config.CommonsConfig;
+import com.flockinger.groschn.messaging.ExecutorConfig;
 import com.flockinger.groschn.messaging.config.MainTopics;
-import com.flockinger.groschn.messaging.exception.ReceivedMessageInvalidException;
 import com.flockinger.groschn.messaging.members.NetworkStatistics;
 import com.flockinger.groschn.messaging.model.Message;
 import com.flockinger.groschn.messaging.model.MessagePayload;
+import com.flockinger.groschn.messaging.model.SyncBatchRequest;
 import com.flockinger.groschn.messaging.model.SyncRequest;
 import com.flockinger.groschn.messaging.model.SyncResponse;
 import com.flockinger.groschn.messaging.outbound.Broadcaster;
 import com.flockinger.groschn.messaging.util.MessagingUtils;
+import com.flockinger.groschn.messaging.util.TestBlock;
 
 @RunWith(SpringRunner.class)
-@Import({TestConfig.class, CommonsConfig.class})
+@Import({ExecutorConfig.class, CommonsConfig.class})
 @ContextConfiguration(classes = {SyncInquirerImpl.class, MessagingUtils.class, ConcurrentMessenger.class})
 public class SyncInquirerIntegrationTest {
   
-  //FIXME fix integration tests!!!!
-
   @MockBean(reset=MockReset.BEFORE)
   private Broadcaster<MessagePayload> broadcaster;
   @MockBean(reset=MockReset.BEFORE)
@@ -89,7 +81,7 @@ public class SyncInquirerIntegrationTest {
     .thenReturn(fakeFuture(20,2)).thenReturn(fakeFuture(90,2)).thenReturn(fakeFuture(20,2));
     
     
-    List<SyncResponse<Block>> responses = inquirer.fetchNextBatch(request, Block.class);
+    List<SyncResponse<TestBlock>> responses = inquirer.fetchNextBatch(request, TestBlock.class);
     assertFalse("verify responses are there", responses.isEmpty());
     assertEquals("verify correct starting position", 2l, responses.get(0).getStartingPosition().longValue());
     assertNotNull("verify entities are not null", responses.get(0).getEntities());
@@ -121,7 +113,7 @@ public class SyncInquirerIntegrationTest {
     .thenReturn(exceptionalFuture()).thenReturn(fakeFuture(1,2)).thenReturn(exceptionalFuture())
     .thenReturn(exceptionalFuture()).thenReturn(exceptionalFuture()).thenReturn(exceptionalFuture());
     
-    List<SyncResponse<Block>> responses = inquirer.fetchNextBatch(request, Block.class);
+    List<SyncResponse<TestBlock>> responses = inquirer.fetchNextBatch(request, TestBlock.class);
     assertFalse("verify response is there", responses.isEmpty());
     assertEquals("verify correct starting position", 2l, responses.get(0).getStartingPosition().longValue());
     assertNotNull("verify entities are not null", responses.get(0).getEntities());
@@ -142,127 +134,8 @@ public class SyncInquirerIntegrationTest {
        
     when(broadcaster.sendRequest(any(), anyString(), any(MainTopics.class))).thenReturn(fakeFuture(1,2,0,false));
     
-    inquirer.fetchNextBatch(request, Block.class);
-  }
-  
-  
-  @Test
-  public void testFetchNextBatch_withFirstAndSecondAttemptReturnedEmptyResponsesShouldRetry_shouldFetch() {
-    SyncBatchRequest request = SyncBatchRequest.build().batchSize(10)
-        .idealReceiveNodeCount(3).maxFetchRetries(3).topic(MainTopics.SYNC_BLOCKCHAIN);
-    request.setFromPosition(2);
-    when(networkStatistics.activeNodeCount()).thenReturn(20l);
-    when(networkStatistics.activeNodeIds()).thenReturn(generateNodeIds(20));
-    
-    when(broadcaster.sendRequest(any(), anyString(), any(MainTopics.class)))
-    .thenReturn(emptyFuture(1)).thenReturn(emptyFuture(1)).thenReturn(emptyFuture(1))
-    .thenReturn(emptyFuture(1)).thenReturn(emptyFuture(1)).thenReturn(emptyFuture(1))
-    .thenReturn(emptyFuture(1)).thenReturn(emptyFuture(1)).thenReturn(emptyFuture(1))
-    .thenReturn(emptyFuture(1)).thenReturn(emptyFuture(1)).thenReturn(emptyFuture(1))
-    .thenReturn(fakeFuture(1,2)).thenReturn(fakeFuture(1,2)).thenReturn(fakeFuture(1,2))
-    .thenReturn(fakeFuture(10,2)).thenReturn(fakeFuture(10,2)).thenReturn(fakeFuture(10,2));
-    
-    List<SyncResponse<Block>> responses = inquirer.fetchNextBatch(request, Block.class);
-    assertFalse("verify response is there", responses.isEmpty());
-    assertEquals("verify correct starting position", 2l, responses.get(0).getStartingPosition().longValue());
-    assertNotNull("verify entities are not null", responses.get(0).getEntities());
-    assertEquals("verify correct amount responded entities", 10, responses.get(0).getEntities().size());
-    
-    verify(broadcaster, atLeast(18)).sendRequest(any(), anyString(), any(MainTopics.class));
-    verify(networkStatistics, times(3)).activeNodeIds();
-  }
-  
-  
-  @Test
-  public void testFetchNextBatch_shouldHaveAlwaysDifferentNodeIds() {
-    SyncBatchRequest request = SyncBatchRequest.build().batchSize(10)
-        .idealReceiveNodeCount(3).maxFetchRetries(3).topic(MainTopics.SYNC_BLOCKCHAIN);
-    request.setFromPosition(2);
-    when(networkStatistics.activeNodeCount()).thenReturn(100l);
-    when(networkStatistics.activeNodeIds()).thenReturn(generateNodeIds(100));
-        
-    when(broadcaster.sendRequest(any(), anyString(), any(MainTopics.class)))
-    .thenReturn(fakeFuture(1,2)).thenReturn(fakeFuture(1,9, 15, false)).thenReturn(fakeFuture(1,2))
-    .thenReturn(fakeFuture(10,13)).thenReturn(fakeFuture(10,15)).thenReturn(fakeFuture(10,19));
-    
-    inquirer.fetchNextBatch(request, Block.class);
-    inquirer.fetchNextBatch(request, Block.class);
-    inquirer.fetchNextBatch(request, Block.class);
-    inquirer.fetchNextBatch(request, Block.class);
-    
-    var receiverNodeCaptor = ArgumentCaptor.forClass(String.class);
-    verify(broadcaster, atLeast(18)).sendRequest(any(), receiverNodeCaptor.capture(), any());
-    var alwaysSimmilarPickedNodesCount = receiverNodeCaptor.getAllValues().stream()
-        .collect(Collectors.groupingBy(String::toString,Collectors.counting()))
-        .values().stream().filter(simmliarPickedNodesCount -> simmliarPickedNodesCount ==4).count();
-    assertTrue("verify that different nodes are picked each time, kinda", alwaysSimmilarPickedNodesCount < 3);
-  }
-  
-    
-  @Test(expected=ReceivedMessageInvalidException.class)
-  public void testFetchNextBatch_withZeroBatchSize_shouldThrowException() {
-    SyncBatchRequest request = SyncBatchRequest.build().batchSize(0)
-        .idealReceiveNodeCount(3).maxFetchRetries(3).topic(MainTopics.SYNC_BLOCKCHAIN);
-    request.setFromPosition(2);
-    
-    inquirer.fetchNextBatch(request, Block.class);
-  }
-  
-  @Test(expected=ReceivedMessageInvalidException.class)
-  public void testFetchNextBatch_withZeroIdealNodeCount_shouldThrowException() {
-    SyncBatchRequest request = SyncBatchRequest.build().batchSize(10)
-        .idealReceiveNodeCount(0).maxFetchRetries(3).topic(MainTopics.SYNC_BLOCKCHAIN);
-    request.setFromPosition(2);
-    
-    inquirer.fetchNextBatch(request, Block.class);
-  }
-  
-  @Test(expected=ReceivedMessageInvalidException.class)
-  public void testFetchNextBatch_withNullTopic_shouldThrowException() {
-    SyncBatchRequest request = SyncBatchRequest.build().batchSize(10)
-        .idealReceiveNodeCount(3).maxFetchRetries(3).topic(null);
-    request.setFromPosition(2);
-    
-    inquirer.fetchNextBatch(request, Block.class);
-  }
-  
-  @Test(expected=ReceivedMessageInvalidException.class)
-  public void testFetchNextBatch_withZeroStartPosition_shouldThrowException() {
-    SyncBatchRequest request = SyncBatchRequest.build().batchSize(10)
-        .idealReceiveNodeCount(3).maxFetchRetries(3).topic(MainTopics.SYNC_BLOCKCHAIN);
-    request.setFromPosition(0);
-    
-    inquirer.fetchNextBatch(request, Block.class);
-  }
-  
-  
-  @Test
-  public void testFetchNextBatch_witOnlyTwoGoodResponses_shouldFetchAndPickEitherOne() {
-    SyncBatchRequest request = SyncBatchRequest.build().batchSize(10)
-        .idealReceiveNodeCount(3).maxFetchRetries(3).topic(MainTopics.SYNC_BLOCKCHAIN);
-    request.setFromPosition(2);
-    when(networkStatistics.activeNodeCount()).thenReturn(20l);
-    when(networkStatistics.activeNodeIds()).thenReturn(generateNodeIds(20));
-        
-    when(broadcaster.sendRequest(any(), anyString(), any(MainTopics.class)))
-    .thenReturn(fakeFuture(1,2)).thenReturn(fakeFuture(1,2)).thenReturn(exceptionalFuture())
-    .thenReturn(exceptionalFuture()).thenReturn(exceptionalFuture()).thenReturn(exceptionalFuture())
-    .thenReturn(exceptionalFuture()).thenReturn(exceptionalFuture()).thenReturn(exceptionalFuture())
-    .thenReturn(exceptionalFuture()).thenReturn(exceptionalFuture()).thenReturn(exceptionalFuture())
-    .thenReturn(exceptionalFuture()).thenReturn(exceptionalFuture()).thenReturn(exceptionalFuture())
-    .thenReturn(exceptionalFuture()).thenReturn(exceptionalFuture()).thenReturn(exceptionalFuture())
-    .thenReturn(exceptionalFuture()).thenReturn(exceptionalFuture());
-    
-    List<SyncResponse<Block>> responses = inquirer.fetchNextBatch(request, Block.class);
-    assertFalse("verify response is there", responses.isEmpty());
-    assertEquals("verify correct starting position", 2l, responses.get(0).getStartingPosition().longValue());
-    assertNotNull("verify entities are not null", responses.get(0).getEntities());
-    assertEquals("verify correct amount responded entities", 10, responses.get(0).getEntities().size());
-    
-    verify(broadcaster,times(6)).sendRequest(any(), anyString(), any(MainTopics.class));
-    verify(networkStatistics, times(1)).activeNodeIds();
-  }
-  
+    inquirer.fetchNextBatch(request, TestBlock.class);
+  }  
   
   @Test
   public void testFetchNextBatch_withVeryFewNodes_shouldFetch() {
@@ -277,7 +150,7 @@ public class SyncInquirerIntegrationTest {
     .thenReturn(exceptionalFuture());
     
     
-    List<SyncResponse<Block>> responses = inquirer.fetchNextBatch(request, Block.class);
+    List<SyncResponse<TestBlock>> responses = inquirer.fetchNextBatch(request, TestBlock.class);
     assertFalse("verify response is there", responses.isEmpty());
     assertEquals("verify correct starting position", 2l, responses.get(0).getStartingPosition().longValue());
     assertNotNull("verify entities are not null", responses.get(0).getEntities());
@@ -295,7 +168,7 @@ public class SyncInquirerIntegrationTest {
   
   private CompletableFuture<Message<MessagePayload>> fakeFuture(int timeout, long startPosition, int responseBlockAmount, boolean lastPosReached) {
     return CompletableFuture.supplyAsync(() -> {
-      var response = new SyncResponse<Block>();
+      var response = new SyncResponse<TestBlock>();
       response.setStartingPosition(startPosition);
       response.setEntities(getBlockAmount(responseBlockAmount));
       response.setLastPositionReached(lastPosReached);
@@ -320,8 +193,8 @@ public class SyncInquirerIntegrationTest {
     },exec);
   }
   
-  private List<Block> getBlockAmount(int amount) {
-    return IntStream.range(0, amount).mapToObj(am -> new Block()).collect(Collectors.toList());
+  private List<TestBlock> getBlockAmount(int amount) {
+    return IntStream.range(0, amount).mapToObj(am -> new TestBlock()).collect(Collectors.toList());
   }
   
   private List<String> generateNodeIds(int amount) {

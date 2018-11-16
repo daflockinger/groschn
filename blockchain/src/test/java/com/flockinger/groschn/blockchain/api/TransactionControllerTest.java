@@ -115,7 +115,7 @@ public class TransactionControllerTest extends BaseControllerTest {
     .andExpect(jsonPath("$.id", is("1234")));
     
     verify(manager).storeTransaction(any());
-    verify(broadcaster).broadcast(any(), any());
+    verify(broadcaster).broadcast(any(), any(), any());
   }
   
   @Test

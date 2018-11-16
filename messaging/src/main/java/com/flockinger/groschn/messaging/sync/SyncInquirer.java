@@ -1,9 +1,8 @@
-package com.flockinger.groschn.blockchain.messaging.sync;
+package com.flockinger.groschn.messaging.sync;
 
 import java.util.List;
-import java.util.Optional;
-import com.flockinger.groschn.blockchain.messaging.dto.SyncBatchRequest;
 import com.flockinger.groschn.blockchain.model.Hashable;
+import com.flockinger.groschn.messaging.model.SyncBatchRequest;
 import com.flockinger.groschn.messaging.model.SyncResponse;
 
 /**
