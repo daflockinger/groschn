@@ -360,7 +360,7 @@ public class BlockSynchronizerTest extends BaseCachingTest {
     Collections.shuffle(infoResult.getCorrectInfos());
     
     ExecutorService service = Executors.newFixedThreadPool(10);
-    var hashables = IntStream.range(0, 4).mapToObj(count -> new SyncRunnable(infoResult, synchronizer)).collect(Collectors.toList());
+    var hashables = IntStream.range(0, 2).mapToObj(count -> new SyncRunnable(infoResult, synchronizer)).collect(Collectors.toList());
     service.invokeAll(hashables); // invoke simultaneously
     Thread.sleep(200);
     
