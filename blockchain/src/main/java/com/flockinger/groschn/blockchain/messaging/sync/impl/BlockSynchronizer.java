@@ -28,6 +28,7 @@ import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.model.Hashable;
 import com.flockinger.groschn.commons.exception.BlockchainException;
 import com.flockinger.groschn.messaging.config.MainTopics;
+import com.flockinger.groschn.messaging.model.RequestHeader;
 import com.flockinger.groschn.messaging.model.SyncBatchRequest;
 import com.flockinger.groschn.messaging.model.SyncResponse;
 import com.flockinger.groschn.messaging.sync.SyncInquirer;
@@ -91,7 +92,7 @@ public class BlockSynchronizer implements SyncKeeper {
       for(int batchCount =0;(batchCount < totalBatches) && !hasFinishedSync; batchCount++) {
         var relatedInfos = extractPartition(blockInfos, batchCount);
         hasFinishedSync = storeBatchOfBlocksAndReturnHasFinished(SyncBatchRequest
-            .build(batchRequest).fromPosition(fromPosition), relatedInfos);
+            .build(batchRequest).fromPosition(fromPosition).headers(mapToHeaders(relatedInfos)), relatedInfos);
         LOG.info("Successfully synced and stored Blocks until position: " + fromPosition);
         fromPosition += BLOCK_REQUEST_PACKAGE_SIZE;
       }
@@ -100,6 +101,15 @@ public class BlockSynchronizer implements SyncKeeper {
       LOG.info("Synchronization finished");
       blockMaker.generation(RESTART);
     }
+  }
+  
+  private List<RequestHeader> mapToHeaders(List<BlockInfo> infos) {
+    return infos.stream().map(info -> {
+      var header = new RequestHeader();
+      header.setPosition(info.getPosition());
+      header.setHash(info.getBlockHash());
+      return header;
+    }).collect(Collectors.toList());
   }
   
   private List<BlockInfo> extractPartition(List<BlockInfo> allInfos, int position) {

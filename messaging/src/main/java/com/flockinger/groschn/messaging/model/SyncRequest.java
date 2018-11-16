@@ -1,5 +1,6 @@
 package com.flockinger.groschn.messaging.model;
 
+import java.util.List;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import com.flockinger.groschn.blockchain.model.Hashable;
@@ -18,6 +19,8 @@ public class SyncRequest implements Hashable<SyncRequest> {
   @Min(1)
   private Long requestPackageSize;
   
+  private List<RequestHeader> wantedHeaders;
+  
   public Long getStartingPosition() {
     return startingPosition;
   }
@@ -32,6 +35,14 @@ public class SyncRequest implements Hashable<SyncRequest> {
 
   public void setRequestPackageSize(Long requestPackageSize) {
     this.requestPackageSize = requestPackageSize;
+  }
+  
+  public List<RequestHeader> getWantedHeaders() {
+    return wantedHeaders;
+  }
+
+  public void setWantedHeaders(List<RequestHeader> wantedHeaders) {
+    this.wantedHeaders = wantedHeaders;
   }
 
   @Override

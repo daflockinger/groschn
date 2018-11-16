@@ -94,6 +94,10 @@ public class BlockSynchronizerTest extends BaseCachingTest {
     verify(inquirer, times(1 * 4)).fetchNextBatch(batchCaptor.capture(), any(Class.class));
     var batchRequests = batchCaptor.getAllValues();
     assertEquals("verify first requests batch size", 10, batchRequests.get(0).getBatchSize());
+    assertNotNull("verify first requests headers are not null", batchRequests.get(0).getWantedHeaders());
+    assertEquals("verify first requests headers size", 10, batchRequests.get(0).getWantedHeaders().size());
+    assertEquals("verify first requests first header has correct hash", "hash123", batchRequests.get(0).getWantedHeaders().get(0).getHash());
+    assertEquals("verify first requests first header has correct position", 123l, batchRequests.get(0).getWantedHeaders().get(0).getPosition().longValue());
     assertEquals("verify first requests fetch retry count", 5, batchRequests.get(0).getMaxFetchRetries());
     assertEquals("verify first requests ideal node count", 1, batchRequests.get(0).getIdealReceiveNodeCount());
     assertEquals("verify first requests correct start position", 123l, batchRequests.get(0).getFromPosition());
@@ -103,6 +107,7 @@ public class BlockSynchronizerTest extends BaseCachingTest {
     assertEquals("verify fourth request start position", 153l, batchRequests.get(3).getFromPosition());
     assertEquals("verify after processing syncing status is on Done", SyncStatus.DONE.name(),
         syncBlockIdCache.getIfPresent(SyncStatus.SYNC_STATUS_CACHE_KEY));
+    
     
     var cmdCaptor = ArgumentCaptor.forClass(BlockMakerCommand.class);
     verify(blockMaker,times(2)).generation(cmdCaptor.capture());
@@ -362,6 +367,7 @@ public class BlockSynchronizerTest extends BaseCachingTest {
     var blocks = new ArrayList<Block>();
     var block1 = new Block();
     block1.setPosition(123l);
+    block1.setHash("hash123");
     var block2 = new Block();
     block2.setPosition(124l);
     var block3 = new Block();
