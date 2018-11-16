@@ -14,12 +14,12 @@ import com.flockinger.groschn.messaging.config.AtomixConfig.ManagementGroup;
 import com.flockinger.groschn.messaging.config.AtomixConfig.PartitionGroup;
 import io.atomix.core.Atomix;
 
-public class MessagingProtocolConfigTest extends BaseAtomixTest {
+public class MessagingProtocolConfigurationTest extends BaseAtomixTest {
 
   @Autowired
   private AtomixConfig config;
   @Autowired
-  private MessagingProtocolConfig protocolConfig; 
+  private MessagingProtocolConfiguration protocolConfig; 
   
   @Test
   public void testConfig_shouldBeCorrect() {

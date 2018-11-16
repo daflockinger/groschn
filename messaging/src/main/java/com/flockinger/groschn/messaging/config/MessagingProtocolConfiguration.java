@@ -19,7 +19,7 @@ import io.atomix.protocols.backup.partition.PrimaryBackupPartitionGroup;
 import io.atomix.protocols.raft.partition.RaftPartitionGroup;
 
 @Configuration
-public class MessagingProtocolConfig {
+public class MessagingProtocolConfiguration {
   
   @Autowired
   private AtomixConfig config;
