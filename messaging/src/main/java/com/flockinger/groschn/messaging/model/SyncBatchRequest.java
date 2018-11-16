@@ -1,5 +1,6 @@
 package com.flockinger.groschn.messaging.model;
 
+import java.util.List;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import com.flockinger.groschn.messaging.config.MainTopics;
@@ -16,6 +17,8 @@ public class SyncBatchRequest {
   private int maxFetchRetries;
   @Min(5)
   private int batchSize;
+  
+  private List<RequestHeader> wantedHeaders;
   
   public static SyncBatchRequest build() {
     return new SyncBatchRequest();
@@ -65,6 +68,16 @@ public class SyncBatchRequest {
   }
   public SyncBatchRequest batchSize(int batchSize) {
     this.batchSize = batchSize;
+    return this;
+  }
+  public List<RequestHeader> getWantedHeaders() {
+    return wantedHeaders;
+  }
+  public void setWantedHeaders(List<RequestHeader> wantedHeaders) {
+    this.wantedHeaders = wantedHeaders;
+  }
+  public SyncBatchRequest headers(List<RequestHeader> wantedHeaders) {
+    this.wantedHeaders = wantedHeaders;
     return this;
   }
 }

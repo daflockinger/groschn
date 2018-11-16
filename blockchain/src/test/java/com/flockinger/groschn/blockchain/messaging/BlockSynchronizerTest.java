@@ -13,11 +13,17 @@ import static org.mockito.Mockito.when;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.apache.commons.collections4.ListUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -94,6 +100,10 @@ public class BlockSynchronizerTest extends BaseCachingTest {
     verify(inquirer, times(1 * 4)).fetchNextBatch(batchCaptor.capture(), any(Class.class));
     var batchRequests = batchCaptor.getAllValues();
     assertEquals("verify first requests batch size", 10, batchRequests.get(0).getBatchSize());
+    assertNotNull("verify first requests headers are not null", batchRequests.get(0).getWantedHeaders());
+    assertEquals("verify first requests headers size", 10, batchRequests.get(0).getWantedHeaders().size());
+    assertEquals("verify first requests first header has correct hash", "hash123", batchRequests.get(0).getWantedHeaders().get(0).getHash());
+    assertEquals("verify first requests first header has correct position", 123l, batchRequests.get(0).getWantedHeaders().get(0).getPosition().longValue());
     assertEquals("verify first requests fetch retry count", 5, batchRequests.get(0).getMaxFetchRetries());
     assertEquals("verify first requests ideal node count", 1, batchRequests.get(0).getIdealReceiveNodeCount());
     assertEquals("verify first requests correct start position", 123l, batchRequests.get(0).getFromPosition());
@@ -103,6 +113,7 @@ public class BlockSynchronizerTest extends BaseCachingTest {
     assertEquals("verify fourth request start position", 153l, batchRequests.get(3).getFromPosition());
     assertEquals("verify after processing syncing status is on Done", SyncStatus.DONE.name(),
         syncBlockIdCache.getIfPresent(SyncStatus.SYNC_STATUS_CACHE_KEY));
+    
     
     var cmdCaptor = ArgumentCaptor.forClass(BlockMakerCommand.class);
     verify(blockMaker,times(2)).generation(cmdCaptor.capture());
@@ -340,6 +351,47 @@ public class BlockSynchronizerTest extends BaseCachingTest {
   }
   
   @Test
+  @SuppressWarnings("unchecked")
+  public void testSynchronize_whenRequestingSyncTwiceAtTheSameTime_shouldOnlyCallOnce() throws Exception {
+    when(inquirer.fetchNextBatch(any(SyncBatchRequest.class), any(Class.class)))
+    .thenAnswer(new Answer<List<SyncResponse<Block>>>() {
+      @Override
+      public List<SyncResponse<Block>> answer(InvocationOnMock invocation) throws Throwable {
+        Thread.sleep(200);
+        return getFakeResponse(true,153l);
+      }});
+    when(blockService.saveInBlockchain(any())).thenReturn(new StoredBlock());
+    
+    BlockInfoResult infoResult = new BlockInfoResult();
+    infoResult.setStartPosition(153l);
+    infoResult.getCorrectInfos().addAll(getFakeResponse(false,153l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    Collections.shuffle(infoResult.getCorrectInfos());
+    
+    ExecutorService service = Executors.newFixedThreadPool(10);
+    var hashables = IntStream.range(0, 2).mapToObj(count -> new SyncRunnable(infoResult, synchronizer)).collect(Collectors.toList());
+    service.invokeAll(hashables); // invoke simultaneously
+    Thread.sleep(200);
+    
+    verify(blockService, times(10)).saveInBlockchain(any());
+    verify(inquirer, times(1)).fetchNextBatch(any(), any(Class.class));
+    verify(blockMaker, times(2)).generation(any());
+  }
+  
+  private static class SyncRunnable implements Callable<String> {
+    private BlockInfoResult infoResult;
+    private BlockSynchronizer synchronizer;
+    public SyncRunnable(BlockInfoResult infoResult, BlockSynchronizer synchronizer) {
+      this.infoResult = infoResult;
+      this.synchronizer = synchronizer;
+    }
+    @Override
+    public String call() throws Exception {
+      synchronizer.synchronize(infoResult);
+      return "";
+    }
+  }
+  
+  @Test
   public void testSyncStatus_withSetStatus_shouldReturnCorrect() {
     syncBlockIdCache.put(SyncStatus.SYNC_STATUS_CACHE_KEY, SyncStatus.IN_PROGRESS.name());
     
@@ -362,6 +414,7 @@ public class BlockSynchronizerTest extends BaseCachingTest {
     var blocks = new ArrayList<Block>();
     var block1 = new Block();
     block1.setPosition(123l);
+    block1.setHash("hash123");
     var block2 = new Block();
     block2.setPosition(124l);
     var block3 = new Block();
