@@ -2,18 +2,19 @@ package com.flockinger.groschn.blockchain.messaging.dto;
 
 import java.util.List;
 
-public class BlockInfoResult {
-  private List<String> nodeIds;
+public class BlockInfoResponse {
+  
+  private String nodeId;
   private List<BlockInfo> blockInfos;
   
-  public BlockInfoResult(List<String> nodeIds, List<BlockInfo> blockInfos) {
+  public BlockInfoResponse(String nodeId, List<BlockInfo> blockInfos) {
     super();
-    this.nodeIds = nodeIds;
+    this.nodeId = nodeId;
     this.blockInfos = blockInfos;
   }
   
-  public List<String> getNodeIds() {
-    return nodeIds;
+  public String getNodeId() {
+    return nodeId;
   }
   public List<BlockInfo> getBlockInfos() {
     return blockInfos;

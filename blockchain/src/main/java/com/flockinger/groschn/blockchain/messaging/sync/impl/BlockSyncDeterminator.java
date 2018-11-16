@@ -17,7 +17,7 @@ import org.springframework.stereotype.Service;
 import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
 import com.flockinger.groschn.blockchain.exception.BlockSynchronizationException;
 import com.flockinger.groschn.blockchain.messaging.dto.BlockInfo;
-import com.flockinger.groschn.blockchain.messaging.dto.BlockInfoResult;
+import com.flockinger.groschn.blockchain.messaging.dto.DeprecatedBlockInfoResult;
 import com.flockinger.groschn.blockchain.messaging.sync.SyncDeterminator;
 import com.flockinger.groschn.blockchain.messaging.sync.SyncKeeper;
 import com.flockinger.groschn.blockchain.model.Block;
@@ -51,7 +51,7 @@ public class BlockSyncDeterminator implements SyncDeterminator {
   @Override
   public void determineAndSync() {
     var latestBlock = blockService.getLatestBlock();
-    BlockInfoResult infoResult = new BlockInfoResult();
+    DeprecatedBlockInfoResult infoResult = new DeprecatedBlockInfoResult();
 
     for (int determinationRetry = 0; determinationRetry < 3
         && infoResult.getStartPosition() < 1; determinationRetry++) {
@@ -69,8 +69,8 @@ public class BlockSyncDeterminator implements SyncDeterminator {
     }
   }
 
-  private BlockInfoResult determineStartPositionAndInfos(long fromScanPosition,
-      BlockInfoResult infoResult) {
+  private DeprecatedBlockInfoResult determineStartPositionAndInfos(long fromScanPosition,
+      DeprecatedBlockInfoResult infoResult) {
     var blockInfos = getSortedBlockInfosFrom(fromScanPosition);
     var blocks = blockService.findBlocks(fromScanPosition, BATCH_SIZE);
     Collections.sort(blocks, Comparator.comparingLong(Block::getPosition).reversed());

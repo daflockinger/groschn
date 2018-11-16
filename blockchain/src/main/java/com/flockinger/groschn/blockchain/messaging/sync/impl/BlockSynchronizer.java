@@ -21,7 +21,7 @@ import org.springframework.stereotype.Service;
 import com.flockinger.groschn.blockchain.blockworks.BlockMaker;
 import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
 import com.flockinger.groschn.blockchain.messaging.dto.BlockInfo;
-import com.flockinger.groschn.blockchain.messaging.dto.BlockInfoResult;
+import com.flockinger.groschn.blockchain.messaging.dto.DeprecatedBlockInfoResult;
 import com.flockinger.groschn.blockchain.messaging.dto.SyncStatus;
 import com.flockinger.groschn.blockchain.messaging.sync.SyncKeeper;
 import com.flockinger.groschn.blockchain.model.Block;
@@ -72,7 +72,7 @@ public class BlockSynchronizer implements SyncKeeper {
       .topic(MainTopics.SYNC_BLOCKCHAIN);
   
   @Override
-  public void synchronize(BlockInfoResult infoResult) { 
+  public void synchronize(DeprecatedBlockInfoResult infoResult) { 
     synchronized (this) {
       if(syncStatus().equals(SyncStatus.IN_PROGRESS.name())) {
         LOG.warn("Synchronization still in progress!");
@@ -91,7 +91,7 @@ public class BlockSynchronizer implements SyncKeeper {
     }
   }
   
-  private void doSynchronize(BlockInfoResult infoResult) {
+  private void doSynchronize(DeprecatedBlockInfoResult infoResult) {
     var fromPosition = infoResult.getStartPosition();
     var blockInfos = ListUtils.emptyIfNull(infoResult.getCorrectInfos());
     var totalBatches = Math.round(Math.ceil((double)blockInfos.size()/(double)BLOCK_REQUEST_PACKAGE_SIZE));
