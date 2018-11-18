@@ -1,6 +1,7 @@
 package com.flockinger.groschn.messaging.sync;
 
 import static java.util.stream.Collectors.toList;
+import static org.apache.commons.collections4.CollectionUtils.isEmpty;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Date;
@@ -46,6 +47,7 @@ public class SyncInquirerImpl implements SyncInquirer {
   public <T extends Hashable<T>> List<SyncResponse<T>> fetchNextBatch(SyncBatchRequest request,
       Class<T> responseType) {
     utils.assertEntity(request);
+    addNodesIfNeeded(request);
     List<SyncResponse<T>> response = new ArrayList<>();
     
     for(int retryCount=0; retryCount < request.getMaxFetchRetries() && response.isEmpty(); retryCount ++) {
@@ -55,8 +57,15 @@ public class SyncInquirerImpl implements SyncInquirer {
     return response;
   }
   
+  private void addNodesIfNeeded(SyncBatchRequest request) {
+    if(isEmpty(request.getSelectedNodeIds())) {
+      request.selectedNodeIds(networkStatistics.activeNodeIds().stream()
+          .filter(id -> !id.equals(nodeId)).collect(toList()));
+    }
+  }
+  
   private List<Message<MessagePayload>> fetchMessages(SyncBatchRequest request) {
-    var syncPartners = getSyncPartners(request.getIdealReceiveNodeCount() * 2);
+    var syncPartners = determineSyncPartners(request.getIdealReceiveNodeCount() * 2, request.getSelectedNodeIds());
     var requests = syncPartners.stream()
         .collect(Collectors.toMap(Function.identity(), it -> request))
         .entrySet().stream().collect(Collectors.toList());
@@ -77,9 +86,7 @@ public class SyncInquirerImpl implements SyncInquirer {
     return message;
   }
   
-  private List<String> getSyncPartners(int randomSelectionSize) {
-    var nodeIds = networkStatistics.activeNodeIds().stream()
-        .filter(id -> !id.equals(nodeId)).collect(toList());
+  private List<String> determineSyncPartners(int randomSelectionSize, List<String> nodeIds) {
     if(nodeIds.size() < randomSelectionSize) {
       return nodeIds;
     } else {
