@@ -1,5 +1,6 @@
 package com.flockinger.groschn.messaging.model;
 
+import java.util.ArrayList;
 import java.util.List;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
@@ -18,6 +19,8 @@ public class SyncBatchRequest {
   @Min(5)
   private int batchSize;
   
+  private List<String> selectedNodeIds = new ArrayList<>();
+  
   private List<RequestHeader> wantedHeaders;
   
   public static SyncBatchRequest build() {
@@ -29,6 +32,7 @@ public class SyncBatchRequest {
     return request.batchSize(oldRequest.getBatchSize())
         .idealReceiveNodeCount(oldRequest.getIdealReceiveNodeCount())
         .maxFetchRetries(oldRequest.getMaxFetchRetries())
+        .selectedNodeIds(oldRequest.getSelectedNodeIds())
         .topic(oldRequest.getTopic());
   }
   
@@ -78,6 +82,13 @@ public class SyncBatchRequest {
   }
   public SyncBatchRequest headers(List<RequestHeader> wantedHeaders) {
     this.wantedHeaders = wantedHeaders;
+    return this;
+  }
+  public List<String> getSelectedNodeIds() {
+    return selectedNodeIds;
+  }
+  public SyncBatchRequest selectedNodeIds(List<String> selectedNodeIds) {
+    this.selectedNodeIds = selectedNodeIds;
     return this;
   }
 }

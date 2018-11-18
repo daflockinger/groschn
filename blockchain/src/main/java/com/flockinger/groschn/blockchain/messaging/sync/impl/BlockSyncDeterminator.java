@@ -28,11 +28,18 @@ import com.flockinger.groschn.messaging.model.SyncBatchRequest;
 import com.flockinger.groschn.messaging.model.SyncResponse;
 import com.flockinger.groschn.messaging.sync.SyncInquirer;
 
+//FIXME DEPRECATED, TO BE REMOVED!
 @Service
 public class BlockSyncDeterminator implements SyncDeterminator {
+
+  @Override
+  public void determineAndSync() {
+    // TODO Auto-generated method stub
+    
+  }
   // FIXME redo that service, make it simpler, make it work!!
 
-  @Autowired
+ /* @Autowired
   private SyncKeeper synchronizer;
   @Autowired
   private BlockStorageService blockService;
@@ -117,5 +124,5 @@ public class BlockSyncDeterminator implements SyncDeterminator {
   private <T extends Hashable<T>> List<SyncResponse<T>> findMajorlyAcceptedBatch(
       List<SyncResponse<T>> first, List<SyncResponse<T>> second) {
     return (first.size() > second.size()) ? first : second;
-  }
+  }*/
 }

@@ -1,10 +1,10 @@
 package com.flockinger.groschn.blockchain.messaging.sync;
 
-import com.flockinger.groschn.blockchain.messaging.dto.DeprecatedBlockInfoResult;
+import com.flockinger.groschn.blockchain.messaging.dto.BlockInfoResult;
 
 public interface SyncKeeper {
   
-  void synchronize(DeprecatedBlockInfoResult infoResult);
+  void synchronize(BlockInfoResult infoResult);
   
   String syncStatus();
 }

@@ -34,7 +34,7 @@ import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
 import com.flockinger.groschn.blockchain.blockworks.dto.BlockMakerCommand;
 import com.flockinger.groschn.blockchain.exception.validation.BlockValidationException;
 import com.flockinger.groschn.blockchain.messaging.dto.BlockInfo;
-import com.flockinger.groschn.blockchain.messaging.dto.DeprecatedBlockInfoResult;
+import com.flockinger.groschn.blockchain.messaging.dto.BlockInfoResult;
 import com.flockinger.groschn.blockchain.messaging.dto.SyncStatus;
 import com.flockinger.groschn.blockchain.messaging.sync.impl.BlockSynchronizer;
 import com.flockinger.groschn.blockchain.model.Block;
@@ -74,13 +74,12 @@ public class BlockSynchronizerTest extends BaseCachingTest {
     .thenReturn(getFakeResponse(false,133l)).thenReturn(getFakeResponse(false,143l)).thenReturn(getFakeResponse(true,153l));
     when(blockService.saveInBlockchain(any())).thenReturn(new StoredBlock());
     
-    DeprecatedBlockInfoResult infoResult = new DeprecatedBlockInfoResult();
-    infoResult.setStartPosition(123l);
-    infoResult.getCorrectInfos().addAll(getFakeResponse(false,123l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
-    infoResult.getCorrectInfos().addAll(getFakeResponse(false,133l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
-    infoResult.getCorrectInfos().addAll(getFakeResponse(false,143l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
-    infoResult.getCorrectInfos().addAll(getFakeResponse(true,153l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
-    Collections.shuffle(infoResult.getCorrectInfos());
+    BlockInfoResult infoResult = new BlockInfoResult(generateNodeIds("id",20),new ArrayList<>());
+    infoResult.getBlockInfos().addAll(getFakeResponse(false,123l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    infoResult.getBlockInfos().addAll(getFakeResponse(false,133l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    infoResult.getBlockInfos().addAll(getFakeResponse(false,143l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    infoResult.getBlockInfos().addAll(getFakeResponse(true,153l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    Collections.shuffle(infoResult.getBlockInfos());
     synchronizer.synchronize(infoResult);
     
     var blockStoreCaptor = ArgumentCaptor.forClass(Block.class);
@@ -113,6 +112,7 @@ public class BlockSynchronizerTest extends BaseCachingTest {
     assertEquals("verify fourth request start position", 153l, batchRequests.get(3).getFromPosition());
     assertEquals("verify after processing syncing status is on Done", SyncStatus.DONE.name(),
         syncBlockIdCache.getIfPresent(SyncStatus.SYNC_STATUS_CACHE_KEY));
+    assertTrue("verify batch request contains selected Node ID's", batchRequests.get(0).getSelectedNodeIds().size() > 0);
     
     
     var cmdCaptor = ArgumentCaptor.forClass(BlockMakerCommand.class);
@@ -131,11 +131,10 @@ public class BlockSynchronizerTest extends BaseCachingTest {
     .thenReturn(getFakeResponse(false,133l)).thenReturn(getFakeResponse(false,143l)).thenReturn(getFakeResponse(false,153l,new ArrayList<>()));
     when(blockService.saveInBlockchain(any())).thenReturn(new StoredBlock());
     
-    DeprecatedBlockInfoResult infoResult = new DeprecatedBlockInfoResult();
-    infoResult.setStartPosition(123l);
-    infoResult.getCorrectInfos().addAll(getFakeResponse(false,123l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
-    infoResult.getCorrectInfos().addAll(getFakeResponse(false,133l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
-    infoResult.getCorrectInfos().addAll(getFakeResponse(false,143l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    BlockInfoResult infoResult = new BlockInfoResult(generateNodeIds("id",20),new ArrayList<>());
+    infoResult.getBlockInfos().addAll(getFakeResponse(false,123l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    infoResult.getBlockInfos().addAll(getFakeResponse(false,133l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    infoResult.getBlockInfos().addAll(getFakeResponse(false,143l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
     synchronizer.synchronize(infoResult);
     
     verify(blockService, times(10 * 3)).saveInBlockchain(any());
@@ -153,11 +152,10 @@ public class BlockSynchronizerTest extends BaseCachingTest {
     .thenReturn(getFakeResponse(false,133l)).thenReturn(getFakeResponse(false,143l)).thenReturn(getFakeResponse(false,153l, null));
     when(blockService.saveInBlockchain(any())).thenReturn(new StoredBlock());
     
-    DeprecatedBlockInfoResult infoResult = new DeprecatedBlockInfoResult();
-    infoResult.setStartPosition(123l);
-    infoResult.getCorrectInfos().addAll(getFakeResponse(false,123l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
-    infoResult.getCorrectInfos().addAll(getFakeResponse(false,133l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
-    infoResult.getCorrectInfos().addAll(getFakeResponse(false,143l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    BlockInfoResult infoResult = new BlockInfoResult(generateNodeIds("id",20),new ArrayList<>());
+    infoResult.getBlockInfos().addAll(getFakeResponse(false,123l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    infoResult.getBlockInfos().addAll(getFakeResponse(false,133l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    infoResult.getBlockInfos().addAll(getFakeResponse(false,143l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
     synchronizer.synchronize(infoResult);
     
     verify(blockService, times(10 * 3)).saveInBlockchain(any());
@@ -176,12 +174,11 @@ public class BlockSynchronizerTest extends BaseCachingTest {
     .thenReturn(getFakeResponse(false,153l));
     when(blockService.saveInBlockchain(any())).thenReturn(new StoredBlock());
     
-    DeprecatedBlockInfoResult infoResult = new DeprecatedBlockInfoResult();
-    infoResult.setStartPosition(123l);
-    infoResult.getCorrectInfos().addAll(getFakeResponse(false,123l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
-    infoResult.getCorrectInfos().addAll(getFakeResponse(false,133l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
-    infoResult.getCorrectInfos().addAll(getFakeResponse(false,143l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
-    infoResult.getCorrectInfos().addAll(getFakeResponse(false,153l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    BlockInfoResult infoResult = new BlockInfoResult(generateNodeIds("id",20),new ArrayList<>());
+    infoResult.getBlockInfos().addAll(getFakeResponse(false,123l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    infoResult.getBlockInfos().addAll(getFakeResponse(false,133l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    infoResult.getBlockInfos().addAll(getFakeResponse(false,143l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    infoResult.getBlockInfos().addAll(getFakeResponse(false,153l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
     synchronizer.synchronize(infoResult);
     
     verify(blockService, times(10 * 4)).saveInBlockchain(any());
@@ -202,12 +199,11 @@ public class BlockSynchronizerTest extends BaseCachingTest {
     .thenReturn(getFakeResponse(false,153l));
     when(blockService.saveInBlockchain(any())).thenReturn(new StoredBlock());
     
-    DeprecatedBlockInfoResult infoResult = new DeprecatedBlockInfoResult();
-    infoResult.setStartPosition(123l);
-    infoResult.getCorrectInfos().addAll(getFakeResponse(false,123l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
-    infoResult.getCorrectInfos().addAll(getFakeResponse(false,133l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
-    infoResult.getCorrectInfos().addAll(getFakeResponse(false,143l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
-    infoResult.getCorrectInfos().addAll(getFakeResponse(false,153l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    BlockInfoResult infoResult = new BlockInfoResult(generateNodeIds("id",20),new ArrayList<>());
+    infoResult.getBlockInfos().addAll(getFakeResponse(false,123l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    infoResult.getBlockInfos().addAll(getFakeResponse(false,133l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    infoResult.getBlockInfos().addAll(getFakeResponse(false,143l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    infoResult.getBlockInfos().addAll(getFakeResponse(false,153l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
     synchronizer.synchronize(infoResult);
     
     verify(blockService, times(10 * 4)).saveInBlockchain(any());
@@ -225,11 +221,10 @@ public class BlockSynchronizerTest extends BaseCachingTest {
     .thenReturn(getFakeResponse(false,133l)).thenReturn(getFakeResponse(false,143l)).thenReturn(new ArrayList<>());
     when(blockService.saveInBlockchain(any())).thenReturn(new StoredBlock());
     
-    DeprecatedBlockInfoResult infoResult = new DeprecatedBlockInfoResult();
-    infoResult.setStartPosition(123l);
-    infoResult.getCorrectInfos().addAll(getFakeResponse(false,123l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
-    infoResult.getCorrectInfos().addAll(getFakeResponse(false,133l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
-    infoResult.getCorrectInfos().addAll(getFakeResponse(false,143l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    BlockInfoResult infoResult = new BlockInfoResult(generateNodeIds("id",20),new ArrayList<>());
+    infoResult.getBlockInfos().addAll(getFakeResponse(false,123l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    infoResult.getBlockInfos().addAll(getFakeResponse(false,133l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    infoResult.getBlockInfos().addAll(getFakeResponse(false,143l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
     synchronizer.synchronize(infoResult);
     
     verify(blockService, times(10 * 3)).saveInBlockchain(any());
@@ -246,8 +241,7 @@ public class BlockSynchronizerTest extends BaseCachingTest {
     when(inquirer.fetchNextBatch(any(SyncBatchRequest.class), any(Class.class))).thenReturn(getFakeResponse(true,123l,new ArrayList<>()));
     when(blockService.saveInBlockchain(any())).thenReturn(new StoredBlock());
     
-    DeprecatedBlockInfoResult infoResult = new DeprecatedBlockInfoResult();
-    infoResult.setStartPosition(123l);
+    BlockInfoResult infoResult = new BlockInfoResult(generateNodeIds("id",20),new ArrayList<>());
     synchronizer.synchronize(infoResult);
     
     verify(blockService, times(0)).saveInBlockchain(any());
@@ -264,13 +258,12 @@ public class BlockSynchronizerTest extends BaseCachingTest {
     when(inquirer.fetchNextBatch(any(SyncBatchRequest.class), any(Class.class))).thenReturn(getFakeResponse(true,123l,new ArrayList<>()));
     when(blockService.saveInBlockchain(any())).thenReturn(new StoredBlock());
     
-    DeprecatedBlockInfoResult infoResult = new DeprecatedBlockInfoResult();
-    infoResult.setStartPosition(123l);
-    infoResult.getCorrectInfos().addAll(getFakeResponse(false,123l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    BlockInfoResult infoResult = new BlockInfoResult(generateNodeIds("id",20),new ArrayList<>());
+    infoResult.getBlockInfos().addAll(getFakeResponse(false,123l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
     synchronizer.synchronize(infoResult);
     
     verify(blockService, times(0)).saveInBlockchain(any());
-    verify(inquirer, times(21)).fetchNextBatch(any(), any());
+    verify(inquirer, times(20)).fetchNextBatch(any(), any());
     var cmdCaptor = ArgumentCaptor.forClass(BlockMakerCommand.class);
     verify(blockMaker,times(2)).generation(cmdCaptor.capture());
     assertTrue("verify block generation stop and restart are called before/after sync", 
@@ -286,12 +279,11 @@ public class BlockSynchronizerTest extends BaseCachingTest {
     .thenReturn(getFakeResponse(true,153l));
     when(blockService.saveInBlockchain(any())).thenThrow(BlockValidationException.class).thenReturn(new StoredBlock());
     
-    DeprecatedBlockInfoResult infoResult = new DeprecatedBlockInfoResult();
-    infoResult.setStartPosition(123l);
-    infoResult.getCorrectInfos().addAll(getFakeResponse(false,123l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
-    infoResult.getCorrectInfos().addAll(getFakeResponse(false,133l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
-    infoResult.getCorrectInfos().addAll(getFakeResponse(false,143l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
-    infoResult.getCorrectInfos().addAll(getFakeResponse(true,153l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    BlockInfoResult infoResult = new BlockInfoResult(generateNodeIds("id",20),new ArrayList<>());
+    infoResult.getBlockInfos().addAll(getFakeResponse(false,123l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    infoResult.getBlockInfos().addAll(getFakeResponse(false,133l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    infoResult.getBlockInfos().addAll(getFakeResponse(false,143l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    infoResult.getBlockInfos().addAll(getFakeResponse(true,153l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
     synchronizer.synchronize(infoResult);
 
     verify(blockService, times(41)).saveInBlockchain(any());
@@ -318,15 +310,14 @@ public class BlockSynchronizerTest extends BaseCachingTest {
     when(inquirer.fetchNextBatch(any(SyncBatchRequest.class), any(Class.class))).thenReturn(getFakeResponse(false,123l));
     when(blockService.saveInBlockchain(any())).thenThrow(BlockValidationException.class);
     
-    DeprecatedBlockInfoResult infoResult = new DeprecatedBlockInfoResult();
-    infoResult.setStartPosition(123l);
-    infoResult.getCorrectInfos().addAll(getFakeResponse(false,123l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
-    infoResult.getCorrectInfos().addAll(getFakeResponse(false,133l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
-    infoResult.getCorrectInfos().addAll(getFakeResponse(false,143l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    BlockInfoResult infoResult = new BlockInfoResult(generateNodeIds("id",20),new ArrayList<>());
+    infoResult.getBlockInfos().addAll(getFakeResponse(false,123l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    infoResult.getBlockInfos().addAll(getFakeResponse(false,133l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    infoResult.getBlockInfos().addAll(getFakeResponse(false,143l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
     synchronizer.synchronize(infoResult);
 
-    verify(blockService, times(21)).saveInBlockchain(any());
-    verify(inquirer, times(21)).fetchNextBatch(any(), any());
+    verify(blockService, times(20)).saveInBlockchain(any());
+    verify(inquirer, times(20)).fetchNextBatch(any(), any());
     var cmdCaptor = ArgumentCaptor.forClass(BlockMakerCommand.class);
     verify(blockMaker,times(2)).generation(cmdCaptor.capture());
     assertTrue("verify block generation stop and restart are called before/after sync", 
@@ -341,8 +332,7 @@ public class BlockSynchronizerTest extends BaseCachingTest {
     when(blockService.saveInBlockchain(any())).thenReturn(new StoredBlock());
     syncBlockIdCache.put(SyncStatus.SYNC_STATUS_CACHE_KEY, SyncStatus.IN_PROGRESS.name());
     
-    DeprecatedBlockInfoResult infoResult = new DeprecatedBlockInfoResult();
-    infoResult.setStartPosition(123l);
+    BlockInfoResult infoResult = new BlockInfoResult(generateNodeIds("id",20),new ArrayList<>());
     synchronizer.synchronize(infoResult);
     
     verify(blockService, times(0)).saveInBlockchain(any());
@@ -362,10 +352,9 @@ public class BlockSynchronizerTest extends BaseCachingTest {
       }});
     when(blockService.saveInBlockchain(any())).thenReturn(new StoredBlock());
     
-    DeprecatedBlockInfoResult infoResult = new DeprecatedBlockInfoResult();
-    infoResult.setStartPosition(153l);
-    infoResult.getCorrectInfos().addAll(getFakeResponse(false,153l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
-    Collections.shuffle(infoResult.getCorrectInfos());
+    BlockInfoResult infoResult = new BlockInfoResult(generateNodeIds("id",20),new ArrayList<>());
+    infoResult.getBlockInfos().addAll(getFakeResponse(false,153l).get(0).getEntities().stream().map(this::mapToInfo).collect(Collectors.toList()));
+    Collections.shuffle(infoResult.getBlockInfos());
     
     ExecutorService service = Executors.newFixedThreadPool(10);
     var hashables = IntStream.range(0, 2).mapToObj(count -> new SyncRunnable(infoResult, synchronizer)).collect(Collectors.toList());
@@ -378,9 +367,9 @@ public class BlockSynchronizerTest extends BaseCachingTest {
   }
   
   private static class SyncRunnable implements Callable<String> {
-    private DeprecatedBlockInfoResult infoResult;
+    private BlockInfoResult infoResult;
     private BlockSynchronizer synchronizer;
-    public SyncRunnable(DeprecatedBlockInfoResult infoResult, BlockSynchronizer synchronizer) {
+    public SyncRunnable(BlockInfoResult infoResult, BlockSynchronizer synchronizer) {
       this.infoResult = infoResult;
       this.synchronizer = synchronizer;
     }
@@ -451,5 +440,11 @@ public class BlockSynchronizerTest extends BaseCachingTest {
     info.setBlockHash(block.getHash());
     info.setPosition(block.getPosition());
     return info;
+  }
+  
+  private List<String> generateNodeIds(String prefix, int amount) {
+    List<String> nodes = new ArrayList<>();
+    IntStream.range(0, amount).forEach(a -> nodes.add(prefix + Integer.toString(a)));
+    return nodes;
   }
 }

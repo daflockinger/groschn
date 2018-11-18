@@ -5,6 +5,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -15,7 +16,6 @@ import java.util.Map.Entry;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -69,7 +69,7 @@ public class SyncInquirerTest {
         .idealReceiveNodeCount(3).maxFetchRetries(3).topic(MainTopics.SYNC_BLOCKCHAIN);
     request.setFromPosition(2);
     when(networkStatistics.activeNodeCount()).thenReturn(20l);
-    when(networkStatistics.activeNodeIds()).thenReturn(generateNodeIds(20));
+    when(networkStatistics.activeNodeIds()).thenReturn(generateNodeIds("id",20));
     when(messengerMock.fetch(any(), any())).thenReturn(ImmutableList.of(fakeFuture(1,2),fakeFuture(1,2),fakeFuture(1,2)
     ,fakeFuture(20,2),fakeFuture(90,2),fakeFuture(20,2)));
     
@@ -92,7 +92,7 @@ public class SyncInquirerTest {
         .idealReceiveNodeCount(3).maxFetchRetries(3).topic(MainTopics.SYNC_BLOCKCHAIN);
     request.setFromPosition(2);
     when(networkStatistics.activeNodeCount()).thenReturn(20l);
-    when(networkStatistics.activeNodeIds()).thenReturn(generateNodeIds(20));
+    when(networkStatistics.activeNodeIds()).thenReturn(generateNodeIds("id",20));
     when(messengerMock.fetch(any(), any()))
     .thenReturn(new ArrayList<>())
     .thenReturn(new ArrayList<>())
@@ -108,7 +108,7 @@ public class SyncInquirerTest {
     
    
     verify(messengerMock,times(3)).fetch(any(), any());    
-    verify(networkStatistics, times(3)).activeNodeIds();
+    verify(networkStatistics, times(1)).activeNodeIds();
   }
   
   @Test
@@ -117,7 +117,7 @@ public class SyncInquirerTest {
         .idealReceiveNodeCount(3).maxFetchRetries(3).topic(MainTopics.SYNC_BLOCKCHAIN);
     request.setFromPosition(2);
     when(networkStatistics.activeNodeCount()).thenReturn(20l);
-    when(networkStatistics.activeNodeIds()).thenReturn(generateNodeIds(20));
+    when(networkStatistics.activeNodeIds()).thenReturn(generateNodeIds("id",20));
     when(messengerMock.fetch(any(), any()))
     .thenReturn(new ArrayList<>());
     
@@ -125,7 +125,38 @@ public class SyncInquirerTest {
     assertTrue("verify responses are empty", responses.isEmpty());
    
     verify(messengerMock,times(3)).fetch(any(), any());    
-    verify(networkStatistics, times(3)).activeNodeIds();
+    verify(networkStatistics, times(1)).activeNodeIds();
+  }
+  
+  @Test
+  public void testFetchNextBatch_withUsingSelectedNodeIds_shouldSendOnlyToSelectedOnes() {
+    SyncBatchRequest request = SyncBatchRequest.build().batchSize(10)
+        .idealReceiveNodeCount(3).maxFetchRetries(3).topic(MainTopics.SYNC_BLOCKCHAIN)
+        .selectedNodeIds(generateNodeIds("selected", 10));
+    request.getSelectedNodeIds().remove(nodeId);
+    request.setFromPosition(2);
+    when(networkStatistics.activeNodeCount()).thenReturn(20l);
+    when(networkStatistics.activeNodeIds()).thenReturn(generateNodeIds("id",20));
+    when(messengerMock.fetch(any(), any())).thenReturn(ImmutableList.of(fakeFuture(1,2),fakeFuture(1,2),fakeFuture(1,2)
+    ,fakeFuture(20,2),fakeFuture(90,2),fakeFuture(20,2)));
+    
+    
+    List<SyncResponse<TestBlock>> responses = inquirer.fetchNextBatch(request, TestBlock.class);
+    assertFalse("verify responses are there", responses.isEmpty());
+    assertEquals("verify correct starting position", 2l, responses.get(0).getStartingPosition().longValue());
+    assertNotNull("verify entities are not null", responses.get(0).getEntities());
+    assertEquals("verify correct amount responded entities", 10, responses.get(0).getEntities().size());
+    
+    ArgumentCaptor<List> requestsCaptor = ArgumentCaptor.forClass(List.class);
+    verify(messengerMock,times(1)).fetch(requestsCaptor.capture(), any());
+    var sentRequests = requestsCaptor.getAllValues().stream()
+        .map(it -> (List<Entry<String, SyncBatchRequest>>)it).collect(Collectors.toList());
+    boolean areRequestSentOnlyToSelected = sentRequests.stream()
+        .flatMap(Collection::stream)
+        .map(Entry::getKey)
+        .allMatch(id -> id.startsWith("selected"));
+    assertTrue("verify all sent requests are only sent to selected Nodes", areRequestSentOnlyToSelected);  
+    verify(networkStatistics, never()).activeNodeIds();
   }
   
   @Test
@@ -134,7 +165,7 @@ public class SyncInquirerTest {
         .idealReceiveNodeCount(3).maxFetchRetries(3).topic(MainTopics.SYNC_BLOCKCHAIN);
     request.setFromPosition(2);
     when(networkStatistics.activeNodeCount()).thenReturn(100l);
-    when(networkStatistics.activeNodeIds()).thenReturn(generateNodeIds(100));
+    when(networkStatistics.activeNodeIds()).thenReturn(generateNodeIds("id",100));
     when(messengerMock.fetch(any(), any())).thenReturn(ImmutableList.of(fakeFuture(1,2),fakeFuture(1,9, 15, false),fakeFuture(1,2)
         ,fakeFuture(10,13),fakeFuture(10,15),fakeFuture(10,19)));
     
@@ -209,26 +240,14 @@ public class SyncInquirerTest {
       return message;
   }
   
-  private Message<MessagePayload> emptyFuture(int timeout) {
-      var message = utils.packageMessage(null, UUID.randomUUID().toString());
-      try {
-        Thread.sleep(timeout);
-      } catch (InterruptedException e) {}
-      return message;
-  }
-  
-  private Message<MessagePayload> exceptionalFuture() {
-      throw new RuntimeException();
-  }
-  
   private List<TestBlock> getBlockAmount(int amount) {
     return IntStream.range(0, amount).mapToObj(am -> new TestBlock()).collect(Collectors.toList());
   }
   
-  private List<String> generateNodeIds(int amount) {
+  private List<String> generateNodeIds(String prefix, int amount) {
     List<String> nodes = new ArrayList<>();
     nodes.add(nodeId);
-    IntStream.range(0, amount - 1).forEach(a -> nodes.add(Integer.toString(a)));
+    IntStream.range(0, amount - 1).forEach(a -> nodes.add(prefix + Integer.toString(a)));
     return nodes;
   }
 }
