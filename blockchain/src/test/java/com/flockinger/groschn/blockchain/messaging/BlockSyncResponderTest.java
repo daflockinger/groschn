@@ -19,7 +19,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ContextConfiguration;
 import com.flockinger.groschn.blockchain.BaseCachingTest;
 import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
-import com.flockinger.groschn.blockchain.messaging.sync.impl.BlockSyncResponder;
+import com.flockinger.groschn.blockchain.messaging.respond.BlockSyncResponder;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.commons.compress.CompressedEntity;
 import com.flockinger.groschn.commons.compress.CompressionUtils;

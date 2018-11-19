@@ -1,9 +1,5 @@
 package com.flockinger.groschn.blockchain;
 
-import static com.flockinger.groschn.blockchain.TestDataFactory.createRandomTransactionInputWith;
-import static com.flockinger.groschn.blockchain.TestDataFactory.createRandomTransactionOutputWith;
-import static com.flockinger.groschn.blockchain.TestDataFactory.createRandomTransactionWith;
-import static com.flockinger.groschn.blockchain.TestDataFactory.mapToTransaction;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -11,10 +7,14 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.IntStream;
+import java.util.stream.LongStream;
+import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.RandomUtils;
 import org.modelmapper.ModelMapper;
 import com.flockinger.groschn.blockchain.consensus.model.ConsensusType;
 import com.flockinger.groschn.blockchain.consensus.model.Consent;
+import com.flockinger.groschn.blockchain.messaging.dto.BlockInfo;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.model.Transaction;
 import com.flockinger.groschn.blockchain.model.TransactionInput;
@@ -26,6 +26,7 @@ import com.flockinger.groschn.blockchain.validation.Assessment;
 import com.flockinger.groschn.commons.compress.CompressedEntity;
 import com.flockinger.groschn.messaging.model.Message;
 import com.flockinger.groschn.messaging.model.MessagePayload;
+import com.flockinger.groschn.messaging.model.SyncResponse;
 import com.google.common.collect.ImmutableList;
 
 public class TestDataFactory {
@@ -362,5 +363,57 @@ public class TestDataFactory {
     txMessage.setSenderId(UUID.randomUUID().toString());
     message.setPayload(txMessage);
     return message;
+  }
+  
+  public static List<SyncResponse<Block>> getFakeResponse(boolean isLast, long startPos, List<Block> blocks) {
+    var response = new SyncResponse<Block>();
+    response.setEntities(blocks);
+    response.setLastPositionReached(isLast);
+    response.setStartingPosition(startPos);
+    return ListUtils.emptyIfNull(ImmutableList.of(response));
+  }
+  
+  public static BlockInfo mapToInfo(Block block) {
+    var info = new BlockInfo();
+    info.setBlockHash(block.getHash());
+    info.setPosition(block.getPosition());
+    return info;
+  }
+  
+  public static List<String> generateNodeIds(String prefix, int amount) {
+    List<String> nodes = new ArrayList<>();
+    IntStream.range(0, amount).forEach(a -> nodes.add(prefix + Integer.toString(a)));
+    return nodes;
+  }
+  
+  
+  public static List<BlockInfo> fakeBlockInfos(int amount, int startPos, String prefix) {
+    List<BlockInfo> infos = new ArrayList<>();
+    LongStream.range(1, amount + 1).forEach(it -> {
+      var info = new BlockInfo();
+      info.setBlockHash(prefix + startPos + it);
+      info.setPosition(startPos + it - 1);
+      infos.add(info);
+    });
+    return infos;
+  }
+  
+  public static List<Block> fakeBlocks(int amount, int startPos, String prefix) {
+    List<Block> blocks = new ArrayList<>();
+    LongStream.range(1, amount + 1).forEach(it -> {
+      var block = new Block();
+      block.setHash(prefix + startPos  + it);
+      block.setPosition(startPos + it - 1);
+      blocks.add(block);
+    });
+    return blocks;
+  }
+  
+  public static List<BlockInfo> fakeBlockInfos(int amount, int startPos) {
+    return fakeBlockInfos(amount, startPos, "hash");
+  }
+  
+  public static List<Block> fakeBlocks(int amount, int startPos) {
+    return fakeBlocks(amount, startPos, "hash");
   }
 }

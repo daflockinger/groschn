@@ -1,4 +1,4 @@
-package com.flockinger.groschn.blockchain.messaging.sync.impl;
+package com.flockinger.groschn.blockchain.messaging.respond;
 
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;

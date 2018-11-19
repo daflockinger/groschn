@@ -1,5 +1,7 @@
 package com.flockinger.groschn.blockchain.blockworks.impl;
 
+import static com.flockinger.groschn.blockchain.blockworks.dto.BlockMakerCommand.RESTART;
+import static com.flockinger.groschn.blockchain.blockworks.dto.BlockMakerCommand.STOP;
 import static com.flockinger.groschn.blockchain.validation.AssessmentFailure.BLOCK_LAST_HASH_WRONG;
 import static com.flockinger.groschn.blockchain.validation.AssessmentFailure.BLOCK_POSITION_TOO_HIGH;
 import org.slf4j.Logger;
@@ -9,11 +11,10 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import com.flockinger.groschn.blockchain.blockworks.BlockMaker;
 import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
-import static com.flockinger.groschn.blockchain.blockworks.dto.BlockMakerCommand.*;
 import com.flockinger.groschn.blockchain.exception.validation.AssessmentFailedException;
-import com.flockinger.groschn.blockchain.messaging.sync.SyncDeterminator;
+import com.flockinger.groschn.blockchain.messaging.dto.SyncSettings;
+import com.flockinger.groschn.blockchain.messaging.sync.SmartBlockSynchronizer;
 import com.flockinger.groschn.blockchain.model.Block;
-import com.flockinger.groschn.blockchain.validation.AssessmentFailure;
 import com.flockinger.groschn.blockchain.validation.impl.BlockValidator;
 import com.flockinger.groschn.messaging.config.MainTopics;
 import com.flockinger.groschn.messaging.inbound.AbstractMessageListener;
@@ -29,7 +30,7 @@ public class FreshBlockListener extends AbstractMessageListener<Block> {
   @Autowired
   private BlockMaker blockMaker;
   @Autowired
-  private SyncDeterminator blockSyncDeterminator;
+  private SmartBlockSynchronizer smartSynchronizer;
   
   @Autowired
   @Qualifier("BlockId_Cache")
@@ -53,17 +54,14 @@ public class FreshBlockListener extends AbstractMessageListener<Block> {
       LOG.error("Invalid Block-Message received maybe recoverable: " + e.getMessage(), e);
       // if the validation failed due to an outdated chain or or some faulty blocks in the chain
       // try to Resynchronize the Blockchain.
-      if(isSynchronizationRecoverable(e.getFailure())) {
-        blockSyncDeterminator.determineAndSync();
+      if(BLOCK_LAST_HASH_WRONG.equals(e.getFailure())) {
+        smartSynchronizer.sync(SyncSettings.scan(block.getPosition()));
+      } else if (BLOCK_POSITION_TOO_HIGH.equals(e.getFailure())) {
+        smartSynchronizer.sync(SyncSettings.confident(blockService.getLatestBlock().getPosition(), block.getPosition()));
       }
     } catch (RuntimeException e) {
       LOG.error("Something unexpected happened while storing fresh block!", e);
     }
-  }
-  
-  private boolean isSynchronizationRecoverable(AssessmentFailure failure) {
-    return failure != null && failure.equals(BLOCK_LAST_HASH_WRONG) || 
-        failure.equals(BLOCK_POSITION_TOO_HIGH);
   }
   
   @Override

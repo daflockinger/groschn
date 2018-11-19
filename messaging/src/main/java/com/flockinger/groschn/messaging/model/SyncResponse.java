@@ -13,7 +13,11 @@ public class SyncResponse<T extends Serializable> implements Hashable<SyncRespon
   private Long startingPosition;
   
   private List<T> entities;
+  
+  private String nodeId;
     
+  private Long lastPosition;
+  
   private boolean lastPositionReached = false;
 
   public Long getStartingPosition() {
@@ -38,6 +42,22 @@ public class SyncResponse<T extends Serializable> implements Hashable<SyncRespon
 
   public void setLastPositionReached(boolean lastPositionReached) {
     this.lastPositionReached = lastPositionReached;
+  }
+  
+  public Long getLastPosition() {
+    return lastPosition;
+  }
+
+  public void setLastPosition(Long lastPosition) {
+    this.lastPosition = lastPosition;
+  }
+
+  public String getNodeId() {
+    return nodeId;
+  }
+
+  public void setNodeId(String nodeId) {
+    this.nodeId = nodeId;
   }
 
   @Override

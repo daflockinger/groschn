@@ -1,4 +1,4 @@
-package com.flockinger.groschn.blockchain.messaging.sync.impl;
+package com.flockinger.groschn.blockchain.messaging.respond;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -34,8 +34,9 @@ public class BlockSyncInfoResponder extends AbstractMessageResponder<BlockInfo> 
         .stream().map(this::mapToBlockInfo).collect(Collectors.toList());
     SyncResponse<BlockInfo> response = new SyncResponse<>();
     response.setEntities(infos);
-    response.setLastPositionReached(infos.size() < request.getRequestPackageSize());
+    response.setLastPosition(blockService.getLatestBlock().getPosition());    
     response.setStartingPosition(request.getStartingPosition());
+    response.setNodeId(getNodeId());
     
     return response;
   }

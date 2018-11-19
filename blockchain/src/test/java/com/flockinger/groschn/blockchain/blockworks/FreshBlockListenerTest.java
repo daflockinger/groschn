@@ -24,7 +24,9 @@ import org.springframework.test.context.ContextConfiguration;
 import com.flockinger.groschn.blockchain.BaseCachingTest;
 import com.flockinger.groschn.blockchain.blockworks.dto.BlockMakerCommand;
 import com.flockinger.groschn.blockchain.blockworks.impl.FreshBlockListener;
-import com.flockinger.groschn.blockchain.messaging.sync.SyncDeterminator;
+import com.flockinger.groschn.blockchain.messaging.dto.SyncSettings;
+import com.flockinger.groschn.blockchain.messaging.dto.SyncStrategyType;
+import com.flockinger.groschn.blockchain.messaging.sync.SmartBlockSynchronizer;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.repository.model.StoredBlock;
 import com.flockinger.groschn.blockchain.validation.Assessment;
@@ -55,7 +57,7 @@ public class FreshBlockListenerTest extends BaseCachingTest{
   @MockBean
   private BlockMaker blockMaker;
   @MockBean
-  private SyncDeterminator blockSyncDeterminator;
+  private SmartBlockSynchronizer smartSync;
   
   @Autowired
   @Qualifier("BlockId_Cache")
@@ -86,7 +88,7 @@ public class FreshBlockListenerTest extends BaseCachingTest{
     Block toStoreBlock = blockCaptor.getValue();
     assertNotNull("verify that to store block is not null", toStoreBlock);
     assertEquals("verify that the to stored block is exactly the decompressed one", freshBlock, toStoreBlock);
-    verify(blockSyncDeterminator, times(0)).determineAndSync();
+    verify(smartSync, times(0)).sync(any());
     
     verify(validator).validate(any());
     var commandCaptor = ArgumentCaptor.forClass(BlockMakerCommand.class);
@@ -104,7 +106,7 @@ public class FreshBlockListenerTest extends BaseCachingTest{
     listener.receiveMessage(message);
     
     verify(blockService,times(0)).saveUnchecked(any());
-    verify(blockSyncDeterminator, times(0)).determineAndSync();
+    verify(smartSync, never()).sync(any());
   }
   
   
@@ -123,7 +125,7 @@ public class FreshBlockListenerTest extends BaseCachingTest{
     Block toStoreBlock = blockCaptor.getValue();
     assertNotNull("verify that to store block is not null", toStoreBlock);
     assertEquals("verify that the to stored block is exactly the decompressed one", freshBlock, toStoreBlock);
-    verify(blockSyncDeterminator, times(0)).determineAndSync();
+    verify(smartSync, never()).sync(any());
   }
   
   @Test
@@ -156,7 +158,7 @@ public class FreshBlockListenerTest extends BaseCachingTest{
     
     listener.receiveMessage(message);
     
-    verify(blockSyncDeterminator, times(0)).determineAndSync();
+    verify(smartSync, never()).sync(any());
   }
   
   
@@ -167,10 +169,15 @@ public class FreshBlockListenerTest extends BaseCachingTest{
     when(blockService.saveUnchecked(any())).thenReturn(new StoredBlock());
     when(validator.validate(any())).thenReturn(Assessment.build().valid(false)
         .reason("Block to far in the future").failure(AssessmentFailure.BLOCK_POSITION_TOO_HIGH));
+    when(blockService.getLatestBlock()).thenReturn(Block.GENESIS_BLOCK());
     
     listener.receiveMessage(message);
     
-    verify(blockSyncDeterminator, times(1)).determineAndSync();
+    var settingsCaptor = ArgumentCaptor.forClass(SyncSettings.class);
+    verify(smartSync, times(1)).sync(settingsCaptor.capture());
+    assertEquals("verify correct sync strategy", SyncStrategyType.CONFIDENT, settingsCaptor.getValue().getStrategyType());
+    assertEquals("verify correct sync start position", Block.GENESIS_BLOCK().getPosition().longValue(), settingsCaptor.getValue().getFromPos());
+    assertEquals("verify correct sync end position", freshBlock.getPosition().longValue(), settingsCaptor.getValue().getToPos());
   }
   
   @Test
@@ -183,7 +190,10 @@ public class FreshBlockListenerTest extends BaseCachingTest{
 
     listener.receiveMessage(message);
     
-    verify(blockSyncDeterminator, times(1)).determineAndSync();
+    var settingsCaptor = ArgumentCaptor.forClass(SyncSettings.class);
+    verify(smartSync, times(1)).sync(settingsCaptor.capture());
+    assertEquals("verify correct sync strategy", SyncStrategyType.SCAN, settingsCaptor.getValue().getStrategyType());
+    assertEquals("verify correct sync start position", freshBlock.getPosition().longValue(), settingsCaptor.getValue().getFromPos());
   }
   
   @Test
@@ -196,7 +206,7 @@ public class FreshBlockListenerTest extends BaseCachingTest{
     
     listener.receiveMessage(message);
     
-    verify(blockSyncDeterminator, never()).determineAndSync();
+    verify(smartSync, never()).sync(any());;
   }
   
   
@@ -210,7 +220,7 @@ public class FreshBlockListenerTest extends BaseCachingTest{
     
     listener.receiveMessage(message);
     
-    verify(blockSyncDeterminator, times(0)).determineAndSync();
+    verify(smartSync, never()).sync(any());;
   }
   
   

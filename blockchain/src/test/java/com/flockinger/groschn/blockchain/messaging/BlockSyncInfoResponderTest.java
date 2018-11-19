@@ -21,7 +21,7 @@ import org.springframework.test.context.ContextConfiguration;
 import com.flockinger.groschn.blockchain.BaseCachingTest;
 import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
 import com.flockinger.groschn.blockchain.messaging.dto.BlockInfo;
-import com.flockinger.groschn.blockchain.messaging.sync.impl.BlockSyncInfoResponder;
+import com.flockinger.groschn.blockchain.messaging.respond.BlockSyncInfoResponder;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.commons.compress.CompressedEntity;
 import com.flockinger.groschn.commons.compress.CompressionUtils;
@@ -62,6 +62,7 @@ public class BlockSyncInfoResponderTest extends BaseCachingTest {
     request.setRequestPackageSize(12l);
     message.getPayload().setEntity(compressor.compress(request));
     when(blockService.findBlocks(anyLong(), anyLong())).thenReturn(someBlocks(12));
+    when(blockService.getLatestBlock()).thenReturn(someBlocks(12).get(11));
     when(networkStatistics.activeNodeIds()).thenReturn(ImmutableList.of("groschn-master-123", "pfennig-master"));
     
     var responseMessage = responder.respond(message);
@@ -83,13 +84,13 @@ public class BlockSyncInfoResponderTest extends BaseCachingTest {
     assertEquals("verify that response entity size is correct", 12l, response.get().getEntities().size());
     assertTrue("verify that response entity is correct class", BlockInfo.class.isInstance(response.get().getEntities().get(0)));
     BlockInfo firstInfo = (BlockInfo)response.get().getEntities().get(0);
-    assertTrue("verify correct first response entity hash", firstInfo.getBlockHash().startsWith("0"));
-    assertEquals("verify correct first response entity position", 0, firstInfo.getPosition().longValue());
+    assertTrue("verify correct first response entity hash", firstInfo.getBlockHash().startsWith("1"));
+    assertEquals("verify correct first response entity position", 1, firstInfo.getPosition().longValue());
     BlockInfo secondInfo = (BlockInfo)response.get().getEntities().get(1);
-    assertTrue("verify correct first response entity hash", secondInfo.getBlockHash().startsWith("1"));
-    assertEquals("verify correct first response entity position", 1, secondInfo.getPosition().longValue());
-   
-    assertEquals("verify that response is not the last sync", false, response.get().isLastPositionReached());
+    assertTrue("verify correct first response entity hash", secondInfo.getBlockHash().startsWith("2"));
+    assertEquals("verify correct first response entity position", 2, secondInfo.getPosition().longValue());
+    assertEquals("verify correct last block position", 12l, response.get().getLastPosition().longValue());
+    assertEquals("verify correct node it is in response", "groschn-master-123", response.get().getNodeId());
   }
   
   
@@ -103,6 +104,7 @@ public class BlockSyncInfoResponderTest extends BaseCachingTest {
     message.getPayload().setEntity(compressor.compress(request));
     when(networkStatistics.activeNodeIds()).thenReturn(ImmutableList.of("groschn-master-123", "pfennig-master"));
     when(blockService.findBlocks(anyLong(), anyLong())).thenReturn(someBlocks(3));
+    when(blockService.getLatestBlock()).thenReturn(someBlocks(3).get(2));
     
     var responseMessage = responder.respond(message);
     
@@ -121,7 +123,8 @@ public class BlockSyncInfoResponderTest extends BaseCachingTest {
     assertEquals("verify that response starting position is correct", 999l, 
         response.get().getStartingPosition().longValue());
     assertEquals("verify that response entity size is correct", 3l, response.get().getEntities().size());
-    assertEquals("verify that response is not the last sync", true, response.get().isLastPositionReached());
+    assertEquals("verify correct last block position", 3l, response.get().getLastPosition().longValue());
+    assertEquals("verify correct node it is in response", "groschn-master-123", response.get().getNodeId());
   }
   
   @Test
@@ -178,6 +181,7 @@ public class BlockSyncInfoResponderTest extends BaseCachingTest {
     message.getPayload().setEntity(compressor.compress(request));
     when(networkStatistics.activeNodeIds()).thenReturn(ImmutableList.of("groschn-master-123", "pfennig-master"));
     when(blockService.findBlocks(anyLong(), anyLong())).thenReturn(someBlocks(3));
+    when(blockService.getLatestBlock()).thenReturn(someBlocks(3).get(2));
     
     responder.respond(message);
     var responseMessage = responder.respond(message);
@@ -201,7 +205,7 @@ public class BlockSyncInfoResponderTest extends BaseCachingTest {
   }
   
   private List<Block> someBlocks(int size) {
-    return IntStream.range(0, size).mapToObj(this::newBlock).collect(Collectors.toList());
+    return IntStream.range(1, size + 1).mapToObj(this::newBlock).collect(Collectors.toList());
   }
   
   private Block newBlock(int count) {

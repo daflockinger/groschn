@@ -2,6 +2,7 @@ package com.flockinger.groschn.blockchain.messaging;
 
 import static com.flockinger.groschn.blockchain.blockworks.dto.BlockMakerCommand.RESTART;
 import static com.flockinger.groschn.blockchain.blockworks.dto.BlockMakerCommand.STOP;
+import static com.flockinger.groschn.blockchain.TestDataFactory.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -440,11 +441,5 @@ public class BlockSynchronizerTest extends BaseCachingTest {
     info.setBlockHash(block.getHash());
     info.setPosition(block.getPosition());
     return info;
-  }
-  
-  private List<String> generateNodeIds(String prefix, int amount) {
-    List<String> nodes = new ArrayList<>();
-    IntStream.range(0, amount).forEach(a -> nodes.add(prefix + Integer.toString(a)));
-    return nodes;
   }
 }
