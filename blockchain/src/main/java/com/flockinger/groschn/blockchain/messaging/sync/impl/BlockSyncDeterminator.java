@@ -18,7 +18,7 @@ import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
 import com.flockinger.groschn.blockchain.exception.BlockSynchronizationException;
 import com.flockinger.groschn.blockchain.messaging.dto.BlockInfo;
 import com.flockinger.groschn.blockchain.messaging.dto.DeprecatedBlockInfoResult;
-import com.flockinger.groschn.blockchain.messaging.sync.SyncDeterminator;
+import com.flockinger.groschn.blockchain.messaging.sync.SmartBlockSynchronizer;
 import com.flockinger.groschn.blockchain.messaging.sync.SyncKeeper;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.model.Hashable;
@@ -30,13 +30,8 @@ import com.flockinger.groschn.messaging.sync.SyncInquirer;
 
 //FIXME DEPRECATED, TO BE REMOVED!
 @Service
-public class BlockSyncDeterminator implements SyncDeterminator {
+public class BlockSyncDeterminator /*implements SmartBlockSynchronizer*/ {
 
-  @Override
-  public void determineAndSync() {
-    // TODO Auto-generated method stub
-    
-  }
   // FIXME redo that service, make it simpler, make it work!!
 
  /* @Autowired

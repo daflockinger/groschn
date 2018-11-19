@@ -1,4 +1,4 @@
-package com.flockinger.groschn.blockchain.messaging.sync.impl;
+package com.flockinger.groschn.blockchain.messaging.respond;
 
 import java.util.ArrayList;
 import java.util.List;
