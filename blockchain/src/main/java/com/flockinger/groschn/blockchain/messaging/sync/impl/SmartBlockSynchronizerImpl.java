@@ -34,6 +34,7 @@ public class SmartBlockSynchronizerImpl implements SmartBlockSynchronizer {
   }
 
   //TODO analyze kind of failure and react accordingly!
+  //TODO add also double call check and fail fast!!
   private void doSynchronize(Optional<BlockInfoResult> infoResult) {
     if (infoResult.isPresent()) {
       blockSynchronizer.synchronize(infoResult.get());
