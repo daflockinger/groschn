@@ -19,6 +19,8 @@ coverage:
   ignore:
   - .*Dto.java
   - .*Config.java
+  - .*Application.java
+  - .*Exception.java
 
 parsers:
   gcov:

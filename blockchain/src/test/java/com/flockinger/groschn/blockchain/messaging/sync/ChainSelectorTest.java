@@ -28,17 +28,17 @@ public class ChainSelectorTest {
     var minorDifference = createResponse(0,"major", 10);
     minorDifference.getBlockInfos().get(0).setBlockHash("minor9");
     results.addAll(ImmutableList.of(minorDifference, minorDifference));
-    results.addAll(ImmutableList.of(createResponse(0,"major", 10), createResponse(1,"major", 10), createResponse(2,"major", 10)));
+    results.addAll(ImmutableList.of(createResponse(0,"major", 10), createResponse(1,"major", 10), createResponse(null, 2,"major", 10)));
     
     
     var chosenOne = selector.choose(results);
     
     assertTrue("verify one was chosen", chosenOne.isPresent());
-    assertEquals("verify correct chosen node count", 3, chosenOne.get().getNodeIds().size());
+    assertEquals("verify correct chosen node count", 2, chosenOne.get().getNodeIds().size());
+    assertTrue("verify that there's no null node ID's", chosenOne.get().getNodeIds().stream().allMatch(id -> id != null));
     assertEquals("verify correct chosen node count", 10, chosenOne.get().getBlockInfos().size());
     assertEquals("verify correct chosen first node ID", "major0", chosenOne.get().getNodeIds().get(0));
     assertEquals("verify correct chosen second node ID", "major1", chosenOne.get().getNodeIds().get(1));
-    assertEquals("verify correct chosen third node ID", "major2", chosenOne.get().getNodeIds().get(2));
     assertEquals("verify correct chosen first info hash", "hashmajor0", chosenOne.get().getBlockInfos().get(0).getBlockHash());
     assertTrue("verify correct hashes are in there", chosenOne.get().getBlockInfos().stream().allMatch(info -> info.getBlockHash().startsWith("hashmajor")));
     assertEquals("verify correct chosen first info position", 0, chosenOne.get().getBlockInfos().get(0).getPosition().longValue());
@@ -176,6 +176,10 @@ public class ChainSelectorTest {
   }
   
   private BlockInfoResponse createResponse(int number, String prefix, long chainSize) {
+    return createResponse(prefix + number, number, prefix, chainSize);
+  } 
+  
+  private BlockInfoResponse createResponse(String nodeId, int number, String prefix, long chainSize) {
     var infos = new ArrayList<BlockInfo>();
     LongStream.range(0, chainSize).forEach(count -> {
       var info = new BlockInfo();
@@ -183,6 +187,6 @@ public class ChainSelectorTest {
       info.setBlockHash("hash" + prefix + count);
       infos.add(info);
     });
-    return new BlockInfoResponse(prefix + number, infos);
-  } 
+    return new BlockInfoResponse(nodeId, infos);
+  }
 }
