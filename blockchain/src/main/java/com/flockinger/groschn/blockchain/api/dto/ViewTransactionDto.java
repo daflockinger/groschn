@@ -20,11 +20,11 @@ public class ViewTransactionDto   {
 
   @JsonProperty("inputs")
   @Valid
-  private List<TransactionInputDTO> inputs = null;
+  private List<TransactionInputDto> inputs = null;
 
   @JsonProperty("outputs")
   @Valid
-  private List<TransactionOutputDTO> outputs = null;
+  private List<TransactionOutputDto> outputs = null;
 
   public ViewTransactionDto id(String id) {
     this.id = id;
@@ -46,14 +46,14 @@ public class ViewTransactionDto   {
     this.id = id;
   }
 
-  public ViewTransactionDto inputs(List<TransactionInputDTO> inputs) {
+  public ViewTransactionDto inputs(List<TransactionInputDto> inputs) {
     this.inputs = inputs;
     return this;
   }
 
-  public ViewTransactionDto addInputsItem(TransactionInputDTO inputsItem) {
+  public ViewTransactionDto addInputsItem(TransactionInputDto inputsItem) {
     if (this.inputs == null) {
-      this.inputs = new ArrayList<TransactionInputDTO>();
+      this.inputs = new ArrayList<TransactionInputDto>();
     }
     this.inputs.add(inputsItem);
     return this;
@@ -67,22 +67,22 @@ public class ViewTransactionDto   {
 
   @Valid
 
-  public List<TransactionInputDTO> getInputs() {
+  public List<TransactionInputDto> getInputs() {
     return inputs;
   }
 
-  public void setInputs(List<TransactionInputDTO> inputs) {
+  public void setInputs(List<TransactionInputDto> inputs) {
     this.inputs = inputs;
   }
 
-  public ViewTransactionDto outputs(List<TransactionOutputDTO> outputs) {
+  public ViewTransactionDto outputs(List<TransactionOutputDto> outputs) {
     this.outputs = outputs;
     return this;
   }
 
-  public ViewTransactionDto addOutputsItem(TransactionOutputDTO outputsItem) {
+  public ViewTransactionDto addOutputsItem(TransactionOutputDto outputsItem) {
     if (this.outputs == null) {
-      this.outputs = new ArrayList<TransactionOutputDTO>();
+      this.outputs = new ArrayList<TransactionOutputDto>();
     }
     this.outputs.add(outputsItem);
     return this;
@@ -96,11 +96,11 @@ public class ViewTransactionDto   {
 
   @Valid
 
-  public List<TransactionOutputDTO> getOutputs() {
+  public List<TransactionOutputDto> getOutputs() {
     return outputs;
   }
 
-  public void setOutputs(List<TransactionOutputDTO> outputs) {
+  public void setOutputs(List<TransactionOutputDto> outputs) {
     this.outputs = outputs;
   }
 

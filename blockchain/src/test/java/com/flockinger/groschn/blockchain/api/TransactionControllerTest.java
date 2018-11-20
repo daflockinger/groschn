@@ -194,7 +194,7 @@ public class TransactionControllerTest extends BaseControllerTest {
   public void testPublishTransaction_withNoInputPubKey_shouldReturnBadRequest() throws IOException, Exception {
     CreateTransactionDto transaction = mapper.map(TestDataFactory
         .createRandomTransactionWiths(null, null), CreateTransactionDto.class);
-    transaction.getInputs().get(0).publicKey("");
+    transaction.getInputs().get(0).setPublicKey("");
     
     mockMvc
     .perform(

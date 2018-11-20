@@ -13,7 +13,7 @@ import io.swagger.annotations.ApiModelProperty;
 @Validated
 @javax.annotation.Generated(value = "io.swagger.codegen.languages.SpringCodegen", date = "2018-10-27T19:27:44.622Z")
 
-public class TransactionOutputDTO   {
+public class TransactionOutputDto   {
   @JsonProperty("amount")
   @NotEmpty
   private String amount = null;
@@ -30,7 +30,7 @@ public class TransactionOutputDTO   {
   @NotNull
   private Long sequenceNumber = null;
 
-  public TransactionOutputDTO amount(String amount) {
+  public TransactionOutputDto amount(String amount) {
     this.amount = amount;
     return this;
   }
@@ -50,7 +50,7 @@ public class TransactionOutputDTO   {
     this.amount = amount;
   }
 
-  public TransactionOutputDTO publicKey(String publicKey) {
+  public TransactionOutputDto publicKey(String publicKey) {
     this.publicKey = publicKey;
     return this;
   }
@@ -70,7 +70,7 @@ public class TransactionOutputDTO   {
     this.publicKey = publicKey;
   }
 
-  public TransactionOutputDTO timestamp(Long timestamp) {
+  public TransactionOutputDto timestamp(Long timestamp) {
     this.timestamp = timestamp;
     return this;
   }
@@ -90,7 +90,7 @@ public class TransactionOutputDTO   {
     this.timestamp = timestamp;
   }
 
-  public TransactionOutputDTO sequenceNumber(Long sequenceNumber) {
+  public TransactionOutputDto sequenceNumber(Long sequenceNumber) {
     this.sequenceNumber = sequenceNumber;
     return this;
   }
@@ -119,7 +119,7 @@ public class TransactionOutputDTO   {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    TransactionOutputDTO transactionOutputDTO = (TransactionOutputDTO) o;
+    TransactionOutputDto transactionOutputDTO = (TransactionOutputDto) o;
     return Objects.equals(this.amount, transactionOutputDTO.amount) &&
         Objects.equals(this.publicKey, transactionOutputDTO.publicKey) &&
         Objects.equals(this.timestamp, transactionOutputDTO.timestamp) &&

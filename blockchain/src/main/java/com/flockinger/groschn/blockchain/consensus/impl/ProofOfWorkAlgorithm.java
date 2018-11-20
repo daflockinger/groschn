@@ -4,6 +4,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,12 +47,12 @@ public class ProofOfWorkAlgorithm implements ConsensusAlgorithm {
   
   private final Long STARTING_NONCE = 1l;
   
-  private Boolean cancel = false;
+  private AtomicBoolean cancel = new AtomicBoolean(false);
   
   @Override
   public Optional<Block> reachConsensus(List<Transaction> transactions) {      
-    cancel = false;
-    return forgeBlock(createBaseBlock(transactions), cancel);
+    cancel.set(false);
+    return forgeBlock(createBaseBlock(transactions));
   }
   
   
@@ -84,14 +85,14 @@ public class ProofOfWorkAlgorithm implements ConsensusAlgorithm {
     return difficulty;
   }
   
-  private Optional<Block> forgeBlock(Block freshBlock, Boolean cancel) {
+  private Optional<Block> forgeBlock(Block freshBlock) {
     StopWatch miningTimer = StopWatch.createStarted();
     Consent consent = freshBlock.getConsent();
     String blockHash = "";
     consent.setTimestamp(new Date().getTime());
     Long nonceCount=STARTING_NONCE;
     while(!didWorkSucceed(blockHash, consent)) {
-      if(cancel) {
+      if(cancel.get()) {
         return Optional.empty();
       }
       if(nonceCount == Long.MAX_VALUE) {
@@ -123,6 +124,6 @@ public class ProofOfWorkAlgorithm implements ConsensusAlgorithm {
 
   @Override
   public void stopFindingConsensus() {
-    cancel = true;
+    cancel.set(true);
   }
 }

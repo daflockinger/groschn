@@ -9,7 +9,14 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -102,7 +109,7 @@ public class ProofOfWorkAlgorithmTest {
   }
 
   @Test
-  public void testReachConsensus_withOldGenerationTimeTooSlow_shouldReturnCorrect() {
+  public void testReachConsensuslatch_withOldGenerationTimeTooSlow_shouldReturnCorrect() {
     when(mockStorage.getLatestProofOfWorkBlock()).thenReturn(fakeBlock(30001l, 0));
     mockOverallLastPosition();
 
@@ -191,18 +198,24 @@ public class ProofOfWorkAlgorithmTest {
       assertEquals("verify correct consent type", ConsensusType.PROOF_OF_WORK, consent.getType());
   }
 
+
   @Test
   public void testStopFindingConsensus_withRunningConsensusFinding_shouldStop()
-      throws InterruptedException {
+      throws InterruptedException, ExecutionException, TimeoutException {
     when(mockStorage.getLatestProofOfWorkBlock()).thenReturn(fakeBlock(30000l, 12));
     mockOverallLastPosition();
     
-    new Thread(() -> {
-      var block = powAlgo.reachConsensus(fakeTransactions(9, false));
-      assertFalse("verify block of stopped conesnsus is empty", block.isPresent());
-    }).start();
-    
+    ExecutorService executorService = Executors.newSingleThreadExecutor();
+    var block = executorService.submit(new Callable<Optional<Block>>() {
+      @Override
+      public Optional<Block> call() throws Exception {
+        return powAlgo.reachConsensus(fakeTransactions(9, false));
+      }});
+    Thread.sleep(200);
     powAlgo.stopFindingConsensus();
+    
+    var generatedBlock = block.get(1, TimeUnit.SECONDS);
+    assertFalse("verify block of stopped conesnsus is empty", generatedBlock.isPresent());
   }
 
 

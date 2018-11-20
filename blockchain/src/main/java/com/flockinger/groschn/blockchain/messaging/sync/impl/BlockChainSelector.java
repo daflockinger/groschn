@@ -4,6 +4,7 @@ import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.LongSummaryStatistics;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
@@ -91,7 +92,10 @@ public class BlockChainSelector implements ChainSelector {
   }
   
   private BlockInfoResult mapToResult(List<BlockInfoResponse> majorGroup) {
-    var nodes = majorGroup.stream().map(BlockInfoResponse::getNodeId).collect(Collectors.toList());
+    var nodes = majorGroup.stream()
+        .map(BlockInfoResponse::getNodeId)
+        .filter(Objects::nonNull)
+        .collect(Collectors.toList());
     var infos = majorGroup.stream()
         .map(BlockInfoResponse::getBlockInfos)
         .reduce((infosOne, infosTwo) -> infosOne.size() < infosTwo.size() ? infosOne : infosTwo)

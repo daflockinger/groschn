@@ -17,12 +17,12 @@ public class CreateTransactionDto   {
   @JsonProperty("inputs")
   @NotNull
   @Valid
-  private List<TransactionInputDTO> inputs = null;
+  private List<TransactionInputDto> inputs = null;
 
   @JsonProperty("outputs")
   @NotNull
   @Valid
-  private List<TransactionOutputDTO> outputs = null;
+  private List<TransactionOutputDto> outputs = null;
 
 
   /**
@@ -31,11 +31,11 @@ public class CreateTransactionDto   {
   **/
   @ApiModelProperty(value = "Transaction inputs.")
   @Valid
-  public List<TransactionInputDTO> getInputs() {
+  public List<TransactionInputDto> getInputs() {
     return inputs;
   }
 
-  public void setInputs(List<TransactionInputDTO> inputs) {
+  public void setInputs(List<TransactionInputDto> inputs) {
     this.inputs = inputs;
   }
 
@@ -45,11 +45,11 @@ public class CreateTransactionDto   {
   **/
   @ApiModelProperty(value = "Transaction outputs.")
   @Valid
-  public List<TransactionOutputDTO> getOutputs() {
+  public List<TransactionOutputDto> getOutputs() {
     return outputs;
   }
 
-  public void setOutputs(List<TransactionOutputDTO> outputs) {
+  public void setOutputs(List<TransactionOutputDto> outputs) {
     this.outputs = outputs;
   }
 }
