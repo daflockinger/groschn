@@ -1,10 +1,10 @@
 package com.flockinger.groschn.messaging.model;
 
+import com.flockinger.groschn.messaging.config.MainTopics;
 import java.util.ArrayList;
 import java.util.List;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
-import com.flockinger.groschn.messaging.config.MainTopics;
 
 public class SyncBatchRequest {
   
@@ -16,7 +16,7 @@ public class SyncBatchRequest {
   private int idealReceiveNodeCount;
   @Min(1)
   private int maxFetchRetries;
-  @Min(5)
+  @Min(1)
   private int batchSize;
   
   private List<String> selectedNodeIds = new ArrayList<>();

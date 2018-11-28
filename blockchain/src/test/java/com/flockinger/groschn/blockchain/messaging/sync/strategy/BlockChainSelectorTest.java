@@ -1,8 +1,12 @@
-package com.flockinger.groschn.blockchain.messaging.sync;
+package com.flockinger.groschn.blockchain.messaging.sync.strategy;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+
+import com.flockinger.groschn.blockchain.messaging.dto.BlockInfo;
+import com.flockinger.groschn.blockchain.messaging.dto.BlockInfoResponse;
+import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
 import java.util.stream.LongStream;
 import org.junit.Test;
@@ -10,29 +14,45 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
-import com.flockinger.groschn.blockchain.messaging.dto.BlockInfo;
-import com.flockinger.groschn.blockchain.messaging.dto.BlockInfoResponse;
-import com.flockinger.groschn.blockchain.messaging.sync.impl.BlockChainSelector;
-import com.google.common.collect.ImmutableList;
 
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes = {BlockChainSelector.class})
-public class ChainSelectorTest {
+public class BlockChainSelectorTest {
 
   @Autowired
-  private ChainSelector selector;
+  private BlockChainSelector selector;
   
   @Test
   public void testChoose_withTwoChainsOneMajorlyUsed_shouldChooseMajorlyUsedOne() {
     var results = new ArrayList<BlockInfoResponse>();
-    var minorDifference = createResponse(0,"major", 10);
-    minorDifference.getBlockInfos().get(0).setBlockHash("minor9");
+    var minorDifference = createResponse(0,"minor", 10);
+    minorDifference.getBlockInfos().get(9).setBlockHash("hashmajor10");
     results.addAll(ImmutableList.of(minorDifference, minorDifference));
     results.addAll(ImmutableList.of(createResponse(0,"major", 10), createResponse(1,"major", 10), createResponse(null, 2,"major", 10)));
     
     
     var chosenOne = selector.choose(results);
     
+    assertTrue("verify one was chosen", chosenOne.isPresent());
+    assertEquals("verify correct chosen node count", 2, chosenOne.get().getNodeIds().size());
+    assertTrue("verify that there's no null node ID's", chosenOne.get().getNodeIds().stream().allMatch(id -> id != null));
+    assertEquals("verify correct chosen node count", 10, chosenOne.get().getBlockInfos().size());
+    assertEquals("verify correct chosen first node ID", "major0", chosenOne.get().getNodeIds().get(0));
+    assertEquals("verify correct chosen second node ID", "major1", chosenOne.get().getNodeIds().get(1));
+    assertEquals("verify correct chosen first info hash", "hashmajor0", chosenOne.get().getBlockInfos().get(0).getBlockHash());
+    assertTrue("verify correct hashes are in there", chosenOne.get().getBlockInfos().stream().allMatch(info -> info.getBlockHash().startsWith("hashmajor")));
+    assertEquals("verify correct chosen first info position", 0, chosenOne.get().getBlockInfos().get(0).getPosition().longValue());
+  }
+
+  @Test
+  public void testChoose_withTwoChainsOneHavingOnlyOneItemMatchingOtherButOneLonger_shouldChooseMajorlyUsedOne() {
+    var results = new ArrayList<BlockInfoResponse>();
+    results.add(createResponse(0,"major", 1));
+    results.add(createResponse(1,"major", 10));
+
+
+    var chosenOne = selector.choose(results);
+
     assertTrue("verify one was chosen", chosenOne.isPresent());
     assertEquals("verify correct chosen node count", 2, chosenOne.get().getNodeIds().size());
     assertTrue("verify that there's no null node ID's", chosenOne.get().getNodeIds().stream().allMatch(id -> id != null));
@@ -80,8 +100,8 @@ public class ChainSelectorTest {
     assertEquals("verify correct chosen first info position", 0, chosenOne.get().getBlockInfos().get(0).getPosition().longValue());
   }
   
-  @Test
-  public void testChoose_withTwoMajorOneHavingDifferentLengths_shouldChooseMajorlyUsedOneShortestVariant() {
+  @Test //TODO think about if it's really smart to choose the longest or not?
+  public void testChoose_withTwoMajorOneHavingDifferentLengths_shouldChooseMajorlyUsedOneLongestVariant() {
     var results = new ArrayList<BlockInfoResponse>();
     results.addAll(ImmutableList.of(createResponse(0,"longy", 20), createResponse(1,"longy", 20)));
     results.addAll(ImmutableList.of(createResponse(0,"diff", 19), createResponse(1,"diff", 20), createResponse(2,"diff", 21)));
@@ -90,7 +110,7 @@ public class ChainSelectorTest {
     
     assertTrue("verify one was chosen", chosenOne.isPresent());
     assertEquals("verify correct chosen node count", 3, chosenOne.get().getNodeIds().size());
-    assertEquals("verify correct chosen node count", 19, chosenOne.get().getBlockInfos().size());
+    assertEquals("verify correct chosen node count", 21, chosenOne.get().getBlockInfos().size());
     assertEquals("verify correct chosen first node ID", "diff0", chosenOne.get().getNodeIds().get(0));
     assertEquals("verify correct chosen first info hash", "hashdiff0", chosenOne.get().getBlockInfos().get(0).getBlockHash());
     assertEquals("verify correct chosen first info position", 0, chosenOne.get().getBlockInfos().get(0).getPosition().longValue());

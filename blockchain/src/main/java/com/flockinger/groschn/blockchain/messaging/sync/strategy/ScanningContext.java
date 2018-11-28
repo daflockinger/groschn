@@ -1,9 +1,9 @@
 package com.flockinger.groschn.blockchain.messaging.sync.strategy;
 
+import com.flockinger.groschn.blockchain.messaging.dto.BlockInfoResult;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import com.flockinger.groschn.blockchain.messaging.dto.BlockInfoResult;
 
 class ScanningContext {
   private List<BlockInfoResult> finalResults;
@@ -20,10 +20,6 @@ class ScanningContext {
     return context;
   }
 
-  public List<BlockInfoResult> getFinalResults() {
-    return finalResults;
-  }
-  
   public void addFinalResult(Optional<BlockInfoResult> result) {
     finalResults.addAll(result.stream().collect(Collectors.toList()));
   }

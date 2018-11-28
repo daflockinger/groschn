@@ -1,6 +1,11 @@
-package com.flockinger.groschn.blockchain.messaging.sync.impl;
+package com.flockinger.groschn.blockchain.messaging.sync.strategy;
 
+import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
+
+import com.flockinger.groschn.blockchain.messaging.dto.BlockInfo;
+import com.flockinger.groschn.blockchain.messaging.dto.BlockInfoResponse;
+import com.flockinger.groschn.blockchain.messaging.dto.BlockInfoResult;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.LongSummaryStatistics;
@@ -8,17 +13,15 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
-import static org.apache.commons.collections4.CollectionUtils.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import com.flockinger.groschn.blockchain.messaging.dto.BlockInfo;
-import com.flockinger.groschn.blockchain.messaging.dto.BlockInfoResponse;
-import com.flockinger.groschn.blockchain.messaging.dto.BlockInfoResult;
-import com.flockinger.groschn.blockchain.messaging.sync.ChainSelector;
 
 @Component
-public class BlockChainSelector implements ChainSelector {
-  
-  @Override
+class BlockChainSelector  {
+
+  private final static Logger LOG = LoggerFactory.getLogger(BlockChainSelector.class);
+
   public Optional<BlockInfoResult> choose(List<BlockInfoResponse> infoResponses) {
     List<List<BlockInfoResponse>> nonConflictingResponses = new ArrayList<>();
     infoResponses.stream()
@@ -98,8 +101,14 @@ public class BlockChainSelector implements ChainSelector {
         .collect(Collectors.toList());
     var infos = majorGroup.stream()
         .map(BlockInfoResponse::getBlockInfos)
-        .reduce((infosOne, infosTwo) -> infosOne.size() < infosTwo.size() ? infosOne : infosTwo)
+        .reduce((infosOne, infosTwo) -> infosOne.size() > infosTwo.size() ? infosOne : infosTwo)
         .orElse(new ArrayList<>());
+
+    LOG.info("Selected nodes BlockChain for syncing: " + nodes.stream().collect(Collectors.joining()));
+
+    //TODO turn to debug or trace later
+    LOG.info("Selected BlockInfos: " + infos.stream().map(Object::toString).collect(Collectors.joining()));
+
     return new BlockInfoResult(nodes, infos);
   }
 }

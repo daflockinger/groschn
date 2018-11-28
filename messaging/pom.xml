@@ -6,7 +6,7 @@
 
 	<groupId>com.flockinger.groschn</groupId>
 	<artifactId>messaging</artifactId>
-	<version>0.0.1</version>
+	<version>0.0.2</version>
 	<packaging>jar</packaging>
 
 	<name>messaging</name>
@@ -20,6 +20,7 @@
 
 	<properties>
 		<atomix.version>3.0.0-rc11</atomix.version>
+		<reactor.version>3.2.2.RELEASE</reactor.version>
 	</properties>
 
 
@@ -58,19 +59,7 @@
 			<artifactId>atomix-gossip</artifactId>
 			<version>${atomix.version}</version>
 		</dependency>
-		<dependency>
-			<groupId>io.projectreactor</groupId>
-			<artifactId>reactor-core</artifactId>
-			<version>3.2.2.RELEASE</version>
-		</dependency>
 
-
-		<dependency>
-			<groupId>io.projectreactor</groupId>
-			<artifactId>reactor-test</artifactId>
-			<version>3.2.2.RELEASE</version>
-			<scope>test</scope>
-		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>

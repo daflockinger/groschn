@@ -3,16 +3,26 @@ package com.flockinger.groschn.messaging.sync;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
+import com.flockinger.groschn.commons.config.CommonsConfig;
+import com.flockinger.groschn.messaging.ExecutorConfig;
+import com.flockinger.groschn.messaging.config.MainTopics;
+import com.flockinger.groschn.messaging.members.NetworkStatistics;
+import com.flockinger.groschn.messaging.model.RequestParams;
+import com.flockinger.groschn.messaging.model.SyncBatchRequest;
+import com.flockinger.groschn.messaging.model.SyncRequest;
+import com.flockinger.groschn.messaging.model.SyncResponse;
+import com.flockinger.groschn.messaging.outbound.Broadcaster;
+import com.flockinger.groschn.messaging.util.MessagingUtils;
+import com.flockinger.groschn.messaging.util.TestBlock;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -29,26 +39,14 @@ import org.springframework.boot.test.mock.mockito.MockReset;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
-import com.flockinger.groschn.commons.config.CommonsConfig;
-import com.flockinger.groschn.messaging.ExecutorConfig;
-import com.flockinger.groschn.messaging.config.MainTopics;
-import com.flockinger.groschn.messaging.members.NetworkStatistics;
-import com.flockinger.groschn.messaging.model.Message;
-import com.flockinger.groschn.messaging.model.MessagePayload;
-import com.flockinger.groschn.messaging.model.SyncBatchRequest;
-import com.flockinger.groschn.messaging.model.SyncRequest;
-import com.flockinger.groschn.messaging.model.SyncResponse;
-import com.flockinger.groschn.messaging.outbound.Broadcaster;
-import com.flockinger.groschn.messaging.util.MessagingUtils;
-import com.flockinger.groschn.messaging.util.TestBlock;
 
 @RunWith(SpringRunner.class)
 @Import({ExecutorConfig.class, CommonsConfig.class})
-@ContextConfiguration(classes = {SyncInquirerImpl.class, MessagingUtils.class, ConcurrentMessenger.class})
+@ContextConfiguration(classes = {SyncInquirerImpl.class, MessagingUtils.class, ConcurrentMessenger.class, SyncRequester.class})
 public class SyncInquirerIntegrationTest {
-  
+
   @MockBean(reset=MockReset.BEFORE)
-  private Broadcaster<MessagePayload> broadcaster;
+  private Broadcaster broadcaster;
   @MockBean(reset=MockReset.BEFORE)
   private NetworkStatistics networkStatistics;
   @Autowired
@@ -76,7 +74,7 @@ public class SyncInquirerIntegrationTest {
     when(networkStatistics.activeNodeCount()).thenReturn(20l);
     when(networkStatistics.activeNodeIds()).thenReturn(generateNodeIds(20));
     
-    when(broadcaster.sendRequest(any(), anyString(), any(MainTopics.class)))
+    when(broadcaster.sendRequest(any(), eq(SyncResponse.class)))
     .thenReturn(fakeFuture(1,2)).thenReturn(fakeFuture(1,2)).thenReturn(fakeFuture(1,2))
     .thenReturn(fakeFuture(20,2)).thenReturn(fakeFuture(90,2)).thenReturn(fakeFuture(20,2));
     
@@ -87,16 +85,18 @@ public class SyncInquirerIntegrationTest {
     assertNotNull("verify entities are not null", responses.get(0).getEntities());
     assertEquals("verify correct amount responded entities", 10, responses.get(0).getEntities().size());
     
-    var requestCaptor = ArgumentCaptor.forClass(Message.class);
-   
-    verify(broadcaster,times(6)).sendRequest(requestCaptor.capture(), anyString(), any(MainTopics.class));
-    var bla = requestCaptor.getAllValues();
-    Optional<SyncRequest> firstSentSyncReq = utils.extractPayload((Message<MessagePayload>)requestCaptor.getAllValues().get(0), SyncRequest.class);
-    assertTrue("verify non null request is broadcasted", firstSentSyncReq.isPresent());
-    assertEquals("verify non null request has correct start position", 2l, 
-        firstSentSyncReq.get().getStartingPosition().longValue());
+    var requestCaptor = ArgumentCaptor.forClass(RequestParams.class);
+
+    verify(broadcaster,times(6)).sendRequest(requestCaptor.capture(), any());
+    var requestParams =requestCaptor.getValue();
+    SyncRequest firstSentSyncReq = requestCaptor.getValue().getSyncRequest();
+    assertEquals("verify non null request has correct start position", 2l,
+        firstSentSyncReq.getStartingPosition().longValue());
     assertEquals("verify non null request has correct batch size", 10l, 
-        firstSentSyncReq.get().getRequestPackageSize().longValue());
+        firstSentSyncReq.getRequestPackageSize().longValue());
+    assertNotNull("verify receiver node ID is there", requestParams.getReceiverNodeId());
+    assertEquals("verify correct sender node ID", nodeId, requestParams.getSenderId());
+    assertEquals("verify correct topic", "SYNC_BLOCKCHAIN", requestParams.getTopic());
     
     verify(networkStatistics, times(1)).activeNodeIds();
   }
@@ -109,7 +109,7 @@ public class SyncInquirerIntegrationTest {
     when(networkStatistics.activeNodeCount()).thenReturn(20l);
     when(networkStatistics.activeNodeIds()).thenReturn(generateNodeIds(20));
        
-    when(broadcaster.sendRequest(any(), anyString(), any(MainTopics.class)))
+    when(broadcaster.sendRequest(any(),  eq(SyncResponse.class)))
     .thenReturn(exceptionalFuture()).thenReturn(fakeFuture(1,2)).thenReturn(exceptionalFuture())
     .thenReturn(exceptionalFuture()).thenReturn(exceptionalFuture()).thenReturn(exceptionalFuture());
     
@@ -119,7 +119,7 @@ public class SyncInquirerIntegrationTest {
     assertNotNull("verify entities are not null", responses.get(0).getEntities());
     assertEquals("verify correct amount responded entities", 10, responses.get(0).getEntities().size());
     
-    verify(broadcaster,times(6)).sendRequest(any(), anyString(), any(MainTopics.class));
+    verify(broadcaster,times(6)).sendRequest(any(), any());
     verify(networkStatistics, times(1)).activeNodeIds();
   }
   
@@ -132,7 +132,7 @@ public class SyncInquirerIntegrationTest {
     when(networkStatistics.activeNodeCount()).thenReturn(20l);
     when(networkStatistics.activeNodeIds()).thenReturn(generateNodeIds(20));
        
-    when(broadcaster.sendRequest(any(), anyString(), any(MainTopics.class))).thenReturn(fakeFuture(1,2,0,false));
+    when(broadcaster.sendRequest(any(),  eq(SyncResponse.class))).thenReturn(fakeFuture(1,2,0,false));
     
     inquirer.fetchNextBatch(request, TestBlock.class);
   }  
@@ -145,7 +145,7 @@ public class SyncInquirerIntegrationTest {
     when(networkStatistics.activeNodeCount()).thenReturn(4l);
     when(networkStatistics.activeNodeIds()).thenReturn(generateNodeIds(4));
         
-    when(broadcaster.sendRequest(any(), anyString(), any(MainTopics.class)))
+    when(broadcaster.sendRequest(any(), eq(SyncResponse.class)))
     .thenReturn(fakeFuture(1,2)).thenReturn(exceptionalFuture()).thenReturn(fakeFuture(1,2))
     .thenReturn(exceptionalFuture());
     
@@ -156,38 +156,34 @@ public class SyncInquirerIntegrationTest {
     assertNotNull("verify entities are not null", responses.get(0).getEntities());
     assertEquals("verify correct amount responded entities", 10, responses.get(0).getEntities().size());
     
-    verify(broadcaster,times(3)).sendRequest(any(), anyString(), any(MainTopics.class));
+    verify(broadcaster,times(3)).sendRequest(any(), any());
     verify(networkStatistics, times(1)).activeNodeIds();
   }
   
   
   
-  private CompletableFuture<Message<MessagePayload>> fakeFuture(int timeout, long startPosition) {
+  private CompletableFuture< Optional<SyncResponse>> fakeFuture(int timeout, long startPosition) {
     return fakeFuture(timeout, startPosition, 10, false);
   }
   
-  private CompletableFuture<Message<MessagePayload>> fakeFuture(int timeout, long startPosition, int responseBlockAmount, boolean lastPosReached) {
+  private CompletableFuture< Optional<SyncResponse>> fakeFuture(int timeout, long startPosition, int responseBlockAmount, boolean lastPosReached) {
     return CompletableFuture.supplyAsync(() -> {
       var response = new SyncResponse<TestBlock>();
       response.setStartingPosition(startPosition);
       response.setEntities(getBlockAmount(responseBlockAmount));
       response.setLastPositionReached(lastPosReached);
-      var message = utils.packageMessage(response, UUID.randomUUID().toString());
       try {
         Thread.sleep(timeout * 100);
       } catch (InterruptedException e) {}
-      return message;
+      return Optional.of(response);
     },exec);
   }
   
-  private CompletableFuture<Message<MessagePayload>> emptyFuture(int timeout) {
-    return CompletableFuture.supplyAsync(() -> {
-      var message = utils.packageMessage(null, UUID.randomUUID().toString());
-      return message;
-    },exec);
+  private CompletableFuture< Optional<SyncResponse>> emptyFuture(int timeout) {
+    return CompletableFuture.supplyAsync(() -> Optional.empty(),exec);
   }
   
-  private CompletableFuture<Message<MessagePayload>> exceptionalFuture() {
+  private CompletableFuture< Optional<SyncResponse>> exceptionalFuture() {
     return CompletableFuture.supplyAsync(() -> {
       throw new RuntimeException();
     },exec);

@@ -1,5 +1,7 @@
 package com.flockinger.groschn.blockchain.messaging.sync.strategy;
 
+import com.flockinger.groschn.blockchain.messaging.dto.BlockInfoResult;
+import com.flockinger.groschn.blockchain.messaging.sync.BlockSyncStrategy;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -7,10 +9,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import com.flockinger.groschn.blockchain.messaging.dto.BlockInfoResult;
-import com.flockinger.groschn.blockchain.messaging.dto.SyncSettings;
-import com.flockinger.groschn.blockchain.messaging.dto.SyncStrategyType;
-import com.flockinger.groschn.blockchain.messaging.sync.BlockSyncStrategy;
 
 @Component
 public class ScanningSyncStrategy implements BlockSyncStrategy{
@@ -23,8 +21,8 @@ public class ScanningSyncStrategy implements BlockSyncStrategy{
   private final static int BATCH_SIZE = 10;
   
   @Override
-  public Optional<BlockInfoResult> apply(SyncSettings settings) {
-    var adjustedFromPosition = settings.getFromPos();    
+  public Optional<BlockInfoResult> apply(Long fromPosition) {
+    var adjustedFromPosition = fromPosition;
     var currentInfoResult = infoResultProvider.fetchBlockInfos(adjustedFromPosition, BATCH_SIZE);
     var infoResults = new ArrayList<BlockInfoResult>();
     
@@ -66,16 +64,11 @@ public class ScanningSyncStrategy implements BlockSyncStrategy{
   
   private void adjustBatchSize(ScanningContext context) {
     if((context.getFromPosition() - BATCH_SIZE) < 1) {
-      context.batchSize((int)Math.abs(context.getFromPosition() - BATCH_SIZE));
+      context.batchSize(context.getFromPosition() .intValue() - 1);
     }
   }
   
   private void adjustFromPosition(ScanningContext context) {
     context.fromPosition(Math.max(1, context.getFromPosition() - BATCH_SIZE));
-  }
-  
-  @Override
-  public boolean isApplicable(SyncStrategyType startegy) {
-    return SyncStrategyType.SCAN.equals(startegy) || SyncStrategyType.FALLBACK.equals(startegy);
   }
 }

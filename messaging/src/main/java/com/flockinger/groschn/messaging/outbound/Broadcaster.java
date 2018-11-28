@@ -1,34 +1,24 @@
 package com.flockinger.groschn.messaging.outbound;
 
-import java.io.Serializable;
-import java.util.concurrent.CompletableFuture;
 import com.flockinger.groschn.blockchain.model.Hashable;
 import com.flockinger.groschn.messaging.config.MainTopics;
-import com.flockinger.groschn.messaging.model.Message;
+import com.flockinger.groschn.messaging.model.RequestParams;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Responsible of sending messages through the node-network.
- *
- * @param <T>
  */
-public interface Broadcaster<T extends Serializable> {
+public interface Broadcaster {
 
   /**
    * Sends a message to all other connected nodes.
-   * 
-   * @param message
-   * @param topic
    */
-  <T extends Hashable<T>> void  broadcast(T uncompressedEntity, String senderId, MainTopics topic);
-  
-  
+  <R extends Hashable<R>> void broadcast(R uncompressedEntity, String senderId, MainTopics topic);
+
+
   /**
    * Sends a request/response message and waits for a response of the receiver.
-   * 
-   * @param request Message
-   * @param receiverNodeId ID of the receiver
-   * @param topic
-   * @return response Message
    */
-  CompletableFuture<Message<T>> sendRequest(Message<T> request, String receiverNodeId, MainTopics topic);
+  <M extends Hashable<M>> CompletableFuture<Optional<M>> sendRequest(RequestParams requestParams,  Class<M> responseType);
 }

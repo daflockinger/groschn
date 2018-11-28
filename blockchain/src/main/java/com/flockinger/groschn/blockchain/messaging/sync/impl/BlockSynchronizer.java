@@ -1,10 +1,23 @@
 package com.flockinger.groschn.blockchain.messaging.sync.impl;
 
-import static com.flockinger.groschn.blockchain.blockworks.dto.BlockMakerCommand.RESTART;
-import static com.flockinger.groschn.blockchain.blockworks.dto.BlockMakerCommand.STOP;
 import static org.apache.commons.collections4.CollectionUtils.isEmpty;
 import static org.apache.commons.collections4.ListUtils.emptyIfNull;
 import static org.apache.commons.collections4.ListUtils.partition;
+
+import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
+import com.flockinger.groschn.blockchain.exception.BlockSynchronizationException;
+import com.flockinger.groschn.blockchain.messaging.dto.BlockInfo;
+import com.flockinger.groschn.blockchain.messaging.dto.BlockInfoResult;
+import com.flockinger.groschn.blockchain.messaging.dto.SyncStatus;
+import com.flockinger.groschn.blockchain.model.Block;
+import com.flockinger.groschn.blockchain.model.Hashable;
+import com.flockinger.groschn.commons.exception.BlockchainException;
+import com.flockinger.groschn.messaging.config.MainTopics;
+import com.flockinger.groschn.messaging.model.RequestHeader;
+import com.flockinger.groschn.messaging.model.SyncBatchRequest;
+import com.flockinger.groschn.messaging.model.SyncResponse;
+import com.flockinger.groschn.messaging.sync.SyncInquirer;
+import com.github.benmanes.caffeine.cache.Cache;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -19,30 +32,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Service;
-import com.flockinger.groschn.blockchain.blockworks.BlockMaker;
-import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
-import com.flockinger.groschn.blockchain.exception.BlockSynchronizationException;
-import com.flockinger.groschn.blockchain.messaging.dto.BlockInfo;
-import com.flockinger.groschn.blockchain.messaging.dto.BlockInfoResult;
-import com.flockinger.groschn.blockchain.messaging.dto.SyncStatus;
-import com.flockinger.groschn.blockchain.messaging.sync.SyncKeeper;
-import com.flockinger.groschn.blockchain.model.Block;
-import com.flockinger.groschn.blockchain.model.Hashable;
-import com.flockinger.groschn.commons.exception.BlockchainException;
-import com.flockinger.groschn.messaging.config.MainTopics;
-import com.flockinger.groschn.messaging.model.RequestHeader;
-import com.flockinger.groschn.messaging.model.SyncBatchRequest;
-import com.flockinger.groschn.messaging.model.SyncResponse;
-import com.flockinger.groschn.messaging.sync.SyncInquirer;
-import com.github.benmanes.caffeine.cache.Cache;
 
 @Service
-public class BlockSynchronizer implements SyncKeeper {
+public class BlockSynchronizer  {
   
   @Autowired
   private BlockStorageService blockService;
-  @Autowired
-  private BlockMaker blockMaker;
   @Autowired
   @Qualifier("SyncBlockId_Cache")
   private Cache<String, String> syncBlockIdCache;
@@ -83,14 +78,11 @@ public class BlockSynchronizer implements SyncKeeper {
   }
   
   
-  @Override
-  public void synchronize(BlockInfoResult infoResult) { 
+  public void synchronize(BlockInfoResult infoResult) {
     synchronized (this) {
       if(syncStatus().equals(SyncStatus.IN_PROGRESS.name())) {
         LOG.warn("Synchronization still in progress!");
         return;
-      } else {
-        blockMaker.generation(STOP);
       }
       setSyncStatus(SyncStatus.IN_PROGRESS);
     }
@@ -101,7 +93,6 @@ public class BlockSynchronizer implements SyncKeeper {
     } finally {
       setSyncStatus(SyncStatus.DONE);
       LOG.info("Synchronization finished");
-      blockMaker.generation(RESTART);
     }
   }
 
@@ -133,10 +124,11 @@ public class BlockSynchronizer implements SyncKeeper {
   
   private boolean storeBatch(SyncBatchRequest request, List<BlockInfo> relatedInfos) {
     LOG.info("fetching next block batch");
-    var syncResponse = inquirer.fetchNextBatch(request, Block.class).stream()
+    var batchResponse = inquirer.fetchNextBatch(request, Block.class);
+    var syncResponse = batchResponse.stream()
         .filter(it -> isResponseCorrect(it, relatedInfos))
         .reduce(this::getBiggerBatch);
-    
+
     if(!syncResponse.isPresent() || isEmpty(syncResponse.get().getEntities())) {
       throw new BlockSynchronizationException("No blocks received, retrying!");
     }
@@ -168,7 +160,6 @@ public class BlockSynchronizer implements SyncKeeper {
     return info;
   }
   
-  @Override
   public String syncStatus() {
     return StringUtils.defaultString(syncBlockIdCache
         .getIfPresent(SyncStatus.SYNC_STATUS_CACHE_KEY),SyncStatus.DONE.name());

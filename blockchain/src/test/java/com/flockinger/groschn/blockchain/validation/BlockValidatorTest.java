@@ -5,19 +5,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import java.math.BigDecimal;
-import java.util.Date;
-import org.apache.commons.lang3.StringUtils;
-import org.awaitility.Awaitility;
-import org.awaitility.Duration;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.ArgumentCaptor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.ConfigFileApplicationContextInitializer;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.TestPropertySource;
+
 import com.flockinger.groschn.blockchain.BaseDbTest;
 import com.flockinger.groschn.blockchain.blockworks.BlockMaker;
 import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
@@ -46,9 +34,22 @@ import com.flockinger.groschn.blockchain.wallet.impl.WalletServiceImpl;
 import com.flockinger.groschn.commons.compress.CompressionUtils;
 import com.flockinger.groschn.commons.hash.HashGenerator;
 import com.flockinger.groschn.messaging.members.NetworkStatistics;
-import com.flockinger.groschn.messaging.model.MessagePayload;
 import com.flockinger.groschn.messaging.outbound.Broadcaster;
 import com.flockinger.groschn.messaging.util.MessagingUtils;
+import java.math.BigDecimal;
+import java.util.Date;
+import org.apache.commons.lang3.StringUtils;
+import org.awaitility.Awaitility;
+import org.awaitility.Duration;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.test.context.ConfigFileApplicationContextInitializer;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.TestPropertySource;
 
 @ContextConfiguration(classes = {BlockValidator.class, BlockchainRepository.class, 
     BlockTransactionsValidator.class, TransactionValidator.class, RewardTransactionValidator.class, 
@@ -73,11 +74,12 @@ public class BlockValidatorTest extends BaseDbTest {
   @MockBean
   private BlockStorageService storageService;
   @MockBean
-  private Broadcaster<MessagePayload> broadcaster;
+  private Broadcaster broadcaster;
   @Autowired
   private HashGenerator hasher;
   
   @Autowired
+  @Qualifier("blockValidator")
   private BlockValidator validator;
   
   @Autowired

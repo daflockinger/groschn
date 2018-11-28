@@ -1,5 +1,9 @@
 package com.flockinger.groschn.blockchain.blockworks;
 
+import com.flockinger.groschn.blockchain.blockworks.dto.BlockGenerationStatus;
+import com.flockinger.groschn.blockchain.blockworks.dto.BlockMakerCommand;
+import com.flockinger.groschn.blockchain.messaging.dto.SyncStatus;
+import com.flockinger.groschn.blockchain.messaging.sync.impl.BlockSynchronizer;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -7,10 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import com.flockinger.groschn.blockchain.blockworks.dto.BlockGenerationStatus;
-import com.flockinger.groschn.blockchain.blockworks.dto.BlockMakerCommand;
-import com.flockinger.groschn.blockchain.messaging.dto.SyncStatus;
-import com.flockinger.groschn.blockchain.messaging.sync.SyncKeeper;
 
 @Component
 public class PunchTimer {
@@ -18,7 +18,7 @@ public class PunchTimer {
   @Autowired
   private BlockMaker blockMaker;
   @Autowired
-  private SyncKeeper blockSynchronizer;
+  private BlockSynchronizer blockSynchronizer;
 
   private final static Logger LOG = LoggerFactory.getLogger(PunchTimer.class);
 

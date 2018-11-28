@@ -1,10 +1,12 @@
 package com.flockinger.groschn.blockchain.repository;
 
+import com.flockinger.groschn.blockchain.consensus.model.ConsensusType;
+import com.flockinger.groschn.blockchain.repository.model.StoredBlock;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.mongodb.repository.MongoRepository;
-import com.flockinger.groschn.blockchain.consensus.model.ConsensusType;
-import com.flockinger.groschn.blockchain.repository.model.StoredBlock;
+import org.springframework.data.mongodb.repository.Query;
+import org.springframework.transaction.annotation.Transactional;
 
 public interface BlockchainRepository extends MongoRepository<StoredBlock, String>{
   
@@ -28,8 +30,10 @@ public interface BlockchainRepository extends MongoRepository<StoredBlock, Strin
   List<StoredBlock> findByTransactionsOutputsPublicKey(String publicKey);
   
   List<StoredBlock> findByTransactionsInputsPublicKey(String publicKey);
-  
-  List<StoredBlock> findByPositionBetween(Long startingPosition, Long endPosition);
-  
-  void removeByPositionGreaterThanEqual(Long position);
+
+  @Query("{\"position\" : {\"$gte\" : ?0, \"$lte\" : ?1}}")
+  List<StoredBlock> findByPositionBetweenInclusive(Long startingPosition, Long endPosition);
+
+  @Transactional
+  void removeByPosition(Long position);
 }

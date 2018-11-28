@@ -1,5 +1,6 @@
 package com.flockinger.groschn.blockchain.repository.model;
 
+import com.flockinger.groschn.blockchain.consensus.model.Consent;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import org.springframework.data.annotation.Id;
@@ -7,7 +8,6 @@ import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
-import com.flockinger.groschn.blockchain.consensus.model.Consent;
 
 @Document(collection="blockchain")
 @CompoundIndexes({
@@ -20,7 +20,7 @@ public class StoredBlock {
   @Id
   private String id = null;
   
-  @Indexed
+  @Indexed(unique = true)
   @NotNull
   private Long position = null;
   
