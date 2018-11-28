@@ -3,7 +3,6 @@ package com.flockinger.groschn.blockchain.messaging.sync.strategy;
 import static com.flockinger.groschn.blockchain.TestDataFactory.fakeBlockInfos;
 import static com.flockinger.groschn.blockchain.TestDataFactory.fakeBlocks;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -11,6 +10,10 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
+import com.flockinger.groschn.blockchain.TestDataFactory;
+import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
+import com.flockinger.groschn.blockchain.messaging.dto.BlockInfoResult;
 import java.util.ArrayList;
 import java.util.Optional;
 import org.junit.Test;
@@ -19,11 +22,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
-import com.flockinger.groschn.blockchain.TestDataFactory;
-import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
-import com.flockinger.groschn.blockchain.messaging.dto.BlockInfoResult;
-import com.flockinger.groschn.blockchain.messaging.dto.SyncSettings;
-import com.flockinger.groschn.blockchain.messaging.dto.SyncStrategyType;
 
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes = {ScanningSyncStrategy.class, ScanResultMatcher.class})
@@ -52,7 +50,7 @@ public class ScanningSyncStrategyTest {
     when(blockService.findBlocks(anyLong(), anyLong())).thenReturn(fakeBlocks(10, 12, "hash"));
     
     
-    var result = scanner.apply(SyncSettings.scan(12L));
+    var result = scanner.apply(12L);
     
     assertTrue("verify BlockInfoResult is returned", result.isPresent());
     var returnedNodes = result.get().getNodeIds();
@@ -89,7 +87,7 @@ public class ScanningSyncStrategyTest {
     when(blockService.findBlocks(eq(32L), eq(10L)))
         .thenReturn(fakeBlocks(10, 32, "hash"));
     
-    var result = scanner.apply(SyncSettings.scan(52L));
+    var result = scanner.apply(52L);
     
     assertTrue("verify BlockInfoResult is returned", result.isPresent());
     var returnedNodes = result.get().getNodeIds();
@@ -125,7 +123,7 @@ public class ScanningSyncStrategyTest {
     when(blockService.findBlocks(eq(32L), eq(10L)))
         .thenReturn(fakeBlocks(10, 32, "hash"));
     
-    var result = scanner.apply(SyncSettings.scan(52L));
+    var result = scanner.apply(52L);
     
     assertTrue("verify BlockInfoResult is returned", result.isPresent());
     var returnedNodes = result.get().getNodeIds();
@@ -144,29 +142,29 @@ public class ScanningSyncStrategyTest {
   @Test
   public void testApply_withScannedAllTheWayToFirstBlock_shouldReturnAllInfos() {
     var nodes = TestDataFactory.generateNodeIds("id", 23);
-    var infos =  fakeBlockInfos(5,1,"hosh");
+    var infos =  fakeBlockInfos(4,1,"hosh");
     infos.get(0).setBlockHash("hash");
     when(infoResultProvider.fetchBlockInfos(eq(15L), eq(10)))
         .thenReturn(Optional.ofNullable(new BlockInfoResult(nodes, fakeBlockInfos(10,15,"hish"))));
     when(infoResultProvider.fetchBlockInfos(eq(5L), eq(10)))
         .thenReturn(Optional.ofNullable(new BlockInfoResult(nodes, fakeBlockInfos(10,5,"hush"))));
-    when(infoResultProvider.fetchBlockInfos(eq(1L), eq(5)))
+    when(infoResultProvider.fetchBlockInfos(eq(1L), eq(4)))
         .thenReturn(Optional.ofNullable(new BlockInfoResult(nodes, infos)));
     
     when(blockService.findBlocks(eq(15L), eq(10L)))
         .thenReturn(fakeBlocks(10, 15, "hash"));
     when(blockService.findBlocks(eq(5L), eq(10L)))
         .thenReturn(fakeBlocks(10, 5, "hash"));
-    when(blockService.findBlocks(eq(1L), eq(5L)))
+    when(blockService.findBlocks(eq(1L), eq(4L)))
         .thenReturn(fakeBlocks(10, 1, "hash"));
     
-    var result = scanner.apply(SyncSettings.scan(15L));
+    var result = scanner.apply(15L);
     
     assertTrue("verify BlockInfoResult is returned", result.isPresent());
     var returnedNodes = result.get().getNodeIds();
     assertTrue("verify that all nodeIds are present", returnedNodes.containsAll(TestDataFactory.generateNodeIds("id", 23)));
     var returnedInfos = result.get().getBlockInfos();
-    assertEquals("verify correct returned to sync info size", 25, returnedInfos.size());
+    assertEquals("verify correct returned to sync info size", 24, returnedInfos.size());
     assertTrue("verify that correct blockInfos are returned", 
            returnedInfos.containsAll(infos) 
         && returnedInfos.containsAll(fakeBlockInfos(10,15,"hish")) 
@@ -179,38 +177,31 @@ public class ScanningSyncStrategyTest {
   @Test
   public void testApply_withEmptyBlockchainNoDBEntries_shouldReturnAllInfos() {
     var nodes = TestDataFactory.generateNodeIds("id", 23);
-    var infos =  fakeBlockInfos(5,1,"hosh");
+    var infos =  fakeBlockInfos(4,1,"hosh");
     infos.get(0).setBlockHash("hash");
     when(infoResultProvider.fetchBlockInfos(eq(15L), eq(10)))
         .thenReturn(Optional.ofNullable(new BlockInfoResult(nodes, fakeBlockInfos(10,15,"hish"))));
     when(infoResultProvider.fetchBlockInfos(eq(5L), eq(10)))
         .thenReturn(Optional.ofNullable(new BlockInfoResult(nodes, fakeBlockInfos(10,5,"hush"))));
-    when(infoResultProvider.fetchBlockInfos(eq(1L), eq(5)))
+    when(infoResultProvider.fetchBlockInfos(eq(1L), eq(4)))
         .thenReturn(Optional.ofNullable(new BlockInfoResult(nodes, infos)));
     
     when(blockService.findBlocks(eq(15L), eq(10L)))
         .thenReturn(new ArrayList<>());
     
-    var result = scanner.apply(SyncSettings.scan(15L));
+    var result = scanner.apply(15L);
     
     assertTrue("verify BlockInfoResult is returned", result.isPresent());
     var returnedNodes = result.get().getNodeIds();
     assertTrue("verify that all nodeIds are present", returnedNodes.containsAll(TestDataFactory.generateNodeIds("id", 23)));
     var returnedInfos = result.get().getBlockInfos();
-    assertEquals("verify correct returned to sync info size", 25, returnedInfos.size());
+    assertEquals("verify correct returned to sync info size", 24, returnedInfos.size());
     assertTrue("verify that correct blockInfos are returned", 
            returnedInfos.containsAll(infos) 
         && returnedInfos.containsAll(fakeBlockInfos(10,15,"hish")) 
         && returnedInfos.containsAll(fakeBlockInfos(10,5,"hush")) );
-    
+
     verify(infoResultProvider, times(3)).fetchBlockInfos(anyLong(), anyInt());
     verify(blockService, times(3)).findBlocks(anyLong(), anyLong());
-  }
-  
-  @Test
-  public void testIsApplicable_shouldReturnCorrect() {
-    assertTrue("should be applicable as fallback", scanner.isApplicable(SyncStrategyType.FALLBACK));
-    assertTrue("should be applicable as scanner", scanner.isApplicable(SyncStrategyType.SCAN));
-    assertFalse("should NOT be applicable as confident", scanner.isApplicable(SyncStrategyType.CONFIDENT));
   }
 }

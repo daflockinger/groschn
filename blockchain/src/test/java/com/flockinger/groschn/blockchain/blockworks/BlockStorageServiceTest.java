@@ -1,22 +1,16 @@
 package com.flockinger.groschn.blockchain.blockworks;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import org.junit.After;
-import org.junit.Test;
-import org.mockito.ArgumentCaptor;
-import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.test.context.ContextConfiguration;
+
 import com.flockinger.groschn.blockchain.BaseDbTest;
 import com.flockinger.groschn.blockchain.TestDataFactory;
 import com.flockinger.groschn.blockchain.blockworks.impl.BlockStorageServiceImpl;
@@ -30,8 +24,18 @@ import com.flockinger.groschn.blockchain.repository.model.StoredBlock;
 import com.flockinger.groschn.blockchain.repository.model.StoredTransaction;
 import com.flockinger.groschn.blockchain.repository.model.TransactionStatus;
 import com.flockinger.groschn.blockchain.transaction.TransactionManager;
-import com.flockinger.groschn.blockchain.validation.impl.BlockValidator;
+import com.flockinger.groschn.blockchain.validation.impl.InnerBlockValidator;
 import com.google.common.collect.ImmutableList;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import org.junit.After;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.ContextConfiguration;
 
 @ContextConfiguration(classes = {BlockchainRepository.class, BlockStorageServiceImpl.class})
 public class BlockStorageServiceTest extends BaseDbTest {
@@ -43,8 +47,8 @@ public class BlockStorageServiceTest extends BaseDbTest {
   @Autowired
   private ModelMapper mapper;
   
-  @MockBean
-  private BlockValidator validator;
+  @MockBean(name="innerBlockValidator")
+  private InnerBlockValidator validator;
   @MockBean
   private TransactionManager transactionManager;
   
@@ -114,6 +118,53 @@ public class BlockStorageServiceTest extends BaseDbTest {
     verify(transactionManager).updateTransactionStatuses(anyList(), statusCaptor.capture());
     assertEquals("verify transactions will be updated with correct status", TransactionStatus.EMBEDDED_IN_BLOCK, statusCaptor.getValue());
   }
+
+
+  @Test
+  public void testStoreInBlockchain_withBlockStoredAgain_shouldUpdateCorrectlyAndNotCreateDuplicate() {
+    if(dao.count() == 0) {
+      ((BlockStorageServiceImpl)service).initBlockchain();
+    }
+    dao.save(mapper.map( TestDataFactory.getFakeBlock(), StoredBlock.class));
+    assertEquals("verify that only one block exists before", 2L, dao.count());
+
+    Block freshBlock =  TestDataFactory.getFakeBlock();
+    when(validator.validate(any())).thenReturn(TestDataFactory.fakeAssessment(true));
+
+    StoredBlock savedBlock = service.saveInBlockchain(freshBlock);
+    assertNotNull("verify that returned block is not null", savedBlock);
+    assertNotNull("verify that returned block has an ID", savedBlock.getId());
+
+    assertEquals("verify that only one block exists after updating it", 2L, dao.count());
+    Optional<StoredBlock> storedBlock = dao.findById(savedBlock.getId());
+    assertTrue("verify that stored block exists", storedBlock.isPresent());
+    assertEquals("verify correct block consent difficulty", freshBlock.getConsent().getDifficulty(), storedBlock.get().getConsent().getDifficulty());
+    assertEquals("verify correct block consent millisecondsspent", freshBlock.getConsent().getMilliSecondsSpentMining(), storedBlock.get().getConsent().getMilliSecondsSpentMining());
+    assertEquals("verify correct block consent nonce", freshBlock.getConsent().getNonce(), storedBlock.get().getConsent().getNonce());
+    assertEquals("verify correct block consent timestamp", freshBlock.getConsent().getTimestamp(), storedBlock.get().getConsent().getTimestamp());
+    assertEquals("verify correct block consent type", freshBlock.getConsent().getType(), storedBlock.get().getConsent().getType());
+    assertEquals("verify correct block hash ", freshBlock.getHash(), storedBlock.get().getHash());
+    assertEquals("verify correct block last hash",freshBlock.getLastHash(), storedBlock.get().getLastHash());
+    assertEquals("verify correct block position", freshBlock.getPosition(), storedBlock.get().getPosition());
+    assertEquals("verify correct block timestamp", freshBlock.getTimestamp(), storedBlock.get().getTimestamp());
+    assertEquals("verify correct block transactions merkle root", freshBlock.getTransactionMerkleRoot(), storedBlock.get().getTransactionMerkleRoot());
+    assertEquals("verify correct block transaction size", freshBlock.getTransactions().size(), storedBlock.get().getTransactions().size());
+  }
+
+  @Test
+  public void testStoreInBlockchain_withTryStoringGenesisBlockAgain_shouldDoNothing() {
+    if(dao.count() == 0) {
+      ((BlockStorageServiceImpl)service).initBlockchain();
+    }
+    assertEquals("verify that only one block exists before", 1L, dao.count());
+
+    Block freshBlock = Block.GENESIS_BLOCK();
+    when(validator.validate(any())).thenReturn(TestDataFactory.fakeAssessment(true));
+
+    StoredBlock savedBlock = service.saveInBlockchain(freshBlock);
+    assertNull("verify that genesis block was not stored again", savedBlock.getId());
+    verify(validator, never()).validate(any());
+  }
   
   @Test(expected=AssessmentFailedException.class)
   public void testStoreInBlockchain_withInvalidBlock_shouldThrowException() {
@@ -174,7 +225,21 @@ public class BlockStorageServiceTest extends BaseDbTest {
     verify(transactionManager).updateTransactionStatuses(anyList(), statusCaptor.capture());
     assertEquals("verify transactions will be updated with correct status", TransactionStatus.EMBEDDED_IN_BLOCK, statusCaptor.getValue());
   }
-  
+
+  @Test
+  public void testStoreUncheckedInBlockchain_withTryStoringGenesisBlockAgain_shouldDoNothing() {
+    if(dao.count() == 0) {
+      ((BlockStorageServiceImpl)service).initBlockchain();
+    }
+    assertEquals("verify that only one block exists before", 1L, dao.count());
+
+    Block freshBlock = Block.GENESIS_BLOCK();
+    when(validator.validate(any())).thenReturn(TestDataFactory.fakeAssessment(true));
+
+    StoredBlock savedBlock = service.saveUnchecked(freshBlock);
+    assertNull("verify that genesis block was not stored again", savedBlock.getId());
+  }
+
   @Test
   public void testgetLatestBlockPosition_shouldReturnCorrect() {
     when(validator.validate(any())).thenReturn(TestDataFactory.fakeAssessment(true));
@@ -261,6 +326,7 @@ public class BlockStorageServiceTest extends BaseDbTest {
   
   @Test
   public void testFindBlocks_withValidPositionAndQuandity_shouldWork() {
+    dao.deleteAll();
     dao.saveAll(fakeBlocks(3l,2l,1l,4l,5l));
     
     List<Block> blocks = service.findBlocks(2, 3);
@@ -280,6 +346,12 @@ public class BlockStorageServiceTest extends BaseDbTest {
     assertEquals("verify correct response amount", 3, blocks2.size());
     assertTrue("verify correct blocks are received", blocks2.stream().map(Block::getPosition)
         .collect(Collectors.toList()).containsAll(ImmutableList.of(3l,4l,5l)));
+
+    List<Block> blocks4 = service.findBlocks(4, 1);
+    assertNotNull("verify received blocks are not null", blocks4);
+    assertEquals("verify correct response amount", 1, blocks4.size());
+    assertTrue("verify correct blocks are received", blocks4.stream().map(Block::getPosition)
+        .collect(Collectors.toList()).containsAll(ImmutableList.of(4l)));
   }
   
   @Test
@@ -288,7 +360,7 @@ public class BlockStorageServiceTest extends BaseDbTest {
     
     List<Block> blocks = service.findBlocks(2, 0);
     assertNotNull("verify received blocks are not null", blocks);
-    assertEquals("verify correct response amount", 0, blocks.size());
+    assertEquals("verify correct response amount", 1, blocks.size());
   }
   
   @Test
@@ -308,37 +380,34 @@ public class BlockStorageServiceTest extends BaseDbTest {
     
     List<Block> blocks = service.findBlocks(-3, -3);
     assertNotNull("verify received blocks are not null", blocks);
-    assertEquals("verify correct response amount", 0, blocks.size());
+    assertEquals("verify correct response amount", 1, blocks.size());
   }
   
   @Test
-  public void testRemoveBlocks_withMiddlePosition_shouldRemoveCorrect() {
+  public void testRemoveBlock_withMiddlePosition_shouldRemoveCorrect() {
     dao.saveAll(fakeBlocks(3l,2l,1l,4l,5l));
     
-    service.removeBlocks(3);
-    
-    var existingBlocks = dao.findAll();
-    assertEquals("verify that enough blocks still exist", 2, existingBlocks.size());
-    assertTrue("verify that the first block still exists", existingBlocks.stream().anyMatch(b -> b.getPosition() == 1));
-    assertTrue("verify that the 2nd block still exists", existingBlocks.stream().anyMatch(b -> b.getPosition() == 2));
+    service.removeBlock(3L);
+
+    var existingBlocks = dao.findByPosition(3L);
+    assertFalse("verify that it doesn't exist any more", existingBlocks.isPresent());
   }
   
   @Test
-  public void testRemoveBlocks_withZeroPosition_shouldNotRemoveGenesisBlock() {
-    dao.saveAll(fakeBlocks(5l,3l,2l,5l,6l));
+  public void testRemoveBlock_withZeroPosition_shouldNotRemoveGenesisBlock() {
+    dao.saveAll(fakeBlocks(5l,3l,2l,1l,6l));
     
-    service.removeBlocks(1);
-    
-    var existingBlocks = dao.findAll();
-    assertEquals("verify that enough blocks still exist", 1, existingBlocks.size());
-    assertTrue("verify that the first block still exists", existingBlocks.stream().anyMatch(b -> b.getPosition() == 1));
+    service.removeBlock(1L);
+
+    var existingBlocks = dao.findByPosition(1L);
+    assertTrue("verify that genesis block still exists", existingBlocks.isPresent());
   }
   
   @Test
-  public void testRemoveBlocks_withTooHighPosition_shouldDoNothing() {
+  public void testRemoveBlock_withTooHighPosition_shouldDoNothing() {
     dao.saveAll(fakeBlocks(3l,2l,1l,4l,5l));
     
-    service.removeBlocks(6);
+    service.removeBlock(6L);
     
     var existingBlocks = dao.findAll();
     assertEquals("verify that enough blocks still exist", 5, existingBlocks.size());

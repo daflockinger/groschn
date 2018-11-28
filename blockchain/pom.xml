@@ -13,6 +13,7 @@
 	<description>Core Blockchain of Groschn</description>
 	<properties>
 		<springfox-version>2.7.0</springfox-version>
+		<reactor.version>3.2.2.RELEASE</reactor.version>
 	</properties>
 
 	<parent>
@@ -20,7 +21,6 @@
 		<artifactId>groschn</artifactId>
 		<version>0.0.1</version>
 	</parent>
-
 
 	<dependencies>
 		<dependency>
@@ -57,7 +57,7 @@
 		<dependency>
 			<groupId>com.flockinger.groschn</groupId>
 			<artifactId>messaging</artifactId>
-			<version>0.0.1</version>
+			<version>0.0.2</version>
 		</dependency>
 		<dependency>
 			<groupId>com.flockinger.groschn</groupId>

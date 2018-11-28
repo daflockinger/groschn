@@ -1,11 +1,11 @@
 package com.flockinger.groschn.blockchain.model;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import com.flockinger.groschn.blockchain.consensus.impl.ProofOfWorkAlgorithm;
 import com.flockinger.groschn.blockchain.consensus.model.ConsensusType;
 import com.flockinger.groschn.blockchain.consensus.model.Consent;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class Block implements Hashable<Block> {
   /**
@@ -40,18 +40,17 @@ public class Block implements Hashable<Block> {
   public final static Block GENESIS_BLOCK() {
     Block genesisBlock = new Block();
     genesisBlock.setLastHash("Wer den Groschen nicht ehrt, ist den Schilling nicht wert!");
-    genesisBlock.setHash( //FIXME make that with correct leading zeros!
-        "2c7a509afb7c6675774b75e999e8191c7790161da9843f16b7519cb756200e3cb6d7ea6b8d4078c4805d1205b415b9d83e5d5b0a10e16d9f70e8d1deef47a15e");
-    genesisBlock.setTimestamp(484696800000l);
+    genesisBlock.setHash("000094cdea7597ae9e2aa1643adb7a42c1912cc01fb95351df337760483b1e89f96f0f603da92b0f5b8e56886c77565160f759bf9fa82b19a3943ccd70a33247");
+    genesisBlock.setTimestamp(484696800000L);
     genesisBlock.setTransactions(new ArrayList<>());
     genesisBlock.setPosition(1l);
     genesisBlock.setVersion(1);
     Consent powConsent = new Consent();
     powConsent.setType(ConsensusType.PROOF_OF_WORK);
     powConsent.setDifficulty(ProofOfWorkAlgorithm.DEFAULT_DIFFICULTY);
-    powConsent.setMilliSecondsSpentMining(439l);
-    powConsent.setTimestamp(1536407028239l);
-    powConsent.setNonce(69532l);
+    powConsent.setMilliSecondsSpentMining(794L);
+    powConsent.setTimestamp(1543396309902L);
+    powConsent.setNonce(124688L);
     genesisBlock.setConsent(powConsent);
     return genesisBlock;
   }

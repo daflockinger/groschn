@@ -1,5 +1,15 @@
 package com.flockinger.groschn.blockchain.api.impl;
 
+import com.flockinger.groschn.blockchain.api.TransactionController;
+import com.flockinger.groschn.blockchain.api.dto.CreateTransactionDto;
+import com.flockinger.groschn.blockchain.api.dto.TransactionIdDto;
+import com.flockinger.groschn.blockchain.api.dto.TransactionStatusDto;
+import com.flockinger.groschn.blockchain.api.dto.ViewTransactionDto;
+import com.flockinger.groschn.blockchain.model.Transaction;
+import com.flockinger.groschn.blockchain.transaction.TransactionManager;
+import com.flockinger.groschn.messaging.config.MainTopics;
+import com.flockinger.groschn.messaging.outbound.Broadcaster;
+import io.swagger.annotations.ApiParam;
 import java.util.List;
 import javax.validation.Valid;
 import org.modelmapper.ModelMapper;
@@ -10,18 +20,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
-import com.flockinger.groschn.blockchain.api.TransactionController;
-import com.flockinger.groschn.blockchain.api.dto.CreateTransactionDto;
-import com.flockinger.groschn.blockchain.api.dto.TransactionIdDto;
-import com.flockinger.groschn.blockchain.api.dto.TransactionStatusDto;
-import com.flockinger.groschn.blockchain.api.dto.ViewTransactionDto;
-import com.flockinger.groschn.blockchain.model.Transaction;
-import com.flockinger.groschn.blockchain.transaction.TransactionManager;
-import com.flockinger.groschn.messaging.config.MainTopics;
-import com.flockinger.groschn.messaging.model.MessagePayload;
-import com.flockinger.groschn.messaging.outbound.Broadcaster;
-import com.flockinger.groschn.messaging.util.MessagingUtils;
-import io.swagger.annotations.ApiParam;
 
 @RestController
 public class TransactionControllerImpl implements TransactionController {
@@ -29,7 +27,7 @@ public class TransactionControllerImpl implements TransactionController {
   @Autowired
   private TransactionManager manager;
   @Autowired
-  private Broadcaster<MessagePayload> broadcaster;
+  private Broadcaster broadcaster;
   @Autowired
   private ModelMapper mapper;
   

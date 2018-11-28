@@ -77,3 +77,24 @@ services:
       - GATEWAY_1_NODE_ADDR=groschn-gateway-1:5002
       - ATOMIX_MANAGEMENT_GROUP_SIZE=1
       - ATOMIX_MANAGEMENT_DATA_DIRECTORY=/tmp/groschn3
+  groschn-blockchain-4:
+    image: "flockinger/groschn-blockchain:latest"
+    ports:
+      - "8005:8005"
+      - "5005:5005"
+    links: 
+      - mongo
+      - groschn-gateway-1
+    environment: 
+      - APP_PORT=8005
+      - MONGO_HOST=mongo
+      - MONGO_DB_NAME=groschn4
+      - NODE_ID=groschn4
+      - NODE_PUBLIC_KEY=PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSCwJ5LnYLpKbSYEnbtauxjG1MRrXHYrvLMBw5j8soQTtWv1mok5VKEHFfpjBoPea5LgDbkWfmMDWmGwn29J1FasibU
+      - NODE_PRIVATE_KEY=3hupFSQNWwiJuQNc68HiWzPgyNpQA2yy9iiwhytMS7rZygEwigCPQqG3ekeCwYWVsbjaXSFk3HqiZT6YiwVXs3hFT2bkPXebF1SkZge6aDBbgFWpjozZRbexEFQw1YvVk4usPicpyxn1BrPH7DCWU1PwCibN7JptfD4E6mLb5XCPFgYX9HRRCoDX9UuhnbcK2yHCe
+      - ATOMIX_NODE_ID=groschn4
+      - ATOMIX_NODE_ADDR=groschn-blockchain-4:5005
+      - GATEWAY_1_NODE_ID=gateway1
+      - GATEWAY_1_NODE_ADDR=groschn-gateway-1:5002
+      - ATOMIX_MANAGEMENT_GROUP_SIZE=1
+      - ATOMIX_MANAGEMENT_DATA_DIRECTORY=/tmp/groschn4

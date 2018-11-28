@@ -1,5 +1,9 @@
 package com.flockinger.groschn.blockchain.messaging.sync.strategy;
 
+import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
+import com.flockinger.groschn.blockchain.messaging.dto.BlockInfo;
+import com.flockinger.groschn.blockchain.messaging.dto.BlockInfoResult;
+import com.flockinger.groschn.blockchain.model.Block;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Optional;
@@ -7,11 +11,9 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
-import com.flockinger.groschn.blockchain.messaging.dto.BlockInfo;
-import com.flockinger.groschn.blockchain.messaging.dto.BlockInfoResult;
-import com.flockinger.groschn.blockchain.model.Block;
+import org.springframework.stereotype.Component;
 
+@Component
 class ScanResultMatcher {
   @Autowired
   private BlockStorageService blockService;

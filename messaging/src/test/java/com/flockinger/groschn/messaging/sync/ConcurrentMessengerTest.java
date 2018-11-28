@@ -2,9 +2,11 @@ package com.flockinger.groschn.messaging.sync;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+
+import com.google.common.collect.ImmutableList;
+import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
 import org.junit.Test;
-import com.google.common.collect.ImmutableList;
 
 public class ConcurrentMessengerTest {
 
@@ -80,6 +82,17 @@ public class ConcurrentMessengerTest {
           throw new NullPointerException();
     }));
     
+    assertTrue("verify that it returns empty", results.isEmpty());
+  }
+
+  @Test
+  public void testFetch_withEmptyRequests_shouldReturnEmpty() {
+    ConcurrentMessenger messenger = new ConcurrentMessenger();
+
+    var results = messenger.fetch(new ArrayList<>(), it ->  CompletableFuture.supplyAsync(() -> {
+      throw new NullPointerException();
+    }));
+
     assertTrue("verify that it returns empty", results.isEmpty());
   }
 }

@@ -9,25 +9,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
-import java.math.BigDecimal;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.stream.Collectors;
-import org.apache.commons.lang3.RandomUtils;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
-import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.data.mongodb.MongoDbFactory;
-import org.springframework.test.context.ContextConfiguration;
+
 import com.flockinger.groschn.blockchain.BaseDbTest;
 import com.flockinger.groschn.blockchain.TestDataFactory;
 import com.flockinger.groschn.blockchain.api.dto.TransactionIdDto;
@@ -58,6 +40,25 @@ import com.flockinger.groschn.commons.exception.crypto.CantConfigureSigningAlgor
 import com.flockinger.groschn.commons.hash.HashGenerator;
 import com.flockinger.groschn.commons.sign.Signer;
 import com.google.common.collect.ImmutableList;
+import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
+import org.apache.commons.lang3.RandomUtils;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
+import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.mongodb.MongoDbFactory;
+import org.springframework.test.context.ContextConfiguration;
 
 @ContextConfiguration(classes = {TransactionManagerImpl.class, TransactionPoolRepository.class, MongoDbFactory.class,
     BlockchainRepository.class})
@@ -544,23 +545,29 @@ public class TransactionManagerTest extends BaseDbTest {
   
   private List<StoredBlock> fakeBlocks(StoredTransactionOutput importantOutput, String importantHash) {
     List<StoredBlock> blocks = new ArrayList<>();
-    StoredBlock block1 = new StoredBlock(); 
+    StoredBlock block1 = new StoredBlock();
+    block1.setPosition(1L);
     block1.setTransactions(createFakeTransactions(null,null));
     blocks.add(block1);
-    StoredBlock block2 = new StoredBlock(); 
+    StoredBlock block2 = new StoredBlock();
+    block2.setPosition(2L);
     block2.setTransactions(createFakeTransactions(null,null));
     blocks.add(block2);
-    StoredBlock block3 = new StoredBlock(); 
+    StoredBlock block3 = new StoredBlock();
+    block3.setPosition(3L);
     block3.setTransactions(createFakeTransactions(null,null));
     blocks.add(block3);
-    StoredBlock block4 = new StoredBlock(); 
+    StoredBlock block4 = new StoredBlock();
+    block4.setPosition(4L);
     block4.setHash("I'm the one");
     block4.setTransactions(createFakeTransactions(importantOutput, importantHash));
     blocks.add(block4);
-    StoredBlock block5 = new StoredBlock(); 
+    StoredBlock block5 = new StoredBlock();
+    block5.setPosition(5L);
     block5.setTransactions(createFakeTransactions(null,null));
     blocks.add(block5);
-    StoredBlock block6 = new StoredBlock(); 
+    StoredBlock block6 = new StoredBlock();
+    block6.setPosition(6L);
     block6.setTransactions(createFakeTransactions(null,null));
     blocks.add(block6);
     return blocks;

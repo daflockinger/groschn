@@ -7,25 +7,15 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import java.util.Optional;
-import java.util.UUID;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.ArgumentCaptor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.mock.mockito.MockReset;
-import org.springframework.test.context.ContextConfiguration;
+
 import com.flockinger.groschn.blockchain.BaseCachingTest;
 import com.flockinger.groschn.blockchain.blockworks.dto.BlockMakerCommand;
 import com.flockinger.groschn.blockchain.blockworks.impl.FreshBlockListener;
-import com.flockinger.groschn.blockchain.messaging.dto.SyncSettings;
-import com.flockinger.groschn.blockchain.messaging.dto.SyncStrategyType;
 import com.flockinger.groschn.blockchain.messaging.sync.SmartBlockSynchronizer;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.repository.model.StoredBlock;
@@ -40,6 +30,16 @@ import com.flockinger.groschn.messaging.model.MessagePayload;
 import com.flockinger.groschn.messaging.util.MessagingUtils;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.google.common.collect.ImmutableList;
+import java.util.Optional;
+import java.util.UUID;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.mock.mockito.MockReset;
+import org.springframework.test.context.ContextConfiguration;
 
 
 @ContextConfiguration(classes = {FreshBlockListener.class})
@@ -52,7 +52,7 @@ public class FreshBlockListenerTest extends BaseCachingTest{
   private CompressionUtils compressor;
   @MockBean(reset=MockReset.BEFORE)
   private BlockStorageService blockService;
-  @MockBean
+  @MockBean(name="blockValidator")
   private BlockValidator validator;
   @MockBean
   private BlockMaker blockMaker;
@@ -161,7 +161,7 @@ public class FreshBlockListenerTest extends BaseCachingTest{
     verify(smartSync, never()).sync(any());
   }
   
-  
+
   @Test
   public void testReceiveMessage_withStorageValidationFailedWithTooHighPosition_shouldResync() {
     when(compressor.decompress(any(), any(Integer.class), any(Class.class))).thenReturn(Optional.of(freshBlock));
@@ -169,15 +169,10 @@ public class FreshBlockListenerTest extends BaseCachingTest{
     when(blockService.saveUnchecked(any())).thenReturn(new StoredBlock());
     when(validator.validate(any())).thenReturn(Assessment.build().valid(false)
         .reason("Block to far in the future").failure(AssessmentFailure.BLOCK_POSITION_TOO_HIGH));
-    when(blockService.getLatestBlock()).thenReturn(Block.GENESIS_BLOCK());
-    
+
     listener.receiveMessage(message);
     
-    var settingsCaptor = ArgumentCaptor.forClass(SyncSettings.class);
-    verify(smartSync, times(1)).sync(settingsCaptor.capture());
-    assertEquals("verify correct sync strategy", SyncStrategyType.CONFIDENT, settingsCaptor.getValue().getStrategyType());
-    assertEquals("verify correct sync start position", Block.GENESIS_BLOCK().getPosition().longValue(), settingsCaptor.getValue().getFromPos());
-    assertEquals("verify correct sync end position", freshBlock.getPosition().longValue(), settingsCaptor.getValue().getToPos());
+    verify(smartSync, times(1)).sync(eq(97L));
   }
   
   @Test
@@ -190,10 +185,7 @@ public class FreshBlockListenerTest extends BaseCachingTest{
 
     listener.receiveMessage(message);
     
-    var settingsCaptor = ArgumentCaptor.forClass(SyncSettings.class);
-    verify(smartSync, times(1)).sync(settingsCaptor.capture());
-    assertEquals("verify correct sync strategy", SyncStrategyType.SCAN, settingsCaptor.getValue().getStrategyType());
-    assertEquals("verify correct sync start position", freshBlock.getPosition().longValue(), settingsCaptor.getValue().getFromPos());
+    verify(smartSync, times(1)).sync(eq(freshBlock.getPosition()));
   }
   
   @Test
@@ -220,7 +212,7 @@ public class FreshBlockListenerTest extends BaseCachingTest{
     
     listener.receiveMessage(message);
     
-    verify(smartSync, never()).sync(any());;
+    verify(smartSync, never()).sync(any());
   }
   
   

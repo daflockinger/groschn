@@ -7,6 +7,19 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
+import com.flockinger.groschn.blockchain.BaseCachingTest;
+import com.flockinger.groschn.blockchain.TestConfig;
+import com.flockinger.groschn.blockchain.blockworks.dto.BlockGenerationStatus;
+import com.flockinger.groschn.blockchain.blockworks.dto.BlockMakerCommand;
+import com.flockinger.groschn.blockchain.blockworks.impl.BlockMakerImpl;
+import com.flockinger.groschn.blockchain.consensus.impl.ConsensusFactory;
+import com.flockinger.groschn.blockchain.exception.ReachingConsentFailedException;
+import com.flockinger.groschn.blockchain.exception.validation.BlockValidationException;
+import com.flockinger.groschn.blockchain.model.Block;
+import com.flockinger.groschn.blockchain.transaction.TransactionManager;
+import com.flockinger.groschn.messaging.outbound.Broadcaster;
+import com.flockinger.groschn.messaging.util.MessagingUtils;
 import java.util.ArrayList;
 import java.util.Optional;
 import org.awaitility.Awaitility;
@@ -20,19 +33,6 @@ import org.springframework.boot.test.mock.mockito.MockReset;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
-import com.flockinger.groschn.blockchain.BaseCachingTest;
-import com.flockinger.groschn.blockchain.TestConfig;
-import com.flockinger.groschn.blockchain.blockworks.dto.BlockGenerationStatus;
-import com.flockinger.groschn.blockchain.blockworks.dto.BlockMakerCommand;
-import com.flockinger.groschn.blockchain.blockworks.impl.BlockMakerImpl;
-import com.flockinger.groschn.blockchain.consensus.impl.ConsensusFactory;
-import com.flockinger.groschn.blockchain.exception.ReachingConsentFailedException;
-import com.flockinger.groschn.blockchain.exception.validation.BlockValidationException;
-import com.flockinger.groschn.blockchain.model.Block;
-import com.flockinger.groschn.blockchain.transaction.TransactionManager;
-import com.flockinger.groschn.messaging.model.MessagePayload;
-import com.flockinger.groschn.messaging.outbound.Broadcaster;
-import com.flockinger.groschn.messaging.util.MessagingUtils;
 
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes = {BlockMakerImpl.class, MessagingUtils.class})
@@ -46,7 +46,7 @@ public class BlockMakerTest extends BaseCachingTest {
   @MockBean(reset=MockReset.BEFORE)
   private BlockStorageService storageService;
   @MockBean(reset=MockReset.BEFORE)
-  private Broadcaster<MessagePayload> broadcaster;
+  private Broadcaster broadcaster;
 
   @MockBean(reset=MockReset.BEFORE)
   private RewardGenerator rewardGenerator;

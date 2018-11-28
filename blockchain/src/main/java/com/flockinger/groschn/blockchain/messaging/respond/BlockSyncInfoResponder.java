@@ -1,11 +1,5 @@
 package com.flockinger.groschn.blockchain.messaging.respond;
 
-import java.util.List;
-import java.util.stream.Collectors;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
 import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
 import com.flockinger.groschn.blockchain.messaging.dto.BlockInfo;
 import com.flockinger.groschn.blockchain.model.Block;
@@ -16,6 +10,12 @@ import com.flockinger.groschn.messaging.model.MessagePayload;
 import com.flockinger.groschn.messaging.model.SyncRequest;
 import com.flockinger.groschn.messaging.model.SyncResponse;
 import com.github.benmanes.caffeine.cache.Cache;
+import java.util.List;
+import java.util.stream.Collectors;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 
 @Service
 public class BlockSyncInfoResponder extends AbstractMessageResponder<BlockInfo> implements MessageResponder<MessagePayload> {
@@ -37,7 +37,7 @@ public class BlockSyncInfoResponder extends AbstractMessageResponder<BlockInfo> 
     response.setLastPosition(blockService.getLatestBlock().getPosition());    
     response.setStartingPosition(request.getStartingPosition());
     response.setNodeId(getNodeId());
-    
+
     return response;
   }
   

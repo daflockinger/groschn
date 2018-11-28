@@ -8,6 +8,13 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNotNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
+import com.flockinger.groschn.blockchain.TestDataFactory;
+import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
+import com.flockinger.groschn.blockchain.messaging.dto.BlockInfoResponse;
+import com.flockinger.groschn.blockchain.messaging.dto.BlockInfoResult;
+import com.flockinger.groschn.messaging.model.SyncBatchRequest;
+import com.flockinger.groschn.messaging.sync.SyncInquirer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -18,13 +25,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
-import com.flockinger.groschn.blockchain.TestDataFactory;
-import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
-import com.flockinger.groschn.blockchain.messaging.dto.BlockInfoResponse;
-import com.flockinger.groschn.blockchain.messaging.dto.BlockInfoResult;
-import com.flockinger.groschn.blockchain.messaging.sync.impl.BlockChainSelector;
-import com.flockinger.groschn.messaging.model.SyncBatchRequest;
-import com.flockinger.groschn.messaging.sync.SyncInquirer;
 
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes = {BlockInfoResultProvider.class})

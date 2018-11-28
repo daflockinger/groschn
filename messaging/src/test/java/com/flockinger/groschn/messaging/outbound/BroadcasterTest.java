@@ -6,8 +6,22 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
+import com.flockinger.groschn.commons.compress.CompressionUtils;
+import com.flockinger.groschn.messaging.ExecutorConfig;
+import com.flockinger.groschn.messaging.config.MainTopics;
+import com.flockinger.groschn.messaging.inbound.MessageDispatcher;
+import com.flockinger.groschn.messaging.inbound.MessageResponder;
+import com.flockinger.groschn.messaging.model.Message;
+import com.flockinger.groschn.messaging.model.MessagePayload;
+import com.flockinger.groschn.messaging.model.RequestParams;
+import com.flockinger.groschn.messaging.model.SyncRequest;
+import com.flockinger.groschn.messaging.outbound.impl.BroadcasterImpl;
+import com.flockinger.groschn.messaging.util.MessagingUtils;
+import com.flockinger.groschn.messaging.util.TestBlock;
+import io.atomix.cluster.MemberId;
+import io.atomix.cluster.messaging.ClusterCommunicationService;
 import java.time.Duration;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import org.junit.Test;
@@ -23,19 +37,6 @@ import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
-import com.flockinger.groschn.commons.compress.CompressedEntity;
-import com.flockinger.groschn.commons.compress.CompressionUtils;
-import com.flockinger.groschn.messaging.ExecutorConfig;
-import com.flockinger.groschn.messaging.config.MainTopics;
-import com.flockinger.groschn.messaging.inbound.MessageDispatcher;
-import com.flockinger.groschn.messaging.inbound.MessageResponder;
-import com.flockinger.groschn.messaging.model.Message;
-import com.flockinger.groschn.messaging.model.MessagePayload;
-import com.flockinger.groschn.messaging.outbound.impl.BroadcasterImpl;
-import com.flockinger.groschn.messaging.util.MessagingUtils;
-import com.flockinger.groschn.messaging.util.TestBlock;
-import io.atomix.cluster.MemberId;
-import io.atomix.cluster.messaging.ClusterCommunicationService;
 
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes = {BroadcasterImpl.class, BroadcasterTest.GarfieldResponder.class, MessagingUtils.class, CompressionUtils.class})
@@ -45,12 +46,14 @@ import io.atomix.cluster.messaging.ClusterCommunicationService;
 public class BroadcasterTest {
 
   @Autowired
-  private Broadcaster<MessagePayload> broadcaster;
+  private Broadcaster broadcaster;
   
   @MockBean
   private ClusterCommunicationService clusterCommunicationService;
   @MockBean
   private MessageDispatcher mockDispatcher;
+  @Autowired
+  private MessagingUtils utils;
   
   @Test
   @SuppressWarnings("unchecked")
@@ -80,18 +83,16 @@ public class BroadcasterTest {
   @Test
   @SuppressWarnings("unchecked")
   public void testSendRequest_withNormalEntity_shouldCallSend() {
-    var message = new Message<MessagePayload>();
-    message.setId(UUID.randomUUID().toString());
-    var somePayLoad = new MessagePayload();
-    somePayLoad.setSenderId("groschn1");
-    var compressedEntity = new CompressedEntity();
-    somePayLoad.setEntity(compressedEntity.originalSize(1).entity(new byte[1]));
-    message.setPayload(somePayLoad);
-    message.setTimestamp(123l);
-    when(clusterCommunicationService.send(any(), any(), any(),any(),any(), any())).thenReturn(CompletableFuture.supplyAsync(() -> new byte[0]));    
-    
-    var response = broadcaster.sendRequest(message, "anotherGroschn", MainTopics.BLOCK_INFO);
-    
+    when(clusterCommunicationService.send(any(), any(), any(),any(),any(), any()))
+        .thenReturn(CompletableFuture.supplyAsync(() -> utils.packageMessage(new TestBlock(), "groschn1")));
+
+    var request = new SyncRequest();
+    request.setStartingPosition(1L);
+    request.setRequestPackageSize(3L);
+    var requestParams = RequestParams.build(request).topic(MainTopics.BLOCK_INFO).receiverNodeId("anotherGroschn").senderId("groschn1");
+
+    var response = broadcaster.sendRequest(requestParams, TestBlock.class);
+
     assertNotNull("verify response is not null", response);
     assertNotNull("verify that result is not null", response.join());
     

@@ -9,11 +9,22 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
+import com.flockinger.groschn.commons.config.CommonsConfig;
+import com.flockinger.groschn.messaging.ExecutorConfig;
+import com.flockinger.groschn.messaging.config.MainTopics;
+import com.flockinger.groschn.messaging.exception.ReceivedMessageInvalidException;
+import com.flockinger.groschn.messaging.members.NetworkStatistics;
+import com.flockinger.groschn.messaging.model.SyncBatchRequest;
+import com.flockinger.groschn.messaging.model.SyncResponse;
+import com.flockinger.groschn.messaging.util.MessagingUtils;
+import com.flockinger.groschn.messaging.util.TestBlock;
+import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.UUID;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.junit.Test;
@@ -26,19 +37,6 @@ import org.springframework.boot.test.mock.mockito.MockReset;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
-import com.flockinger.groschn.commons.config.CommonsConfig;
-import com.flockinger.groschn.messaging.ExecutorConfig;
-import com.flockinger.groschn.messaging.config.MainTopics;
-import com.flockinger.groschn.messaging.exception.ReceivedMessageInvalidException;
-import com.flockinger.groschn.messaging.members.NetworkStatistics;
-import com.flockinger.groschn.messaging.model.Message;
-import com.flockinger.groschn.messaging.model.MessagePayload;
-import com.flockinger.groschn.messaging.model.SyncBatchRequest;
-import com.flockinger.groschn.messaging.model.SyncResponse;
-import com.flockinger.groschn.messaging.outbound.Broadcaster;
-import com.flockinger.groschn.messaging.util.MessagingUtils;
-import com.flockinger.groschn.messaging.util.TestBlock;
-import com.google.common.collect.ImmutableList;
 
 
 @RunWith(SpringRunner.class)
@@ -47,15 +45,14 @@ import com.google.common.collect.ImmutableList;
 public class SyncInquirerTest {
 
   @MockBean(reset=MockReset.BEFORE)
-  private Broadcaster<MessagePayload> broadcaster;
+  private SyncRequester requester;
   @MockBean(reset=MockReset.BEFORE)
   private NetworkStatistics networkStatistics;
   @MockBean
   private ConcurrentMessenger messengerMock;
   @Autowired
   private MessagingUtils utils;
- 
-  
+
   @Autowired
   private SyncInquirer inquirer;
   
@@ -129,7 +126,7 @@ public class SyncInquirerTest {
   }
   
   @Test
-  public void testFetchNextBatch_withUsingSelectedNodeIds_shouldSendOnlyToSelectedOnes() {
+  public void testFetchNextBatch_withUsingSelectedNodeIdsAndHeaders_shouldSendOnlyToSelectedOnes() {
     SyncBatchRequest request = SyncBatchRequest.build().batchSize(10)
         .idealReceiveNodeCount(3).maxFetchRetries(3).topic(MainTopics.SYNC_BLOCKCHAIN)
         .selectedNodeIds(generateNodeIds("selected", 10));
@@ -155,10 +152,10 @@ public class SyncInquirerTest {
         .flatMap(Collection::stream)
         .map(Entry::getKey)
         .allMatch(id -> id.startsWith("selected"));
-    assertTrue("verify all sent requests are only sent to selected Nodes", areRequestSentOnlyToSelected);  
+    assertTrue("verify all sent requests are only sent to selected Nodes", areRequestSentOnlyToSelected);
     verify(networkStatistics, never()).activeNodeIds();
   }
-  
+
   @Test
   public void testFetchNextBatch_shouldHaveAlwaysDifferentNodeIds() {
     SyncBatchRequest request = SyncBatchRequest.build().batchSize(10)
@@ -224,20 +221,19 @@ public class SyncInquirerTest {
   }
   
   
-  private Message<MessagePayload> fakeFuture(int timeout, long startPosition) {
+  private  Optional<SyncResponse<TestBlock>> fakeFuture(int timeout, long startPosition) {
     return fakeFuture(timeout, startPosition, 10, false);
   }
   
-  private Message<MessagePayload> fakeFuture(int timeout, long startPosition, int responseBlockAmount, boolean lastPosReached) {
+  private Optional<SyncResponse<TestBlock>> fakeFuture(int timeout, long startPosition, int responseBlockAmount, boolean lastPosReached) {
       var response = new SyncResponse<TestBlock>();
       response.setStartingPosition(startPosition);
       response.setEntities(getBlockAmount(responseBlockAmount));
       response.setLastPositionReached(lastPosReached);
-      var message = utils.packageMessage(response, UUID.randomUUID().toString());
       try {
         Thread.sleep(timeout);
       } catch (InterruptedException e) {}
-      return message;
+      return Optional.of(response);
   }
   
   private List<TestBlock> getBlockAmount(int amount) {

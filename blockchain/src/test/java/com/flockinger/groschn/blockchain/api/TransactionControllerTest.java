@@ -12,16 +12,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import java.io.IOException;
-import java.util.ArrayList;
-import org.junit.Test;
-import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.Import;
-import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.web.servlet.MockMvc;
+
 import com.flockinger.groschn.blockchain.TestConfig;
 import com.flockinger.groschn.blockchain.TestDataFactory;
 import com.flockinger.groschn.blockchain.api.dto.CreateTransactionDto;
@@ -34,10 +25,19 @@ import com.flockinger.groschn.blockchain.exception.TransactionNotFoundException;
 import com.flockinger.groschn.blockchain.exception.validation.AssessmentFailedException;
 import com.flockinger.groschn.blockchain.transaction.TransactionManager;
 import com.flockinger.groschn.commons.compress.CompressionUtils;
-import com.flockinger.groschn.messaging.model.MessagePayload;
 import com.flockinger.groschn.messaging.outbound.Broadcaster;
 import com.flockinger.groschn.messaging.util.MessagingUtils;
 import com.google.common.collect.ImmutableList;
+import java.io.IOException;
+import java.util.ArrayList;
+import org.junit.Test;
+import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(controllers = {TransactionControllerImpl.class, MessagingUtils.class})
 @Import(TestConfig.class)
@@ -54,7 +54,7 @@ public class TransactionControllerTest extends BaseControllerTest {
   @MockBean
   private TransactionManager manager;
   @MockBean
-  private Broadcaster<MessagePayload> broadcaster;
+  private Broadcaster broadcaster;
   
 
   @Test
