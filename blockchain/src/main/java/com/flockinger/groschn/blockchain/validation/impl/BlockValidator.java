@@ -1,12 +1,5 @@
 package com.flockinger.groschn.blockchain.validation.impl;
 
-import java.util.Date;
-import java.util.List;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.stereotype.Component;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.flockinger.groschn.blockchain.blockworks.BlockMaker;
 import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
 import com.flockinger.groschn.blockchain.exception.validation.AssessmentFailedException;
@@ -16,10 +9,13 @@ import com.flockinger.groschn.blockchain.validation.Assessment;
 import com.flockinger.groschn.blockchain.validation.AssessmentFailure;
 import com.flockinger.groschn.blockchain.validation.ConsentValidator;
 import com.flockinger.groschn.blockchain.validation.Validator;
-import com.flockinger.groschn.commons.MerkleRootCalculator;
-import com.flockinger.groschn.commons.compress.CompressionUtils;
+import com.flockinger.groschn.commons.ValidationUtils;
 import com.flockinger.groschn.commons.exception.BlockchainException;
-import com.flockinger.groschn.commons.hash.HashGenerator;
+import java.util.Date;
+import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 
 @Component
 public class BlockValidator implements Validator<Block> {
@@ -33,11 +29,7 @@ public class BlockValidator implements Validator<Block> {
   @Autowired
   protected BlockStorageService blockService;
   @Autowired
-  private HashGenerator hasher;
-  @Autowired
-  private MerkleRootCalculator merkleRootCalculator;
-  @Autowired
-  private CompressionUtils compressor;
+  private ValidationUtils validationUtils;
 
   @Override
   public Assessment validate(Block value) {
@@ -92,7 +84,7 @@ public class BlockValidator implements Validator<Block> {
   private void verifyLastHash(String lastHash, Block lastBlock) {
     var lastBlocksHash = lastBlock.getHash();
     lastBlock.setHash(null);
-    verifyAssessment(hasher.isHashCorrect(lastHash, lastBlock), "Last block hash is wrong, try reynchronizing!", 
+    verifyAssessment(validationUtils.isHashCorrect(lastHash, lastBlock), "Last block hash is wrong, try reynchronizing!",
         AssessmentFailure.BLOCK_LAST_HASH_WRONG);
     lastBlock.setHash(lastBlocksHash);
   }
@@ -100,14 +92,14 @@ public class BlockValidator implements Validator<Block> {
   private void verifyCurrentHash(Block block) {
     String currentHash = block.getHash();
     block.setHash(null);
-    boolean isHashCorrect = hasher.isHashCorrect(currentHash, block);
+    boolean isHashCorrect = validationUtils.isHashCorrect(currentHash, block);
     block.setHash(currentHash);
     
     verifyAssessment(isHashCorrect, "Block hash is wrong!");
   }
   
   private void verifyTransactionsMerkleRoot(Block value) {    
-    String rootHash = merkleRootCalculator.calculateMerkleRootHash(value.getTransactions());
+    String rootHash = validationUtils.calculateMerkleRootHash(value.getTransactions());
     verifyAssessment(rootHash.equals(value.getTransactionMerkleRoot()), 
         "MerkleRoot-Hash of all transactions is wrong!");
   }
@@ -124,7 +116,7 @@ public class BlockValidator implements Validator<Block> {
   }
   
   private void checkTransactionSize(List<Transaction> transactions) {
-    int compressedSize = compressor.compressedByteSize(transactions);
+    int compressedSize = validationUtils.compressedByteSize(transactions);
     verifyAssessment(compressedSize <= Block.MAX_TRANSACTION_BYTE_SIZE, 
         "Max compressed transaction size exceeded: " + compressedSize);
   }

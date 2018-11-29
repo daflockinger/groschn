@@ -16,11 +16,12 @@ package com.flockinger.groschn.commons;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+
+import com.flockinger.groschn.commons.exception.AddressFormatException;
+import com.flockinger.groschn.commons.hash.Base58;
 import java.math.BigInteger;
 import java.util.Arrays;
 import org.junit.Test;
-import com.flockinger.groschn.commons.Base58;
-import com.flockinger.groschn.commons.exception.AddressFormatException;
 
 public class Base58Test {
 

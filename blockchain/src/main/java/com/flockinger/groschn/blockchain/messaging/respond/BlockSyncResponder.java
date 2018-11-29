@@ -3,8 +3,9 @@ package com.flockinger.groschn.blockchain.messaging.respond;
 import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.messaging.config.MainTopics;
-import com.flockinger.groschn.messaging.inbound.AbstractMessageResponder;
+import com.flockinger.groschn.messaging.inbound.MessagePackageHelper;
 import com.flockinger.groschn.messaging.inbound.MessageResponder;
+import com.flockinger.groschn.messaging.model.Message;
 import com.flockinger.groschn.messaging.model.MessagePayload;
 import com.flockinger.groschn.messaging.model.RequestHeader;
 import com.flockinger.groschn.messaging.model.SyncRequest;
@@ -20,7 +21,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service("BlockFullSyncResponder")
-public class BlockSyncResponder extends AbstractMessageResponder<Block> implements MessageResponder<MessagePayload>{
+public class BlockSyncResponder implements MessageResponder<MessagePayload>{
   
   @Autowired
   private BlockStorageService blockService;
@@ -30,6 +31,20 @@ public class BlockSyncResponder extends AbstractMessageResponder<Block> implemen
   
   @Value("${atomix.node-id}")
   private String nodeId;
+
+  @Autowired
+  private MessagePackageHelper helper;
+
+  @Override
+  public Message<MessagePayload> respond(Message<MessagePayload> request) {
+    Message<MessagePayload> responseMessage = new Message<>();
+    var syncRequest = helper.verifyAndUnpackRequest(request, syncBlockIdCache);
+    if(syncRequest.isPresent()) {
+        var syncResponse = createResponse(syncRequest.get());
+        responseMessage = helper.packageResponse(syncResponse, nodeId);
+    }
+    return responseMessage;
+  }
     
   protected SyncResponse<Block> createResponse(SyncRequest request) {
     List<Block> blocks = blockService.findBlocks(request.getStartingPosition(), request.getRequestPackageSize());
@@ -64,15 +79,5 @@ public class BlockSyncResponder extends AbstractMessageResponder<Block> implemen
   @Override
   public MainTopics getSubscribedTopic() {
     return MainTopics.SYNC_BLOCKCHAIN;
-  }
-
-  @Override
-  protected Cache<String, String> getCache() {
-    return syncBlockIdCache;
-  }
-
-  @Override
-  protected String getNodeId() {
-    return nodeId;
   }
 }

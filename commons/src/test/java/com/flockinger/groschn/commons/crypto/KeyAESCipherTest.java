@@ -3,26 +3,16 @@ package com.flockinger.groschn.commons.crypto;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+
+import com.flockinger.groschn.commons.TestConfig;
+import com.flockinger.groschn.commons.exception.crypto.CipherConfigurationException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Import;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringRunner;
-import com.flockinger.groschn.commons.TestConfig;
-import com.flockinger.groschn.commons.config.CommonsConfig;
-import com.flockinger.groschn.commons.crypto.EncryptedKey;
-import com.flockinger.groschn.commons.crypto.KeyCipher;
-import com.flockinger.groschn.commons.exception.crypto.CipherConfigurationException;
 
-@RunWith(SpringRunner.class)
-@Import({CommonsConfig.class, TestConfig.class})
 public class KeyAESCipherTest {
 
-  @Autowired
-  private KeyCipher cipher;
+  private KeyCipher cipher = new KeyAESCipher(TestConfig.getDefaultProvider());
   
   @Test
   public void testEncryptDecryptCreatePassphrase_withValidKey_shouldWorkWell() {

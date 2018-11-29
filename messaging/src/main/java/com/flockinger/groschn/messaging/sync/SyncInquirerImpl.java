@@ -7,7 +7,7 @@ import com.flockinger.groschn.blockchain.model.Hashable;
 import com.flockinger.groschn.messaging.members.NetworkStatistics;
 import com.flockinger.groschn.messaging.model.SyncBatchRequest;
 import com.flockinger.groschn.messaging.model.SyncResponse;
-import com.flockinger.groschn.messaging.util.MessagingUtils;
+import com.flockinger.groschn.messaging.util.BeanValidator;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,20 +26,20 @@ public class SyncInquirerImpl implements SyncInquirer {
   @Autowired
   private ConcurrentMessenger messenger;
   @Autowired
-  private MessagingUtils utils;
+  private BeanValidator validator;
   @Autowired
   private SyncRequester requester;
   
   @Value("${atomix.node-id}")
   private String nodeId;
   
-  public SecureRandom randomizer = new SecureRandom();
+  public final SecureRandom randomizer = new SecureRandom();
   
   
   @Override
   public <T extends Hashable<T>> List<SyncResponse<T>> fetchNextBatch(SyncBatchRequest request,
       Class<T> responseType) {
-    utils.assertEntity(request);
+    validator.assertEntity(request);
     addNodesIfNeeded(request);
     List<SyncResponse<T>> response = new ArrayList<>();
     

@@ -2,35 +2,25 @@ package com.flockinger.groschn.messaging.members;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import java.util.List;
-import java.util.Set;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringRunner;
+
 import com.flockinger.groschn.messaging.members.impl.NetworkStatisticsImpl;
 import com.flockinger.groschn.messaging.model.FullNode;
 import com.google.common.collect.ImmutableSet;
 import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.cluster.Member;
 import io.atomix.core.Atomix;
+import java.util.List;
+import java.util.Set;
+import org.junit.Before;
+import org.junit.Test;
 
-@RunWith(SpringRunner.class)
-@ContextConfiguration(classes = {NetworkStatisticsImpl.class})
 public class NetworkStatisticsTest {
 
-  @Autowired
-  private NetworkStatistics statistics;
-  
-  @MockBean
-  private Atomix atomix;
-  @Mock
-  private ClusterMembershipService membershipMock;
+  private Atomix atomix = mock(Atomix.class);
+  private NetworkStatistics statistics = new NetworkStatisticsImpl(atomix);
+  private ClusterMembershipService membershipMock = mock(ClusterMembershipService.class);
   
   @Before
   public void setup() {

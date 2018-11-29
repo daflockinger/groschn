@@ -1,7 +1,5 @@
 package com.flockinger.groschn.commons.crypto;
 
-import com.flockinger.groschn.commons.crypto.EncryptedKey;
-
 public class EncryptedKey {
   
   private byte[] key;

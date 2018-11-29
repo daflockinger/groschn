@@ -1,6 +1,8 @@
 package com.flockinger.groschn.commons.crypto;
 
 import static com.flockinger.groschn.commons.config.CommonsConfig.DEFAULT_PROVIDER_NAME;
+
+import com.flockinger.groschn.commons.exception.crypto.CipherConfigurationException;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.Key;
@@ -15,15 +17,10 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-import com.flockinger.groschn.commons.crypto.EncryptedKey;
-import com.flockinger.groschn.commons.crypto.KeyCipher;
-import com.flockinger.groschn.commons.exception.crypto.CipherConfigurationException;
 
 public class KeyAESCipher implements KeyCipher {
   private final static String CIPHER_TRANSFORMATION = "AES/CBC/PKCS7Padding";
-  public final static String ENCRYPTION_ALGORITHM = "AES";
+  private final static String ENCRYPTION_ALGORITHM = "AES";
   private final static String SECURE_RANDOM_ALGORITHM = "SHA1PRNG";
   private final static int AES_KEY_SIZE_BITS = 256;
   /**
@@ -34,7 +31,6 @@ public class KeyAESCipher implements KeyCipher {
   private final Cipher cipher;
   private final SecureRandom random;
 
-  @Autowired
   public KeyAESCipher(Provider defaultProvider) {
     try {
       Security.addProvider(defaultProvider);
@@ -78,9 +74,7 @@ public class KeyAESCipher implements KeyCipher {
     try {
       IvParameterSpec initVector = new IvParameterSpec(encryptedKey.getInitVector());
       cipher.init(Cipher.DECRYPT_MODE, createKey(passphrase), initVector);
-      byte[] decryptedKey = cipher.doFinal(encryptedKey.getKey());
-      
-      return decryptedKey;
+      return cipher.doFinal(encryptedKey.getKey());
     } catch (InvalidKeyException e) {
       throw new CipherConfigurationException("Key is not a valid AES 256bit key!", e);
     } catch (GeneralSecurityException e) {

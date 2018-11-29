@@ -11,6 +11,17 @@ import static org.mockito.ArgumentMatchers.matches;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
+import com.flockinger.groschn.blockchain.BaseCachingTest;
+import com.flockinger.groschn.blockchain.TestConfig;
+import com.flockinger.groschn.blockchain.blockworks.impl.RewardGeneratorImpl;
+import com.flockinger.groschn.blockchain.dto.TransactionDto;
+import com.flockinger.groschn.blockchain.model.Transaction;
+import com.flockinger.groschn.blockchain.model.TransactionInput;
+import com.flockinger.groschn.blockchain.model.TransactionOutput;
+import com.flockinger.groschn.blockchain.transaction.Bookkeeper;
+import com.flockinger.groschn.blockchain.transaction.TransactionManager;
+import com.flockinger.groschn.blockchain.wallet.WalletService;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Optional;
@@ -27,20 +38,9 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
-import com.flockinger.groschn.blockchain.BaseCachingTest;
-import com.flockinger.groschn.blockchain.TestConfig;
-import com.flockinger.groschn.blockchain.blockworks.impl.RewardGeneratorImpl;
-import com.flockinger.groschn.blockchain.dto.TransactionDto;
-import com.flockinger.groschn.blockchain.model.Transaction;
-import com.flockinger.groschn.blockchain.model.TransactionInput;
-import com.flockinger.groschn.blockchain.model.TransactionOutput;
-import com.flockinger.groschn.blockchain.transaction.Bookkeeper;
-import com.flockinger.groschn.blockchain.transaction.TransactionManager;
-import com.flockinger.groschn.blockchain.wallet.WalletService;
-import com.flockinger.groschn.messaging.util.MessagingUtils;
 
 @RunWith(SpringRunner.class)
-@ContextConfiguration(classes = {RewardGeneratorImpl.class, MessagingUtils.class})
+@ContextConfiguration(classes = {RewardGeneratorImpl.class})
 @Import(TestConfig.class)
 public class RewardGeneratorTest extends BaseCachingTest {
   

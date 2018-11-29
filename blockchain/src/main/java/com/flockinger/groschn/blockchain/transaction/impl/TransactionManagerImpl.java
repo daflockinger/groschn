@@ -4,6 +4,29 @@ import static com.flockinger.groschn.blockchain.repository.model.TransactionStat
 import static com.flockinger.groschn.blockchain.repository.model.TransactionStatus.SIX_BLOCKS_UNDER;
 import static java.lang.Math.abs;
 import static java.lang.Math.max;
+
+import com.flockinger.groschn.blockchain.api.dto.TransactionIdDto;
+import com.flockinger.groschn.blockchain.api.dto.TransactionStatusDto;
+import com.flockinger.groschn.blockchain.api.dto.ViewTransactionDto;
+import com.flockinger.groschn.blockchain.dto.TransactionDto;
+import com.flockinger.groschn.blockchain.exception.TransactionAlreadyClearedException;
+import com.flockinger.groschn.blockchain.exception.TransactionNotFoundException;
+import com.flockinger.groschn.blockchain.exception.validation.AssessmentFailedException;
+import com.flockinger.groschn.blockchain.model.Transaction;
+import com.flockinger.groschn.blockchain.model.TransactionInput;
+import com.flockinger.groschn.blockchain.model.TransactionOutput;
+import com.flockinger.groschn.blockchain.repository.BlockchainRepository;
+import com.flockinger.groschn.blockchain.repository.TransactionPoolRepository;
+import com.flockinger.groschn.blockchain.repository.model.StoredBlock;
+import com.flockinger.groschn.blockchain.repository.model.StoredPoolTransaction;
+import com.flockinger.groschn.blockchain.repository.model.StoredTransaction;
+import com.flockinger.groschn.blockchain.repository.model.TransactionStatus;
+import com.flockinger.groschn.blockchain.transaction.TransactionManager;
+import com.flockinger.groschn.blockchain.validation.Assessment;
+import com.flockinger.groschn.blockchain.validation.Validator;
+import com.flockinger.groschn.blockchain.wallet.WalletService;
+import com.flockinger.groschn.commons.TransactionUtils;
+import com.google.common.collect.ImmutableList;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -28,30 +51,6 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
-import com.flockinger.groschn.blockchain.api.dto.TransactionIdDto;
-import com.flockinger.groschn.blockchain.api.dto.TransactionStatusDto;
-import com.flockinger.groschn.blockchain.api.dto.ViewTransactionDto;
-import com.flockinger.groschn.blockchain.dto.TransactionDto;
-import com.flockinger.groschn.blockchain.exception.TransactionAlreadyClearedException;
-import com.flockinger.groschn.blockchain.exception.TransactionNotFoundException;
-import com.flockinger.groschn.blockchain.exception.validation.AssessmentFailedException;
-import com.flockinger.groschn.blockchain.model.Transaction;
-import com.flockinger.groschn.blockchain.model.TransactionInput;
-import com.flockinger.groschn.blockchain.model.TransactionOutput;
-import com.flockinger.groschn.blockchain.repository.BlockchainRepository;
-import com.flockinger.groschn.blockchain.repository.TransactionPoolRepository;
-import com.flockinger.groschn.blockchain.repository.model.StoredBlock;
-import com.flockinger.groschn.blockchain.repository.model.StoredPoolTransaction;
-import com.flockinger.groschn.blockchain.repository.model.StoredTransaction;
-import com.flockinger.groschn.blockchain.repository.model.TransactionStatus;
-import com.flockinger.groschn.blockchain.transaction.TransactionManager;
-import com.flockinger.groschn.blockchain.validation.Assessment;
-import com.flockinger.groschn.blockchain.validation.Validator;
-import com.flockinger.groschn.blockchain.wallet.WalletService;
-import com.flockinger.groschn.commons.compress.CompressionUtils;
-import com.flockinger.groschn.commons.hash.HashGenerator;
-import com.flockinger.groschn.commons.sign.Signer;
-import com.google.common.collect.ImmutableList;
 
 @Service
 public class TransactionManagerImpl implements TransactionManager {
@@ -64,16 +63,12 @@ public class TransactionManagerImpl implements TransactionManager {
   @Autowired
   private ModelMapper mapper;
   @Autowired
-  private Signer signer;
-  @Autowired
-  private CompressionUtils compressor;
-  @Autowired
   private WalletService wallet;
-  @Autowired
-  private HashGenerator hashGenerator;
   @Autowired
   @Qualifier("Transaction_Validator")
   private Validator<Transaction> validator;
+  @Autowired
+  private TransactionUtils transactionUtils;
 
   @Autowired
   public TransactionManagerImpl(MongoDbFactory factory) {
@@ -90,7 +85,7 @@ public class TransactionManagerImpl implements TransactionManager {
     while (compressedTransactionsSize < maxByteSize && transactionIterator.hasNext()) {
       var freshTransaction = mapToRegularTransaction(transactionIterator.next());
       compressedTransactionsSize +=
-          compressor.compressedByteSize(ImmutableList.of(freshTransaction));
+          transactionUtils.compressedByteSize(ImmutableList.of(freshTransaction));
       if (compressedTransactionsSize < maxByteSize) {
         transactions.add(freshTransaction);
       }
@@ -111,7 +106,7 @@ public class TransactionManagerImpl implements TransactionManager {
     for (TransactionInput input : transaction.getInputs()) {
       signTransactionInput(input, transaction.getOutputs(), walletPrivateKey);
     }
-    transaction.setTransactionHash(hashGenerator.generateHash(transaction));
+    transaction.setTransactionHash(transactionUtils.generateHash(transaction));
     validator.validate(transaction);
     return transaction;
   }
@@ -120,7 +115,7 @@ public class TransactionManagerImpl implements TransactionManager {
       byte[] privateKey) {
     Collections.sort(outputs);
     String outputHashBase = outputs.stream().map(Object::toString).collect(Collectors.joining());
-    String signature = signer.sign(outputHashBase.getBytes(StandardCharsets.UTF_8), privateKey);
+    String signature = transactionUtils.sign(outputHashBase.getBytes(StandardCharsets.UTF_8), privateKey);
     input.setSignature(signature);
   }
 

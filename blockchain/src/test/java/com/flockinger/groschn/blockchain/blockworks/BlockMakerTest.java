@@ -19,7 +19,6 @@ import com.flockinger.groschn.blockchain.exception.validation.BlockValidationExc
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.transaction.TransactionManager;
 import com.flockinger.groschn.messaging.outbound.Broadcaster;
-import com.flockinger.groschn.messaging.util.MessagingUtils;
 import java.util.ArrayList;
 import java.util.Optional;
 import org.awaitility.Awaitility;
@@ -35,7 +34,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 
 @RunWith(SpringRunner.class)
-@ContextConfiguration(classes = {BlockMakerImpl.class, MessagingUtils.class})
+@ContextConfiguration(classes = {BlockMakerImpl.class})
 @Import(TestConfig.class)
 public class BlockMakerTest extends BaseCachingTest {
 

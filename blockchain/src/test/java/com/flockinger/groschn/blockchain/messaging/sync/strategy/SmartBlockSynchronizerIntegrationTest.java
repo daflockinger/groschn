@@ -25,6 +25,7 @@ import com.flockinger.groschn.blockchain.repository.model.StoredBlock;
 import com.flockinger.groschn.blockchain.transaction.TransactionManager;
 import com.flockinger.groschn.blockchain.validation.Assessment;
 import com.flockinger.groschn.blockchain.validation.impl.InnerBlockValidator;
+import com.flockinger.groschn.messaging.inbound.MessagePackageHelper;
 import com.flockinger.groschn.messaging.members.NetworkStatistics;
 import com.flockinger.groschn.messaging.model.Message;
 import com.flockinger.groschn.messaging.model.MessagePayload;
@@ -32,8 +33,10 @@ import com.flockinger.groschn.messaging.model.SyncBatchRequest;
 import com.flockinger.groschn.messaging.model.SyncRequest;
 import com.flockinger.groschn.messaging.model.SyncResponse;
 import com.flockinger.groschn.messaging.sync.SyncInquirer;
-import com.flockinger.groschn.messaging.util.MessagingUtils;
+import com.flockinger.groschn.messaging.util.BeanValidator;
+import com.flockinger.groschn.messaging.util.MessagingContext;
 import com.google.common.collect.ImmutableList;
+import io.atomix.cluster.messaging.ClusterCommunicationService;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -58,7 +61,8 @@ import org.springframework.test.context.junit4.SpringRunner;
 @ContextConfiguration(classes = {SmartBlockSynchronizerImpl.class,
     BlockSynchronizer.class, ScanningSyncStrategy.class,
     ScanResultMatcher.class, BlockInfoResultProvider.class, BlockChainSelector.class,
-    BlockSyncResponder.class, BlockSyncInfoResponder.class, MessagingUtils.class,
+    BlockSyncResponder.class, BlockSyncInfoResponder.class, MessagingContext.class,
+    MessagePackageHelper.class, BeanValidator.class,
     BlockStorageServiceImpl.class})
 @Import(CacheConfig.class)
 @TestPropertySource(properties = "atomix.node-id=bla123")
@@ -85,7 +89,11 @@ public class SmartBlockSynchronizerIntegrationTest extends BaseDbTest {
   @Autowired
   private BlockSyncInfoResponder infoResponder;
   @Autowired
-  private MessagingUtils utils;
+  private MessagingContext utils;
+  @MockBean
+  private ClusterCommunicationService clusterCommunicationService;
+
+
 
   private ModelMapper mapper = new ModelMapper();
 

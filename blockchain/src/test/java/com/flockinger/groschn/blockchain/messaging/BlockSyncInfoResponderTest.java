@@ -1,207 +1,109 @@
 package com.flockinger.groschn.blockchain.messaging;
 
-import static com.flockinger.groschn.blockchain.TestDataFactory.validMessage;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import org.junit.Before;
-import org.junit.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.test.context.ContextConfiguration;
+
 import com.flockinger.groschn.blockchain.BaseCachingTest;
 import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
 import com.flockinger.groschn.blockchain.messaging.dto.BlockInfo;
 import com.flockinger.groschn.blockchain.messaging.respond.BlockSyncInfoResponder;
 import com.flockinger.groschn.blockchain.model.Block;
-import com.flockinger.groschn.commons.compress.CompressedEntity;
-import com.flockinger.groschn.commons.compress.CompressionUtils;
-import com.flockinger.groschn.messaging.members.NetworkStatistics;
+import com.flockinger.groschn.messaging.config.MainTopics;
+import com.flockinger.groschn.messaging.inbound.MessagePackageHelper;
+import com.flockinger.groschn.messaging.model.Message;
 import com.flockinger.groschn.messaging.model.SyncRequest;
 import com.flockinger.groschn.messaging.model.SyncResponse;
-import com.flockinger.groschn.messaging.util.MessagingUtils;
 import com.github.benmanes.caffeine.cache.Cache;
-import com.google.common.collect.ImmutableList;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.ContextConfiguration;
 
-@ContextConfiguration(classes = {BlockSyncInfoResponder.class, MessagingUtils.class})
+@ContextConfiguration(classes = {BlockSyncInfoResponder.class})
 public class BlockSyncInfoResponderTest extends BaseCachingTest {
 
-  @Autowired
-  private CompressionUtils compressor;
-  @MockBean
-  private NetworkStatistics networkStatistics;
   @MockBean
   private BlockStorageService blockService;
-  @Autowired
+  @MockBean
   @Qualifier("SyncBlockInfoId_Cache")
   private Cache<String, String> syncBlockIdCache;
-  
+  @MockBean
+  private MessagePackageHelper helper;
+
   @Autowired 
   private BlockSyncInfoResponder responder;
-  
-  @Before
-  public void setup() {
-    syncBlockIdCache.cleanUp();
-  }
+
   
   @Test
   public void testRespond_withValidRequestAndEnoughBlockInfos_shouldRespondNormal() {
-    var message = validMessage();
-    message.getPayload().setSenderId("pfennig-master");
     SyncRequest request = new SyncRequest();
     request.setStartingPosition(123l);
     request.setRequestPackageSize(12l);
-    message.getPayload().setEntity(compressor.compress(request));
     when(blockService.findBlocks(anyLong(), anyLong())).thenReturn(someBlocks(12));
     when(blockService.getLatestBlock()).thenReturn(someBlocks(12).get(11));
-    when(networkStatistics.activeNodeIds()).thenReturn(ImmutableList.of("groschn-master-123", "pfennig-master"));
-    
-    var responseMessage = responder.respond(message);
-    
-    assertNotNull("verify response exists", responseMessage);
-    assertNotNull("verify response-message has a timestamp", responseMessage.getTimestamp());
-    assertNotNull("verify response-message has a non null payload", responseMessage.getPayload());
-    assertEquals("verify response-message has a valida sender id", "groschn-master-123", 
-        responseMessage.getPayload().getSenderId());
-    assertNotNull("verify response-message has an payload entity", responseMessage.getPayload().getEntity());
-    CompressedEntity entity = responseMessage.getPayload().getEntity();
-    assertTrue("verify that compressed entity is not empty", entity.getEntity().length > 0);
-    assertTrue("verify that compressed entity has an original size", entity.getOriginalSize() > 0);
-    
-    Optional<SyncResponse> response = compressor.decompress(entity.getEntity(), entity.getOriginalSize(), SyncResponse.class);
-    assertTrue("verify that response is there", response.isPresent());
-    assertEquals("verify that response starting position is correct", 123l, 
-        response.get().getStartingPosition().longValue());
-    assertEquals("verify that response entity size is correct", 12l, response.get().getEntities().size());
-    assertTrue("verify that response entity is correct class", BlockInfo.class.isInstance(response.get().getEntities().get(0)));
-    BlockInfo firstInfo = (BlockInfo)response.get().getEntities().get(0);
+    when(helper.verifyAndUnpackRequest(any(),any())).thenReturn(Optional.of(request));
+    when(helper.packageResponse(any(SyncResponse.class), anyString())).thenReturn(new Message());
+
+    var responseMessage = responder.respond(new Message<>());
+
+    assertNotNull("verify response is not null", responseMessage);
+    var responseCaptor = ArgumentCaptor.forClass(SyncResponse.class);
+    verify(helper).packageResponse(responseCaptor.capture(),anyString());
+
+    SyncResponse response = responseCaptor.getValue();
+    assertEquals("verify that response starting position is correct", 123l, response.getStartingPosition().longValue());
+    assertEquals("verify that response entity size is correct", 12l, response.getEntities().size());
+    assertTrue("verify that response entity is correct class", BlockInfo.class.isInstance(response.getEntities().get(0)));
+    BlockInfo firstInfo = (BlockInfo)response.getEntities().get(0);
     assertTrue("verify correct first response entity hash", firstInfo.getBlockHash().startsWith("1"));
     assertEquals("verify correct first response entity position", 1, firstInfo.getPosition().longValue());
-    BlockInfo secondInfo = (BlockInfo)response.get().getEntities().get(1);
+    BlockInfo secondInfo = (BlockInfo)response.getEntities().get(1);
     assertTrue("verify correct first response entity hash", secondInfo.getBlockHash().startsWith("2"));
     assertEquals("verify correct first response entity position", 2, secondInfo.getPosition().longValue());
-    assertEquals("verify correct last block position", 12l, response.get().getLastPosition().longValue());
-    assertEquals("verify correct node it is in response", "groschn-master-123", response.get().getNodeId());
+    assertEquals("verify correct last block position", 12l, response.getLastPosition().longValue());
+    assertEquals("verify correct node it is in response", "groschn-master-123", response.getNodeId());
   }
   
   
   @Test
   public void testRespond_withValidRequestAndLastBlockInfos_shouldRespondEndOfSyncing() {
-    var message = validMessage();
-    message.getPayload().setSenderId("pfennig-master");
     SyncRequest request = new SyncRequest();
     request.setStartingPosition(999l);
     request.setRequestPackageSize(10l);
-    message.getPayload().setEntity(compressor.compress(request));
-    when(networkStatistics.activeNodeIds()).thenReturn(ImmutableList.of("groschn-master-123", "pfennig-master"));
     when(blockService.findBlocks(anyLong(), anyLong())).thenReturn(someBlocks(3));
     when(blockService.getLatestBlock()).thenReturn(someBlocks(3).get(2));
-    
-    var responseMessage = responder.respond(message);
-    
-    assertNotNull("verify response exists", responseMessage);
-    assertNotNull("verify response-message has a timestamp", responseMessage.getTimestamp());
-    assertNotNull("verify response-message has a non null payload", responseMessage.getPayload());
-    assertEquals("verify response-message has a valida sender id", "groschn-master-123", 
-        responseMessage.getPayload().getSenderId());
-    assertNotNull("verify response-message has an payload entity", responseMessage.getPayload().getEntity());
-    CompressedEntity entity = responseMessage.getPayload().getEntity();
-    assertTrue("verify that compressed entity is not empty", entity.getEntity().length > 0);
-    assertTrue("verify that compressed entity has an original size", entity.getOriginalSize() > 0);
-    
-    Optional<SyncResponse> response = compressor.decompress(entity.getEntity(), entity.getOriginalSize(), SyncResponse.class);
-    assertTrue("verify that response is there", response.isPresent());
-    assertEquals("verify that response starting position is correct", 999l, 
-        response.get().getStartingPosition().longValue());
-    assertEquals("verify that response entity size is correct", 3l, response.get().getEntities().size());
-    assertEquals("verify correct last block position", 3l, response.get().getLastPosition().longValue());
-    assertEquals("verify correct node it is in response", "groschn-master-123", response.get().getNodeId());
+    when(helper.verifyAndUnpackRequest(any(),any())).thenReturn(Optional.of(request));
+    when(helper.packageResponse(any(SyncResponse.class), anyString())).thenReturn(new Message());
+
+    var responseMessage = responder.respond(new Message<>());
+
+    assertNotNull("verify response is not null", responseMessage);
+    var responseCaptor = ArgumentCaptor.forClass(SyncResponse.class);
+    verify(helper).packageResponse(responseCaptor.capture(),anyString());
+
+    SyncResponse response = responseCaptor.getValue();
+    assertEquals("verify that response starting position is correct", 999l, response.getStartingPosition().longValue());
+    assertEquals("verify that response entity size is correct", 3l, response.getEntities().size());
+    assertEquals("verify correct last block position", 3l, response.getLastPosition().longValue());
+    assertEquals("verify correct node it is in response", "groschn-master-123", response.getNodeId());
   }
-  
+
   @Test
-  public void testRespond_withInvalidRequestMessage_shouldRespondEmpty() {
-    var message = validMessage();
-    when(networkStatistics.activeNodeIds()).thenReturn(ImmutableList.of("groschn-master-123", "pfennig-master"));
-    when(blockService.findBlocks(anyLong(), anyLong())).thenReturn(someBlocks(3));
-    
-    var responseMessage = responder.respond(message);
-    
-    assertNull("verify response is empty", responseMessage.getPayload());
-  }
-  
-  @Test
-  public void testRespond_withRequestWithoutStartingPoint_shouldRespondEmpty() {
-    var message = validMessage();
-    message.getPayload().setSenderId("pfennig-master");
-    SyncRequest request = new SyncRequest();
-    request.setStartingPosition(null);
-    request.setRequestPackageSize(10l);
-    message.getPayload().setEntity(compressor.compress(request));
-    when(networkStatistics.activeNodeIds()).thenReturn(ImmutableList.of("groschn-master-123", "pfennig-master"));
-    when(blockService.findBlocks(anyLong(), anyLong())).thenReturn(someBlocks(3));
-    
-    var responseMessage = responder.respond(message);
-    
-    assertNull("verify response is empty", responseMessage.getPayload());
-  }
-  
-  @Test
-  public void testRespond_withRequestWithoutBatchSize_shouldRespondEmpty() {
-    var message = validMessage();
-    message.getPayload().setSenderId("pfennig-master");
-    SyncRequest request = new SyncRequest();
-    request.setStartingPosition(2l);
-    request.setRequestPackageSize(null);
-    message.getPayload().setEntity(compressor.compress(request));
-    when(networkStatistics.activeNodeIds()).thenReturn(ImmutableList.of("groschn-master-123", "pfennig-master"));
-    when(blockService.findBlocks(anyLong(), anyLong())).thenReturn(someBlocks(3));
-    
-    var responseMessage = responder.respond(message);
-    
-    assertNull("verify response is empty", responseMessage.getPayload());
-  }
-  
-  
-  @Test
-  public void testRespond_withMessageAlreadyReceived_shouldRespondEmpty() {
-    var message = validMessage();
-    message.getPayload().setSenderId("pfennig-master");
-    SyncRequest request = new SyncRequest();
-    request.setStartingPosition(999l);
-    request.setRequestPackageSize(10l);
-    message.getPayload().setEntity(compressor.compress(request));
-    when(networkStatistics.activeNodeIds()).thenReturn(ImmutableList.of("groschn-master-123", "pfennig-master"));
-    when(blockService.findBlocks(anyLong(), anyLong())).thenReturn(someBlocks(3));
-    when(blockService.getLatestBlock()).thenReturn(someBlocks(3).get(2));
-    
-    responder.respond(message);
-    var responseMessage = responder.respond(message);
-    
-    assertNull("verify response is empty", responseMessage.getPayload());
-  }
-  
-  @Test
-  public void testRespond_withRequesterNotExisting_shouldRespondEmpty() {
-    var message = validMessage();
-    message.getPayload().setSenderId("pfennig-master");
-    SyncRequest request = new SyncRequest();
-    request.setStartingPosition(999l);
-    message.getPayload().setEntity(compressor.compress(request));
-    when(networkStatistics.activeNodeIds()).thenReturn(ImmutableList.of("yen-master-123", "groschn-master"));
-    when(blockService.findBlocks(anyLong(), anyLong())).thenReturn(someBlocks(3));
-    
-    var responseMessage = responder.respond(message);
-    
-    assertNull("verify response is empty", responseMessage.getPayload());
+  public void testGetSubscribedTopic_shouldReturnCorrect() {
+    assertEquals("verify correct set topic", MainTopics.BLOCK_INFO, responder.getSubscribedTopic());
   }
   
   private List<Block> someBlocks(int size) {

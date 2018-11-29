@@ -1,5 +1,7 @@
 package com.flockinger.groschn.commons.sign;
 
+import com.flockinger.groschn.commons.exception.crypto.CantConfigureSigningAlgorithmException;
+import com.flockinger.groschn.commons.hash.Base58;
 import java.io.IOException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -25,11 +27,6 @@ import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.bouncycastle.jce.spec.ECPublicKeySpec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-import com.flockinger.groschn.commons.Base58;
-import com.flockinger.groschn.commons.exception.crypto.CantConfigureSigningAlgorithmException;
-import com.flockinger.groschn.commons.sign.Signer;
 
 public class EcdsaSecpSigner implements Signer {
   /**
@@ -69,10 +66,8 @@ public class EcdsaSecpSigner implements Signer {
 
   private final Logger LOGGER = LoggerFactory.getLogger(this.getClass());
 
-  private KeyPairGenerator generator;
   private KeyFactory keyFactory;
 
-  @Autowired
   public EcdsaSecpSigner(Provider defaultProvider) {
     try {
       Security.addProvider(defaultProvider);
@@ -96,6 +91,7 @@ public class EcdsaSecpSigner implements Signer {
 
   
   public KeyPair generateKeyPair() {
+    KeyPairGenerator generator = null;
     try {
       generator = KeyPairGenerator.getInstance(KEY_FACTORY_ALGORITHM, PROVIDER);
       generator.initialize(getSpec(), SecureRandom.getInstance(SECURE_RANDOM_ALGORITHM));
@@ -106,11 +102,9 @@ public class EcdsaSecpSigner implements Signer {
     } catch (NoSuchProviderException e) {
       LOGGER.error("Please register bouncy castle provider before initializing!", e);
     }
-    
     if (generator == null) {
       throw new CantConfigureSigningAlgorithmException("Cant configure EC algorithm with secp256k1 spec!");
     }
-    
     return generator.generateKeyPair();
   }
 

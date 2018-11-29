@@ -8,6 +8,20 @@ import static com.flockinger.groschn.blockchain.TestDataFactory.mapToStoredTrans
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+
+import com.flockinger.groschn.blockchain.BaseDbTest;
+import com.flockinger.groschn.blockchain.dto.WalletDto;
+import com.flockinger.groschn.blockchain.repository.BlockchainRepository;
+import com.flockinger.groschn.blockchain.repository.WalletRepository;
+import com.flockinger.groschn.blockchain.repository.model.StoredBlock;
+import com.flockinger.groschn.blockchain.repository.model.StoredTransaction;
+import com.flockinger.groschn.blockchain.repository.model.StoredTransactionOutput;
+import com.flockinger.groschn.blockchain.repository.model.StoredWallet;
+import com.flockinger.groschn.blockchain.wallet.impl.WalletServiceImpl;
+import com.flockinger.groschn.commons.exception.crypto.CantConfigureSigningAlgorithmException;
+import com.flockinger.groschn.commons.exception.crypto.CipherConfigurationException;
+import com.flockinger.groschn.commons.hash.Base58;
+import com.flockinger.groschn.commons.sign.Signer;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -18,19 +32,6 @@ import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
-import com.flockinger.groschn.blockchain.BaseDbTest;
-import com.flockinger.groschn.blockchain.dto.WalletDto;
-import com.flockinger.groschn.blockchain.repository.BlockchainRepository;
-import com.flockinger.groschn.blockchain.repository.WalletRepository;
-import com.flockinger.groschn.blockchain.repository.model.StoredBlock;
-import com.flockinger.groschn.blockchain.repository.model.StoredTransaction;
-import com.flockinger.groschn.blockchain.repository.model.StoredTransactionOutput;
-import com.flockinger.groschn.blockchain.repository.model.StoredWallet;
-import com.flockinger.groschn.blockchain.wallet.impl.WalletServiceImpl;
-import com.flockinger.groschn.commons.Base58;
-import com.flockinger.groschn.commons.exception.crypto.CantConfigureSigningAlgorithmException;
-import com.flockinger.groschn.commons.exception.crypto.CipherConfigurationException;
-import com.flockinger.groschn.commons.sign.Signer;
 
 @ContextConfiguration(classes = {WalletServiceImpl.class, BlockchainRepository.class, WalletRepository.class})
 @TestPropertySource(properties = {"blockchain.node.credentials.public-key=master-pub-key",

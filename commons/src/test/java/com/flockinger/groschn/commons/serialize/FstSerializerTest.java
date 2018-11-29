@@ -4,13 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import java.util.ArrayList;
-import java.util.List;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Import;
-import org.springframework.test.context.junit4.SpringRunner;
+
 import com.flockinger.groschn.commons.TestConfig;
 import com.flockinger.groschn.commons.TestDataFactory;
 import com.flockinger.groschn.commons.exception.SerializationException;
@@ -18,14 +12,13 @@ import com.flockinger.groschn.commons.model.TestBlock;
 import com.flockinger.groschn.commons.model.TestConsensusType;
 import com.flockinger.groschn.commons.model.TestMessagePayload;
 import com.flockinger.groschn.commons.model.TestTransaction;
-import com.flockinger.groschn.commons.serialize.BlockSerializer;
+import java.util.ArrayList;
+import java.util.List;
+import org.junit.Test;
 
-@RunWith(SpringRunner.class)
-@Import(TestConfig.class)
 public class FstSerializerTest {
   
-  @Autowired
-  private BlockSerializer fstSerializer;
+  private final BlockSerializer fstSerializer  = TestConfig.serializer();
   
   @Test
   public void testSerializeDeserialize_withHugeBlock_shouldWorkWell() {

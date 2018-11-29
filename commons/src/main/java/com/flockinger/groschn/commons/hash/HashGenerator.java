@@ -1,9 +1,9 @@
 package com.flockinger.groschn.commons.hash;
 
-import java.util.List;
 import com.flockinger.groschn.blockchain.model.Hashable;
 import com.flockinger.groschn.blockchain.model.Sequential;
 import com.flockinger.groschn.commons.exception.HashingException;
+import java.util.List;
 
 public interface HashGenerator {
   
@@ -12,4 +12,6 @@ public interface HashGenerator {
   <T extends Sequential> byte[] generateListHash(List<T> sortable) throws HashingException;
   
   boolean isHashCorrect(String hash, Hashable<?> hashable);
+
+  <T extends Hashable<T>> String calculateMerkleRootHash(List<T> entities);
 }

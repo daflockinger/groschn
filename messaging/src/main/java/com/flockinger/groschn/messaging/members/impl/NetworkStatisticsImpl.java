@@ -1,23 +1,25 @@
 package com.flockinger.groschn.messaging.members.impl;
 
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 import com.flockinger.groschn.messaging.members.NetworkStatistics;
 import com.flockinger.groschn.messaging.model.FullNode;
 import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.cluster.Member;
 import io.atomix.cluster.MemberId;
 import io.atomix.core.Atomix;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.stereotype.Component;
 
 @Component
 public class NetworkStatisticsImpl implements NetworkStatistics {
 
-  @Autowired
-  private Atomix atomix;
+  private final Atomix atomix;
+
+  public NetworkStatisticsImpl(Atomix atomix) {
+    this.atomix = atomix;
+  }
 
   @Override
   public long activeNodeCount() {

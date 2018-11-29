@@ -4,7 +4,22 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyListOf;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import com.flockinger.groschn.blockchain.model.Hashable;
+import com.flockinger.groschn.commons.model.TestBlock;
+import com.flockinger.groschn.commons.model.TestBlockInfo;
+import com.flockinger.groschn.commons.model.TestTransaction;
+import com.flockinger.groschn.commons.model.TestTransactionOutput;
+import com.google.common.collect.ImmutableList;
 import java.math.BigDecimal;
+import java.security.Provider;
+import java.security.Security;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -17,31 +32,26 @@ import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.commons.text.similarity.LevenshteinDistance;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.encoders.Hex;
+import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Import;
-import org.springframework.test.context.junit4.SpringRunner;
-import com.flockinger.groschn.blockchain.model.Hashable;
-import com.flockinger.groschn.commons.TestConfig;
-import com.flockinger.groschn.commons.config.CommonsConfig;
-import com.flockinger.groschn.commons.model.TestBlock;
-import com.flockinger.groschn.commons.model.TestBlockInfo;
-import com.flockinger.groschn.commons.model.TestTransactionOutput;
-import com.google.common.collect.ImmutableList;
 
-@RunWith(SpringRunner.class)
-@Import({CommonsConfig.class, TestConfig.class})
 public class HashGeneratorTest {
 
-  @Autowired
-  private HashGenerator hasher;
+  private final MerkleRootCalculator mockMerkle = mock(MerkleRootCalculator.class);
+  private final HashGenerator hasher = new MultiHashGenerator(mockMerkle);
+
+  @BeforeClass
+  public static void setup() {
+    Provider bouncyCastle = new BouncyCastleProvider();
+    Security.addProvider(bouncyCastle);
+  }
 
   @Test
   public void testGenerateHash_withValidHashableData_shouldCreateCorrectly()
       throws InterruptedException {
-    Hashable<TestBlock> hashable = createTestData(123l);
+    Hashable<TestBlock> hashable = createTestData(123L);
 
     String generatedHash = hasher.generateHash(hashable);
     String expectedHash =
@@ -73,7 +83,7 @@ public class HashGeneratorTest {
   
   @Test
   public void testGenerateHash_withGenerateTwice_shouldCreateSameHash() {
-    Hashable<TestBlock> hashable = createTestData(123l);
+    Hashable<TestBlock> hashable = createTestData(123L);
     String generatedHash = hasher.generateHash(hashable);
 
     assertNotNull("verify returned hash is not null", generatedHash);
@@ -149,9 +159,9 @@ public class HashGeneratorTest {
   @Test
   public void testGenerateListHash_withValidHashablesData_shouldCreateCorrectly()
       throws InterruptedException {
-    TestTransactionOutput out = createTestOutput(12l);
+    TestTransactionOutput out = createTestOutput(12L);
     TestTransactionOutput ou3 = createTestOutput(null);
-    TestTransactionOutput out2 = createTestOutput(14l);
+    TestTransactionOutput out2 = createTestOutput(14L);
 
     var outs = new ArrayList<TestTransactionOutput>();
     outs.addAll(ImmutableList.of(out, out2, ou3));
@@ -170,9 +180,9 @@ public class HashGeneratorTest {
   @Test
   public void testGenerateListHash_withSlightChangeValidHashablesData_shouldCreateCorrectly()
       throws InterruptedException {
-    TestTransactionOutput out = createTestOutput(12l);
+    TestTransactionOutput out = createTestOutput(12L);
     TestTransactionOutput ou3 = createTestOutput(null);
-    TestTransactionOutput out2 = createTestOutput(15l);
+    TestTransactionOutput out2 = createTestOutput(15L);
 
     var outs = new ArrayList<TestTransactionOutput>();
     outs.addAll(ImmutableList.of(out, out2, ou3));
@@ -194,25 +204,25 @@ public class HashGeneratorTest {
   
   @Test
   public void testIsHashCorrect_withCorrectHashAndHashable_shouldReturnTrue() {
-    Hashable<TestBlock> hashable = createTestData(123l);
+    Hashable<TestBlock> hashable = createTestData(123L);
     String hash = "1df4d28a29c655d93bc19e18506b5fb29c9aec9650922e95df86ffab46617820c18ac1ac9780e4a6843c62bddebdf17736769473fde246eedec32491018b0e5c";
-    
-    assertEquals("verify that correct hash for hashable returns true", true, 
+
+    assertEquals("verify that correct hash for hashable returns true", true,
         hasher.isHashCorrect(hash, hashable));
   }
   
   @Test
   public void testIsHashCorrect_withCorrectHashAndHashableSomeUpperCase_shouldReturnTrue() {
-    Hashable<TestBlock> hashable = createTestData(123l);
+    Hashable<TestBlock> hashable = createTestData(123L);
     String hash = "1df4d28a29c655d93bc19e18506b5FB29c9AEC9650922e95df86ffab46617820c18ac1ac9780e4a6843c62bddebdf17736769473FDE246eedec32491018b0e5c";
 
-    assertEquals("verify that correct hash for hashable returns true", true, 
+    assertEquals("verify that correct hash for hashable returns true", true,
         hasher.isHashCorrect(hash, hashable));
   }
   
   @Test
   public void testIsHashCorrect_withSlightlyModifiedHash_shouldReturnFalse() {
-    Hashable<TestBlock> hashable = createTestData(123l);
+    Hashable<TestBlock> hashable = createTestData(123L);
     String hash = "fad4bf68adc722df1dfadd5bf833b26579150e23bf865a1cc72ed39c394a3b26e22158877a7fa79f54a4614c65d3a502e71537f697f5987145f0d137a3e21e49";
 
     assertEquals("verify that slightly modified hash returns false", false, 
@@ -221,7 +231,7 @@ public class HashGeneratorTest {
   
   @Test
   public void testIsHashCorrect_withSlightlyModifiedHashableValue_shouldReturnFalse() {
-    Hashable<TestBlock> hashable = createTestData(124l);
+    Hashable<TestBlock> hashable = createTestData(124L);
     String hash = "ead4bf68adc722df1dfadd5bf833b26579150e23bf865a1cc72ed39c394a3b26e22158877a7fa79f54a4614c65d3a502e71537f697f5987145f0d137a3e21e49";
 
     assertEquals("verify that slightly modified hashable value returns false", false, 
@@ -230,17 +240,28 @@ public class HashGeneratorTest {
   
   @Test
   public void testIsHashCorrect_withInvalidHash_shouldReturnFalse() {
-    Hashable<TestBlock> hashable = createTestData(123l);
+    Hashable<TestBlock> hashable = createTestData(123L);
     String hash = "ZZd4bf68adc722df1dfadd5bf833b26579150e23bf865a1cc72ed39c394a3b26e22158877a7fa79f54a4614c65d3a502e71537f697f5987145f0d137a3e21e49";
 
     assertEquals("verify with invalid hash returns false", false, 
         hasher.isHashCorrect(hash, hashable));
   }
 
+  @Test
+  public void testCalculateMerkleRootHash_WithTransactions_shouldReturnCorrect() {
+    when(mockMerkle.calculateMerkleRootHash(any(HashGenerator.class), anyListOf(TestTransaction.class))).thenReturn("hash");
+    var transactions = ImmutableList.of(new TestTransaction());
+
+    var result = hasher.calculateMerkleRootHash(transactions);
+
+    assertEquals("verify  it called merkle calculator and returned correct", "hash", result);
+    verify(mockMerkle).calculateMerkleRootHash(eq(hasher), eq(transactions));
+  }
+
   private TestBlock createTestData(long timestamp) {
     TestBlock block = new TestBlock();
     block.setLastHash("123456");
-    block.setPosition(2l);
+    block.setPosition(2L);
     block.setTimestamp(timestamp);
     block.setTransactions(new ArrayList<>());
     block.setVersion(1);
@@ -253,7 +274,7 @@ public class HashGeneratorTest {
     out.setAmount(new BigDecimal("123"));
     out.setPublicKey("master-key");
     out.setSequenceNumber(sequenceNumber);
-    out.setTimestamp(1234l);
+    out.setTimestamp(1234L);
     return out;
   }
 }

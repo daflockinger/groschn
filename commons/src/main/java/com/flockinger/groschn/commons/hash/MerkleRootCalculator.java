@@ -1,26 +1,21 @@
-package com.flockinger.groschn.commons;
+package com.flockinger.groschn.commons.hash;
 
+import com.flockinger.groschn.blockchain.model.Hashable;
+import com.flockinger.groschn.commons.exception.HashingException;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import com.flockinger.groschn.blockchain.model.Hashable;
-import com.flockinger.groschn.commons.exception.HashingException;
-import com.flockinger.groschn.commons.hash.HashGenerator;
 
 public class MerkleRootCalculator {
   
-  @Autowired
-  private HashGenerator hasher;
-  
-  public <T extends Hashable<T>> String calculateMerkleRootHash(List<T> entities) {
+  <T extends Hashable<T>> String calculateMerkleRootHash(HashGenerator hasher, List<T> entities) {
     Collections.sort(entities);
     List<MerkleNode> nodes = createHashPairs(entities.stream()
         .map(hasher::generateHash).collect(Collectors.toList()));
     while(nodes.size() > 1) {
-      nodes = createNextUpperTreeBranch(nodes);
+      nodes = createNextUpperTreeBranch(hasher, nodes);
     }
     if(nodes.isEmpty()) {
       throw new HashingException("Cannot build hash of empty list!");
@@ -44,7 +39,7 @@ public class MerkleRootCalculator {
     return MerkleNode.build().leftNode(leftNode).rightNode(rightNode);
   }
   
-  private List<MerkleNode> createNextUpperTreeBranch(List<MerkleNode> currentBranch) {
+  private List<MerkleNode> createNextUpperTreeBranch(HashGenerator hasher, List<MerkleNode> currentBranch) {
     List<String> currentHashes = currentBranch.stream()
         .map(node -> hasher.generateHash(node))
         .collect(Collectors.toList());

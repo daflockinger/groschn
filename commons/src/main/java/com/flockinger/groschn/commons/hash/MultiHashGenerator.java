@@ -1,10 +1,14 @@
 package com.flockinger.groschn.commons.hash;
 
 import static com.flockinger.groschn.commons.config.CommonsConfig.DEFAULT_PROVIDER_NAME;
+
+import com.flockinger.groschn.blockchain.model.Hashable;
+import com.flockinger.groschn.blockchain.model.Sequential;
+import com.flockinger.groschn.commons.exception.HashingException;
+import com.google.common.base.Charsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-import java.security.Provider;
 import java.util.Collections;
 import java.util.List;
 import org.apache.commons.lang3.ArrayUtils;
@@ -12,11 +16,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.jcajce.util.MessageDigestUtils;
 import org.bouncycastle.util.encoders.Hex;
-import org.springframework.beans.factory.annotation.Autowired;
-import com.flockinger.groschn.blockchain.model.Hashable;
-import com.flockinger.groschn.blockchain.model.Sequential;
-import com.flockinger.groschn.commons.exception.HashingException;
-import com.google.common.base.Charsets;
 
 /**
  * Generates a mixed SHA hash out of a {@link Hashable}. <br>
@@ -34,9 +33,10 @@ public class MultiHashGenerator implements HashGenerator {
 
   private final MessageDigest sha3Digest;
   private final MessageDigest sha2Digest;
+  private final MerkleRootCalculator merkleRootCalculator;
 
-  @Autowired
-  public MultiHashGenerator(Provider cryptoProvider) {
+  public MultiHashGenerator(MerkleRootCalculator merkleRootCalculator) {
+    this.merkleRootCalculator = merkleRootCalculator;
     try {
       sha3Digest = MessageDigest.getInstance(SHA3_DIGEST_NAME, DEFAULT_PROVIDER_NAME);
       sha2Digest = MessageDigest.getInstance(SHA2_DIGEST_NAME, DEFAULT_PROVIDER_NAME);
@@ -59,9 +59,7 @@ public class MultiHashGenerator implements HashGenerator {
    * Must be thread-safe, otherwise the hashing arises strange <br>
    * exceptions (IllegalArgumentException, ArrayIndexOutOfBoundsException,...), <br>
    * so only one thread a time can execute it!<br>
-   * 
-   * @param hashableBytes
-   * @return
+   *
    */
   private synchronized byte[] doubleHash(byte[] hashableBytes) {
     var sha2Hash = hashWithDigest(hashableBytes, sha2Digest);
@@ -91,4 +89,10 @@ public class MultiHashGenerator implements HashGenerator {
     assertHashable(hashableBytes);
     return doubleHash(hashableBytes);
   }
+
+  @Override
+  public <T extends Hashable<T>> String calculateMerkleRootHash(List<T> entities) {
+    return merkleRootCalculator.calculateMerkleRootHash(this, entities);
+  }
+
 }
