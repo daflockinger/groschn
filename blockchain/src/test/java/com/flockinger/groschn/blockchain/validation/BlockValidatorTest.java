@@ -31,11 +31,10 @@ import com.flockinger.groschn.blockchain.validation.impl.RewardTransactionValida
 import com.flockinger.groschn.blockchain.validation.impl.TransactionValidationHelper;
 import com.flockinger.groschn.blockchain.validation.impl.TransactionValidator;
 import com.flockinger.groschn.blockchain.wallet.impl.WalletServiceImpl;
-import com.flockinger.groschn.commons.compress.CompressionUtils;
+import com.flockinger.groschn.commons.compress.Compressor;
 import com.flockinger.groschn.commons.hash.HashGenerator;
 import com.flockinger.groschn.messaging.members.NetworkStatistics;
 import com.flockinger.groschn.messaging.outbound.Broadcaster;
-import com.flockinger.groschn.messaging.util.MessagingUtils;
 import java.math.BigDecimal;
 import java.util.Date;
 import org.apache.commons.lang3.StringUtils;
@@ -53,7 +52,7 @@ import org.springframework.test.context.TestPropertySource;
 
 @ContextConfiguration(classes = {BlockValidator.class, BlockchainRepository.class, 
     BlockTransactionsValidator.class, TransactionValidator.class, RewardTransactionValidator.class, 
-    TransactionValidationHelper.class, PowConsensusValidator.class, MessagingUtils.class, 
+    TransactionValidationHelper.class, PowConsensusValidator.class,
     // those are all needed to create a somewhat real block to verify:
     BlockMakerImpl.class,
     ConsensusFactory.class, ProofOfWorkAlgorithm.class, ProofOfMajorityAlgorithm.class, RewardGeneratorImpl.class,
@@ -65,7 +64,7 @@ public class BlockValidatorTest extends BaseDbTest {
   //TODO make it faster!!
   
   @MockBean
-  private CompressionUtils compressor;
+  private Compressor compressor;
   
   @MockBean
   private TransactionPoolListener transactionListener;

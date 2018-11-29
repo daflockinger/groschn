@@ -7,7 +7,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.flockinger.groschn.commons.compress.CompressionUtils;
+import com.flockinger.groschn.commons.compress.Compressor;
 import com.flockinger.groschn.messaging.ExecutorConfig;
 import com.flockinger.groschn.messaging.config.MainTopics;
 import com.flockinger.groschn.messaging.inbound.MessageDispatcher;
@@ -17,7 +17,7 @@ import com.flockinger.groschn.messaging.model.MessagePayload;
 import com.flockinger.groschn.messaging.model.RequestParams;
 import com.flockinger.groschn.messaging.model.SyncRequest;
 import com.flockinger.groschn.messaging.outbound.impl.BroadcasterImpl;
-import com.flockinger.groschn.messaging.util.MessagingUtils;
+import com.flockinger.groschn.messaging.util.MessagingContext;
 import com.flockinger.groschn.messaging.util.TestBlock;
 import io.atomix.cluster.MemberId;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
@@ -39,7 +39,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
 
 @RunWith(SpringRunner.class)
-@ContextConfiguration(classes = {BroadcasterImpl.class, BroadcasterTest.GarfieldResponder.class, MessagingUtils.class, CompressionUtils.class})
+@ContextConfiguration(classes = {BroadcasterImpl.class, BroadcasterTest.GarfieldResponder.class, MessagingContext.class, Compressor.class})
 @Import(ExecutorConfig.class)
 @TestPropertySource(properties="blockchain.messaging.response-timeout=10")
 @TestExecutionListeners({DependencyInjectionTestExecutionListener.class, MockitoTestExecutionListener.class})
@@ -53,7 +53,7 @@ public class BroadcasterTest {
   @MockBean
   private MessageDispatcher mockDispatcher;
   @Autowired
-  private MessagingUtils utils;
+  private MessagingContext utils;
   
   @Test
   @SuppressWarnings("unchecked")

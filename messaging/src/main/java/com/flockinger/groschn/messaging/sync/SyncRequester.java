@@ -13,7 +13,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
-public class SyncRequester {
+class SyncRequester {
 
   @Autowired
   private Broadcaster broadcaster;

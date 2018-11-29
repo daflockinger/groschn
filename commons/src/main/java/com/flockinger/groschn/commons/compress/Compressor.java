@@ -1,29 +1,29 @@
 package com.flockinger.groschn.commons.compress;
 
-import java.util.List;
-import java.util.Optional;
-import org.apache.commons.collections4.ListUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 import com.flockinger.groschn.blockchain.model.Hashable;
 import com.flockinger.groschn.commons.exception.SerializationException;
 import com.flockinger.groschn.commons.serialize.BlockSerializer;
+import java.util.List;
+import java.util.Optional;
 import net.jpountz.lz4.LZ4Compressor;
 import net.jpountz.lz4.LZ4Exception;
 import net.jpountz.lz4.LZ4Factory;
 import net.jpountz.lz4.LZ4FastDecompressor;
+import org.apache.commons.collections4.ListUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class CompressionUtils {
+public class Compressor {
+
+  private final BlockSerializer serializer;
   private final LZ4Factory compressorFactory = LZ4Factory.fastestJavaInstance();
   private final LZ4Compressor compressor = compressorFactory.fastCompressor();
   private final LZ4FastDecompressor decompressor = compressorFactory.fastDecompressor();
-  private static final Logger LOGGER = LoggerFactory.getLogger(CompressionUtils.class);
-  
-  @Autowired
-  private BlockSerializer serializer;
+  private static final Logger LOGGER = LoggerFactory.getLogger(Compressor.class);
 
+  public Compressor(BlockSerializer serializer) {
+    this.serializer = serializer;
+  }
 
   public <T extends Hashable<T>> CompressedEntity compress(T entity) {
     byte[] originalEntity = serializer.serialize(entity);

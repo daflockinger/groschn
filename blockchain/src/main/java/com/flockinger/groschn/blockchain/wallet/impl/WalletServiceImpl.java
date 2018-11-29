@@ -1,5 +1,19 @@
 package com.flockinger.groschn.blockchain.wallet.impl;
 
+import com.flockinger.groschn.blockchain.dto.WalletDto;
+import com.flockinger.groschn.blockchain.exception.wallet.WalletNotFoundException;
+import com.flockinger.groschn.blockchain.model.Block;
+import com.flockinger.groschn.blockchain.model.Transaction;
+import com.flockinger.groschn.blockchain.model.TransactionOutput;
+import com.flockinger.groschn.blockchain.repository.BlockchainRepository;
+import com.flockinger.groschn.blockchain.repository.WalletRepository;
+import com.flockinger.groschn.blockchain.repository.model.StoredBlock;
+import com.flockinger.groschn.blockchain.repository.model.StoredWallet;
+import com.flockinger.groschn.blockchain.wallet.WalletService;
+import com.flockinger.groschn.commons.crypto.EncryptedKey;
+import com.flockinger.groschn.commons.crypto.KeyCipher;
+import com.flockinger.groschn.commons.hash.Base58;
+import com.flockinger.groschn.commons.sign.Signer;
 import java.math.BigDecimal;
 import java.security.KeyPair;
 import java.util.Collection;
@@ -12,20 +26,6 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import com.flockinger.groschn.blockchain.dto.WalletDto;
-import com.flockinger.groschn.blockchain.exception.wallet.WalletNotFoundException;
-import com.flockinger.groschn.blockchain.model.Block;
-import com.flockinger.groschn.blockchain.model.Transaction;
-import com.flockinger.groschn.blockchain.model.TransactionOutput;
-import com.flockinger.groschn.blockchain.repository.BlockchainRepository;
-import com.flockinger.groschn.blockchain.repository.WalletRepository;
-import com.flockinger.groschn.blockchain.repository.model.StoredBlock;
-import com.flockinger.groschn.blockchain.repository.model.StoredWallet;
-import com.flockinger.groschn.blockchain.wallet.WalletService;
-import com.flockinger.groschn.commons.Base58;
-import com.flockinger.groschn.commons.crypto.EncryptedKey;
-import com.flockinger.groschn.commons.crypto.KeyCipher;
-import com.flockinger.groschn.commons.sign.Signer;
 
 @Component
 public class WalletServiceImpl implements WalletService {

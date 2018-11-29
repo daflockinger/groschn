@@ -35,7 +35,7 @@ import com.flockinger.groschn.blockchain.transaction.impl.TransactionManagerImpl
 import com.flockinger.groschn.blockchain.validation.Assessment;
 import com.flockinger.groschn.blockchain.validation.Validator;
 import com.flockinger.groschn.blockchain.wallet.WalletService;
-import com.flockinger.groschn.commons.compress.CompressionUtils;
+import com.flockinger.groschn.commons.compress.Compressor;
 import com.flockinger.groschn.commons.exception.crypto.CantConfigureSigningAlgorithmException;
 import com.flockinger.groschn.commons.hash.HashGenerator;
 import com.flockinger.groschn.commons.sign.Signer;
@@ -81,7 +81,7 @@ public class TransactionManagerTest extends BaseDbTest {
   @Autowired
   private TransactionPoolRepository poolDao;
   @Autowired
-  private CompressionUtils compressor;
+  private Compressor compressor;
   
   private List<StoredPoolTransaction> fakePoolTransactions = createFakePooledTransactions();
   

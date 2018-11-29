@@ -18,7 +18,7 @@ import com.flockinger.groschn.messaging.model.SyncBatchRequest;
 import com.flockinger.groschn.messaging.model.SyncRequest;
 import com.flockinger.groschn.messaging.model.SyncResponse;
 import com.flockinger.groschn.messaging.outbound.Broadcaster;
-import com.flockinger.groschn.messaging.util.MessagingUtils;
+import com.flockinger.groschn.messaging.util.BeanValidator;
 import com.flockinger.groschn.messaging.util.TestBlock;
 import java.util.ArrayList;
 import java.util.List;
@@ -42,7 +42,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 @RunWith(SpringRunner.class)
 @Import({ExecutorConfig.class, CommonsConfig.class})
-@ContextConfiguration(classes = {SyncInquirerImpl.class, MessagingUtils.class, ConcurrentMessenger.class, SyncRequester.class})
+@ContextConfiguration(classes = {SyncInquirerImpl.class, BeanValidator.class, ConcurrentMessenger.class, SyncRequester.class})
 public class SyncInquirerIntegrationTest {
 
   @MockBean(reset=MockReset.BEFORE)
@@ -50,7 +50,7 @@ public class SyncInquirerIntegrationTest {
   @MockBean(reset=MockReset.BEFORE)
   private NetworkStatistics networkStatistics;
   @Autowired
-  private MessagingUtils utils;
+  private BeanValidator utils;
   
   @Autowired
   private SyncInquirer inquirer;

@@ -17,7 +17,7 @@ import com.flockinger.groschn.messaging.exception.ReceivedMessageInvalidExceptio
 import com.flockinger.groschn.messaging.members.NetworkStatistics;
 import com.flockinger.groschn.messaging.model.SyncBatchRequest;
 import com.flockinger.groschn.messaging.model.SyncResponse;
-import com.flockinger.groschn.messaging.util.MessagingUtils;
+import com.flockinger.groschn.messaging.util.BeanValidator;
 import com.flockinger.groschn.messaging.util.TestBlock;
 import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
@@ -41,7 +41,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 @RunWith(SpringRunner.class)
 @Import({ExecutorConfig.class, CommonsConfig.class})
-@ContextConfiguration(classes = {SyncInquirerImpl.class, MessagingUtils.class})
+@ContextConfiguration(classes = {SyncInquirerImpl.class, BeanValidator.class})
 public class SyncInquirerTest {
 
   @MockBean(reset=MockReset.BEFORE)
@@ -50,8 +50,9 @@ public class SyncInquirerTest {
   private NetworkStatistics networkStatistics;
   @MockBean
   private ConcurrentMessenger messengerMock;
+
   @Autowired
-  private MessagingUtils utils;
+  private BeanValidator utils;
 
   @Autowired
   private SyncInquirer inquirer;

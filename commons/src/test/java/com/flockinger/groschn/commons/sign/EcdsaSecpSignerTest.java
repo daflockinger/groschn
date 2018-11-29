@@ -3,31 +3,20 @@ package com.flockinger.groschn.commons.sign;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+
+import com.flockinger.groschn.commons.TestConfig;
+import com.flockinger.groschn.commons.exception.crypto.CantConfigureSigningAlgorithmException;
+import com.flockinger.groschn.commons.hash.Base58;
 import java.security.KeyPair;
 import java.security.Signature;
 import org.apache.commons.codec.DecoderException;
 import org.bouncycastle.util.encoders.Hex;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.annotation.Import;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringRunner;
-import com.flockinger.groschn.commons.Base58;
-import com.flockinger.groschn.commons.TestConfig;
-import com.flockinger.groschn.commons.config.CommonsConfig;
-import com.flockinger.groschn.commons.exception.crypto.CantConfigureSigningAlgorithmException;
-import com.flockinger.groschn.commons.sign.EcdsaSecpSigner;
-import com.flockinger.groschn.commons.sign.Signer;
 
-@RunWith(SpringRunner.class)
-@Import({CommonsConfig.class, TestConfig.class})
 public class EcdsaSecpSignerTest {
 
-  @Autowired
-  private Signer signer;
+  private Signer signer = new EcdsaSecpSigner(TestConfig.getDefaultProvider());
   
   private KeyPair pair;
   

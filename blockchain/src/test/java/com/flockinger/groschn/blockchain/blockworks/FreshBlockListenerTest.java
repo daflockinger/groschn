@@ -6,7 +6,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -22,12 +21,10 @@ import com.flockinger.groschn.blockchain.repository.model.StoredBlock;
 import com.flockinger.groschn.blockchain.validation.Assessment;
 import com.flockinger.groschn.blockchain.validation.AssessmentFailure;
 import com.flockinger.groschn.blockchain.validation.impl.BlockValidator;
-import com.flockinger.groschn.commons.compress.CompressionUtils;
 import com.flockinger.groschn.messaging.config.MainTopics;
-import com.flockinger.groschn.messaging.exception.ReceivedMessageInvalidException;
+import com.flockinger.groschn.messaging.inbound.MessagePackageHelper;
 import com.flockinger.groschn.messaging.model.Message;
 import com.flockinger.groschn.messaging.model.MessagePayload;
-import com.flockinger.groschn.messaging.util.MessagingUtils;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.google.common.collect.ImmutableList;
 import java.util.Optional;
@@ -46,10 +43,6 @@ import org.springframework.test.context.ContextConfiguration;
 @SuppressWarnings("unchecked")
 public class FreshBlockListenerTest extends BaseCachingTest{
 
-  @MockBean
-  private MessagingUtils mockUtils;
-  @MockBean
-  private CompressionUtils compressor;
   @MockBean(reset=MockReset.BEFORE)
   private BlockStorageService blockService;
   @MockBean(name="blockValidator")
@@ -58,8 +51,11 @@ public class FreshBlockListenerTest extends BaseCachingTest{
   private BlockMaker blockMaker;
   @MockBean
   private SmartBlockSynchronizer smartSync;
-  
-  @Autowired
+
+  @MockBean
+  private MessagePackageHelper helper;
+
+  @MockBean
   @Qualifier("BlockId_Cache")
   private Cache<String, String> blockIdCache;
   
@@ -72,12 +68,11 @@ public class FreshBlockListenerTest extends BaseCachingTest{
   public void setup() {
     blockIdCache.cleanUp();
     freshBlock = getFakeBlock();
-    when(mockUtils.extractPayload(any(), any())).thenReturn(Optional.ofNullable(freshBlock));
   }
     
   @Test
   public void testReceiveMessage_withValidBlockAndData_shouldStore() {
-    when(compressor.decompress(any(), any(Integer.class), any(Class.class))).thenReturn(Optional.ofNullable(freshBlock));
+    when(helper.verifyAndUnpackMessage(any(),any(),any(Class.class))).thenReturn(Optional.of(freshBlock));
     when(validator.validate(any())).thenReturn(Assessment.build().valid(true));
     Message<MessagePayload> message = validMessage();
     
@@ -100,7 +95,7 @@ public class FreshBlockListenerTest extends BaseCachingTest{
   
   @Test
   public void testReceiveMessage_withInvalidMessage_shouldDoNothing() {
-    doThrow(ReceivedMessageInvalidException.class).when(mockUtils).assertEntity(any());
+    when(helper.verifyAndUnpackMessage(any(),any(),any(Class.class))).thenReturn(Optional.empty());
     Message<MessagePayload> message = validMessage();
     
     listener.receiveMessage(message);
@@ -112,7 +107,7 @@ public class FreshBlockListenerTest extends BaseCachingTest{
   
   @Test
   public void testReceiveMessage_withFillingUpCacheTooMuch_shouldStillWork() {
-    when(compressor.decompress(any(), any(Integer.class), any(Class.class))).thenReturn(Optional.ofNullable(freshBlock));
+    when(helper.verifyAndUnpackMessage(any(),any(),any(Class.class))).thenReturn(Optional.of(freshBlock));
     when(validator.validate(any())).thenReturn(Assessment.build().valid(true));
     Message<MessagePayload> message = validMessage();
     
@@ -129,29 +124,8 @@ public class FreshBlockListenerTest extends BaseCachingTest{
   }
   
   @Test
-  public void testReceiveMessage_withSendSameMessageTripple_shouldStoreOnlyOnce() {
-    when(compressor.decompress(any(), any(Integer.class), any(Class.class))).thenReturn(Optional.ofNullable(freshBlock));
-    when(validator.validate(any())).thenReturn(Assessment.build().valid(true));
-    Message<MessagePayload> message = validMessage();
-    
-    message.setId("masterID");
-    listener.receiveMessage(message);
-    for(int i=0; i < 15; i++) {
-      message.setId(UUID.randomUUID().toString());
-      listener.receiveMessage(message);
-    }
-    message.setId("masterID");
-    listener.receiveMessage(message);
-    message.setId("masterID");
-    listener.receiveMessage(message);
-    
-    ArgumentCaptor<Block> blockCaptor = ArgumentCaptor.forClass(Block.class);
-    verify(blockService,times(16)).saveUnchecked(blockCaptor.capture());
-  }
-  
-  @Test
   public void testReceiveMessage_withStorageValidationFailedMiserably_shouldDoNothing() {
-    when(compressor.decompress(any(), any(Integer.class), any(Class.class))).thenReturn(Optional.of(freshBlock));
+    when(helper.verifyAndUnpackMessage(any(),any(),any(Class.class))).thenReturn(Optional.of(freshBlock));
     Message<MessagePayload> message = validMessage();
     when(blockService.saveUnchecked(any())).thenReturn(new StoredBlock());
     when(validator.validate(any())).thenReturn(Assessment.build().valid(false));
@@ -160,11 +134,10 @@ public class FreshBlockListenerTest extends BaseCachingTest{
     
     verify(smartSync, never()).sync(any());
   }
-  
 
   @Test
   public void testReceiveMessage_withStorageValidationFailedWithTooHighPosition_shouldResync() {
-    when(compressor.decompress(any(), any(Integer.class), any(Class.class))).thenReturn(Optional.of(freshBlock));
+    when(helper.verifyAndUnpackMessage(any(),any(),any(Class.class))).thenReturn(Optional.of(freshBlock));
     Message<MessagePayload> message = validMessage();
     when(blockService.saveUnchecked(any())).thenReturn(new StoredBlock());
     when(validator.validate(any())).thenReturn(Assessment.build().valid(false)
@@ -177,7 +150,7 @@ public class FreshBlockListenerTest extends BaseCachingTest{
   
   @Test
   public void testReceiveMessage_withStorageValidationFailedWithLastHashWrong_shouldResync() {
-    when(compressor.decompress(any(), any(Integer.class), any(Class.class))).thenReturn(Optional.of(freshBlock));
+    when(helper.verifyAndUnpackMessage(any(),any(),any(Class.class))).thenReturn(Optional.of(freshBlock));
     Message<MessagePayload> message = validMessage();
     when(blockService.saveUnchecked(any())).thenReturn(new StoredBlock());
     when(validator.validate(any())).thenReturn(Assessment.build().valid(false)
@@ -190,7 +163,7 @@ public class FreshBlockListenerTest extends BaseCachingTest{
   
   @Test
   public void testReceiveMessage_withStorageValidationFailedSomewhereElse_shouldDoNothing() {
-    when(compressor.decompress(any(), any(Integer.class), any(Class.class))).thenReturn(Optional.of(freshBlock));
+    when(helper.verifyAndUnpackMessage(any(),any(),any(Class.class))).thenReturn(Optional.of(freshBlock));
     Message<MessagePayload> message = validMessage();
     when(blockService.saveUnchecked(any())).thenReturn(new StoredBlock());
     when(validator.validate(any())).thenReturn(Assessment.build().valid(false)
@@ -204,7 +177,7 @@ public class FreshBlockListenerTest extends BaseCachingTest{
   
   @Test
   public void testReceiveMessage_withStorageValidationFailedWithNoFailure_shouldDoNothing() {
-    when(compressor.decompress(any(), any(Integer.class), any(Class.class))).thenReturn(Optional.of(freshBlock));
+    when(helper.verifyAndUnpackMessage(any(),any(),any(Class.class))).thenReturn(Optional.of(freshBlock));
     Message<MessagePayload> message = validMessage();
     when(blockService.saveUnchecked(any())).thenReturn(new StoredBlock());
     when(validator.validate(any())).thenReturn(Assessment.build().valid(false)
@@ -214,9 +187,7 @@ public class FreshBlockListenerTest extends BaseCachingTest{
     
     verify(smartSync, never()).sync(any());
   }
-  
-  
-  
+
   @Test
   public void testGetSubscribedTopic_shouldBeForBlocks() {
     assertEquals("verify that the fresh block topic is selected", 

@@ -12,7 +12,10 @@ import com.flockinger.groschn.blockchain.messaging.sync.SmartBlockSynchronizer;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.validation.impl.BlockValidator;
 import com.flockinger.groschn.messaging.config.MainTopics;
-import com.flockinger.groschn.messaging.inbound.AbstractMessageListener;
+import com.flockinger.groschn.messaging.inbound.MessageListener;
+import com.flockinger.groschn.messaging.inbound.MessagePackageHelper;
+import com.flockinger.groschn.messaging.model.Message;
+import com.flockinger.groschn.messaging.model.MessagePayload;
 import com.github.benmanes.caffeine.cache.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,7 +24,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 @Service
-public class FreshBlockListener extends AbstractMessageListener<Block> {
+public class FreshBlockListener implements  MessageListener<MessagePayload> {
 
   @Autowired
   private BlockStorageService blockService;
@@ -36,11 +39,22 @@ public class FreshBlockListener extends AbstractMessageListener<Block> {
   @Autowired
   @Qualifier("BlockId_Cache")
   private Cache<String, String> blockIdCache;
+
+  @Autowired
+  private MessagePackageHelper helper;
   
   private final static Logger LOG = LoggerFactory.getLogger(FreshBlockListener.class);
-  
+
   @Override
-  protected void handleMessage(Block block) {
+  public void receiveMessage(Message<MessagePayload> message) {
+    var receivedBlock = helper.verifyAndUnpackMessage(message, blockIdCache, Block.class);
+
+    if(receivedBlock.isPresent()) {
+      handleMessage(receivedBlock.get());
+    }
+  }
+
+  private void handleMessage(Block block) {
     try {
       var assessMent = validator.validate(block);
       if(assessMent.isValid()) {
@@ -63,17 +77,9 @@ public class FreshBlockListener extends AbstractMessageListener<Block> {
       LOG.error("Something unexpected happened while storing fresh block!", e);
     }
   }
-  
+
   @Override
   public MainTopics getSubscribedTopic() {
     return MainTopics.FRESH_BLOCK;
-  }
-  @Override
-  protected Cache<String, String> getCache() {
-    return blockIdCache;
-  }
-  @Override
-  protected Class<Block> messageBodyType() {
-    return Block.class;
   }
 }

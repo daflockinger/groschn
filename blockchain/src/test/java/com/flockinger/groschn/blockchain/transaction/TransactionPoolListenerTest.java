@@ -7,6 +7,17 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
+import com.flockinger.groschn.blockchain.BaseCachingTest;
+import com.flockinger.groschn.blockchain.TestDataFactory;
+import com.flockinger.groschn.blockchain.exception.validation.AssessmentFailedException;
+import com.flockinger.groschn.blockchain.model.Transaction;
+import com.flockinger.groschn.blockchain.transaction.impl.TransactionPoolListener;
+import com.flockinger.groschn.messaging.config.MainTopics;
+import com.flockinger.groschn.messaging.inbound.MessagePackageHelper;
+import com.flockinger.groschn.messaging.model.Message;
+import com.flockinger.groschn.messaging.model.MessagePayload;
+import com.github.benmanes.caffeine.cache.Cache;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.Before;
@@ -17,32 +28,18 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.MockReset;
 import org.springframework.test.context.ContextConfiguration;
-import com.flockinger.groschn.blockchain.BaseCachingTest;
-import com.flockinger.groschn.blockchain.TestDataFactory;
-import com.flockinger.groschn.blockchain.exception.validation.AssessmentFailedException;
-import com.flockinger.groschn.blockchain.model.Transaction;
-import com.flockinger.groschn.blockchain.transaction.impl.TransactionPoolListener;
-import com.flockinger.groschn.commons.compress.CompressionUtils;
-import com.flockinger.groschn.messaging.config.MainTopics;
-import com.flockinger.groschn.messaging.exception.ReceivedMessageInvalidException;
-import com.flockinger.groschn.messaging.model.Message;
-import com.flockinger.groschn.messaging.model.MessagePayload;
-import com.flockinger.groschn.messaging.util.MessagingUtils;
-import com.github.benmanes.caffeine.cache.Cache;
 
 @ContextConfiguration(classes = {TransactionPoolListener.class})
 public class TransactionPoolListenerTest extends BaseCachingTest {
 
-  @MockBean
-  private MessagingUtils mockUtils;
-  @MockBean
-  private CompressionUtils compressor;
   @MockBean(reset=MockReset.BEFORE)
   private TransactionManager transactionManager;
-  
-  @Autowired
+  @MockBean
   @Qualifier("TransactionId_Cache")
   private Cache<String, String> transactionIdCache;
+
+  @MockBean
+  private MessagePackageHelper helper;
   
   @Autowired
   private TransactionPoolListener listener;
@@ -53,12 +50,11 @@ public class TransactionPoolListenerTest extends BaseCachingTest {
   public void setup() {
     transactionIdCache.cleanUp();
     freshTransaction = TestDataFactory.createValidTransaction("ex1", "ex2", "ex3", "ex1");
-    when(mockUtils.extractPayload(any(), any())).thenReturn(Optional.ofNullable(freshTransaction));
   }
     
   @Test
   public void testReceiveMessage_withValidBlockAndData_shouldStore() {
-    when(compressor.decompress(any(), any(Integer.class), any(Class.class))).thenReturn(Optional.ofNullable(freshTransaction));
+    when(helper.verifyAndUnpackMessage(any(),any(),any(Class.class))).thenReturn(Optional.of(freshTransaction));
     Message<MessagePayload> message = TestDataFactory.validMessage();
     
     listener.receiveMessage(message);
@@ -72,7 +68,7 @@ public class TransactionPoolListenerTest extends BaseCachingTest {
   
   @Test
   public void testReceiveMessage_withInvalidMessage_shouldDoNothing() {
-    doThrow(ReceivedMessageInvalidException.class).when(mockUtils).assertEntity(any());
+    when(helper.verifyAndUnpackMessage(any(),any(),any(Class.class))).thenReturn(Optional.empty());
     Message<MessagePayload> message = TestDataFactory.validMessage();
     
     listener.receiveMessage(message);
@@ -83,7 +79,7 @@ public class TransactionPoolListenerTest extends BaseCachingTest {
   
   @Test
   public void testReceiveMessage_withFillingUpCacheTooMuch_shouldStillWork() {
-    when(compressor.decompress(any(), any(Integer.class), any(Class.class))).thenReturn(Optional.ofNullable(freshTransaction));
+    when(helper.verifyAndUnpackMessage(any(),any(),any(Class.class))).thenReturn(Optional.of(freshTransaction));
     Message<MessagePayload> message = TestDataFactory.validMessage();
     
     for(int i=0; i < 30; i++) {
@@ -97,29 +93,11 @@ public class TransactionPoolListenerTest extends BaseCachingTest {
     assertEquals("verify that the to stored transaction is exactly the decompressed one", freshTransaction, toStoreTransaction);
   }
   
-  @Test
-  public void testReceiveMessage_withSendSameMessageTripple_shouldStoreOnlyOnce() {
-    when(compressor.decompress(any(), any(Integer.class), any(Class.class))).thenReturn(Optional.ofNullable(freshTransaction));
-    Message<MessagePayload> message = TestDataFactory.validMessage();
-    
-    message.setId("masterID");
-    listener.receiveMessage(message);
-    for(int i=0; i < 15; i++) {
-      message.setId(UUID.randomUUID().toString());
-      listener.receiveMessage(message);
-    }
-    message.setId("masterID");
-    listener.receiveMessage(message);
-    message.setId("masterID");
-    listener.receiveMessage(message);
-    
-    verify(transactionManager,times(16)).storeTransaction(any());
-  }
-  
+
   
   @Test
   public void testReceiveMessage_withStorageValidationFailed_shouldDoNothing() {
-    when(compressor.decompress(any(), any(Integer.class), any(Class.class))).thenReturn(Optional.of(freshTransaction));
+    when(helper.verifyAndUnpackMessage(any(),any(),any(Class.class))).thenReturn(Optional.of(freshTransaction));
     Message<MessagePayload> message = TestDataFactory.validMessage();
     doThrow(AssessmentFailedException.class).when(transactionManager).storeTransaction(any());
     

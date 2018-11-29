@@ -1,5 +1,13 @@
 package com.flockinger.groschn.blockchain.consensus.impl;
 
+import com.flockinger.groschn.blockchain.blockworks.BlockMaker;
+import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
+import com.flockinger.groschn.blockchain.consensus.ConsensusAlgorithm;
+import com.flockinger.groschn.blockchain.consensus.model.ConsensusType;
+import com.flockinger.groschn.blockchain.consensus.model.Consent;
+import com.flockinger.groschn.blockchain.model.Block;
+import com.flockinger.groschn.blockchain.model.Transaction;
+import com.flockinger.groschn.commons.hash.HashGenerator;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -9,15 +17,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import com.flockinger.groschn.blockchain.blockworks.BlockMaker;
-import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
-import com.flockinger.groschn.blockchain.consensus.ConsensusAlgorithm;
-import com.flockinger.groschn.blockchain.consensus.model.ConsensusType;
-import com.flockinger.groschn.blockchain.consensus.model.Consent;
-import com.flockinger.groschn.blockchain.model.Block;
-import com.flockinger.groschn.blockchain.model.Transaction;
-import com.flockinger.groschn.commons.MerkleRootCalculator;
-import com.flockinger.groschn.commons.hash.HashGenerator;
 
 @Component(value = "POW")
 public class ProofOfWorkAlgorithm implements ConsensusAlgorithm {
@@ -42,8 +41,6 @@ public class ProofOfWorkAlgorithm implements ConsensusAlgorithm {
   private BlockStorageService blockService;
   @Autowired
   private HashGenerator hashGenerator;
-  @Autowired
-  private MerkleRootCalculator merkleCalculator;
   
   private final Long STARTING_NONCE = 1l;
   
@@ -65,7 +62,7 @@ public class ProofOfWorkAlgorithm implements ConsensusAlgorithm {
     freshBlock.setLastHash(lastBlock.getHash());
     freshBlock.setTimestamp(new Date().getTime());
     freshBlock.setVersion(BlockMaker.CURRENT_BLOCK_VERSION);
-    freshBlock.setTransactionMerkleRoot(merkleCalculator.calculateMerkleRootHash(transactions));
+    freshBlock.setTransactionMerkleRoot(hashGenerator.calculateMerkleRootHash(transactions));
     
     Consent consent = new Consent();
     consent.setType(ConsensusType.PROOF_OF_WORK);

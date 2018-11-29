@@ -1,4 +1,4 @@
-package com.flockinger.groschn.commons;
+package com.flockinger.groschn.commons.hash;
 
 /*
  * Copyright 2011 Google Inc. Copyright 2018 Andreas Schildbach
@@ -14,10 +14,10 @@ package com.flockinger.groschn.commons;
  * the License.
  */
 
+import com.flockinger.groschn.commons.exception.AddressFormatException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
-import com.flockinger.groschn.commons.exception.AddressFormatException;
 
 /**
  * Base58 is a way to encode Bitcoin addresses (or arbitrary data) as alphanumeric strings.

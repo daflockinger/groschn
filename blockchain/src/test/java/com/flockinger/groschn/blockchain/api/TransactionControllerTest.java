@@ -24,9 +24,7 @@ import com.flockinger.groschn.blockchain.exception.TransactionAlreadyClearedExce
 import com.flockinger.groschn.blockchain.exception.TransactionNotFoundException;
 import com.flockinger.groschn.blockchain.exception.validation.AssessmentFailedException;
 import com.flockinger.groschn.blockchain.transaction.TransactionManager;
-import com.flockinger.groschn.commons.compress.CompressionUtils;
 import com.flockinger.groschn.messaging.outbound.Broadcaster;
-import com.flockinger.groschn.messaging.util.MessagingUtils;
 import com.google.common.collect.ImmutableList;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -39,7 +37,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
-@WebMvcTest(controllers = {TransactionControllerImpl.class, MessagingUtils.class})
+@WebMvcTest(controllers = {TransactionControllerImpl.class})
 @Import(TestConfig.class)
 @TestPropertySource(properties="atomix.node-id=1234")
 public class TransactionControllerTest extends BaseControllerTest {
@@ -48,9 +46,6 @@ public class TransactionControllerTest extends BaseControllerTest {
   private MockMvc mockMvc;
   @Autowired
   private ModelMapper mapper;
-  
-  @MockBean
-  private CompressionUtils mockCompressor;
   @MockBean
   private TransactionManager manager;
   @MockBean

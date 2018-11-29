@@ -1,12 +1,5 @@
 package com.flockinger.groschn.blockchain.validation.impl;
 
-import java.util.Date;
-import java.util.List;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.stereotype.Component;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.flockinger.groschn.blockchain.blockworks.BlockMaker;
 import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
 import com.flockinger.groschn.blockchain.exception.validation.AssessmentFailedException;
@@ -16,10 +9,14 @@ import com.flockinger.groschn.blockchain.validation.Assessment;
 import com.flockinger.groschn.blockchain.validation.AssessmentFailure;
 import com.flockinger.groschn.blockchain.validation.ConsentValidator;
 import com.flockinger.groschn.blockchain.validation.Validator;
-import com.flockinger.groschn.commons.MerkleRootCalculator;
-import com.flockinger.groschn.commons.compress.CompressionUtils;
+import com.flockinger.groschn.commons.compress.Compressor;
 import com.flockinger.groschn.commons.exception.BlockchainException;
 import com.flockinger.groschn.commons.hash.HashGenerator;
+import java.util.Date;
+import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 
 @Component
 public class BlockValidator implements Validator<Block> {
@@ -35,9 +32,7 @@ public class BlockValidator implements Validator<Block> {
   @Autowired
   private HashGenerator hasher;
   @Autowired
-  private MerkleRootCalculator merkleRootCalculator;
-  @Autowired
-  private CompressionUtils compressor;
+  private Compressor compressor;
 
   @Override
   public Assessment validate(Block value) {
@@ -107,7 +102,7 @@ public class BlockValidator implements Validator<Block> {
   }
   
   private void verifyTransactionsMerkleRoot(Block value) {    
-    String rootHash = merkleRootCalculator.calculateMerkleRootHash(value.getTransactions());
+    String rootHash = hasher.calculateMerkleRootHash(value.getTransactions());
     verifyAssessment(rootHash.equals(value.getTransactionMerkleRoot()), 
         "MerkleRoot-Hash of all transactions is wrong!");
   }
