@@ -52,4 +52,8 @@ public class Compressor {
     byte[] entityBytes = serializer.serialize(entities);
     return compressor.compress(entityBytes, new byte[entityBytes.length]);
   }
+
+  public BlockSerializer serializer() {
+    return  serializer;
+  }
 }

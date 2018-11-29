@@ -22,7 +22,6 @@ import com.flockinger.groschn.blockchain.validation.impl.RewardTransactionValida
 import com.flockinger.groschn.blockchain.validation.impl.TransactionValidationHelper;
 import com.flockinger.groschn.blockchain.validation.impl.TransactionValidator;
 import com.flockinger.groschn.blockchain.wallet.impl.WalletServiceImpl;
-import com.flockinger.groschn.commons.compress.Compressor;
 import com.flockinger.groschn.commons.hash.MerkleRootCalculator;
 import com.flockinger.groschn.commons.hash.MultiHashGenerator;
 import com.google.common.collect.ImmutableList;
@@ -39,7 +38,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 @RunWith(SpringRunner.class)
 @ContextConfiguration(
     classes = {InnerBlockValidator.class, BlockchainRepository.class, MultiHashGenerator.class,
-        MerkleRootCalculator.class, Compressor.class, BlockStorageServiceImpl.class, PowConsensusValidator.class,
+        MerkleRootCalculator.class,  BlockStorageServiceImpl.class, PowConsensusValidator.class,
         BlockTransactionsValidator.class, TransactionValidator.class, RewardTransactionValidator.class, 
         TransactionValidationHelper.class, WalletServiceImpl.class, BookkeeperImpl.class})
 public class InnerBlockValidatorTest extends BaseDbTest {

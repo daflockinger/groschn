@@ -1,10 +1,7 @@
 package com.flockinger.groschn.blockchain.validation.impl;
 
 import static com.flockinger.groschn.blockchain.model.Block.MAX_AMOUNT_MINED_GROSCHN;
-import java.math.BigDecimal;
-import java.util.Date;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+
 import com.flockinger.groschn.blockchain.exception.validation.AssessmentFailedException;
 import com.flockinger.groschn.blockchain.model.Transaction;
 import com.flockinger.groschn.blockchain.model.TransactionInput;
@@ -12,9 +9,12 @@ import com.flockinger.groschn.blockchain.model.TransactionOutput;
 import com.flockinger.groschn.blockchain.validation.Assessment;
 import com.flockinger.groschn.blockchain.validation.Validator;
 import com.flockinger.groschn.blockchain.wallet.WalletService;
+import com.flockinger.groschn.commons.ValidationUtils;
 import com.flockinger.groschn.commons.exception.BlockchainException;
-import com.flockinger.groschn.commons.hash.HashGenerator;
-import com.flockinger.groschn.commons.sign.Signer;
+import java.math.BigDecimal;
+import java.util.Date;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 /**
  * Single Transaction Validator should be used for new incomming <br>
@@ -47,9 +47,7 @@ public class TransactionValidator implements Validator<Transaction> {
     - see if the PointCut is any help in this calculation?
    **/
   @Autowired
-  private HashGenerator hasher;
-  @Autowired
-  private Signer signer;
+  private ValidationUtils validationUtils;
   @Autowired
   private WalletService wallet;
   @Autowired
@@ -64,7 +62,7 @@ public class TransactionValidator implements Validator<Transaction> {
       verifyTransactionHash(value);
       //3. verify input sum is >= output sum
       verifyTransactionBalance(value);
-      byte[] outputHash = hasher.generateListHash(value.getOutputs());
+      byte[] outputHash = validationUtils.generateListHash(value.getOutputs());
       
       for(int inCount=0; inCount < value.getInputs().size(); inCount++) {
         TransactionInput input = value.getInputs().get(inCount);
@@ -99,14 +97,14 @@ public class TransactionValidator implements Validator<Transaction> {
   private void verifyTransactionHash(Transaction transaction) {
     String transactionHash = transaction.getTransactionHash();
     transaction.setTransactionHash(null);
-    boolean isHashCorrect = hasher.isHashCorrect(transactionHash, transaction);
+    boolean isHashCorrect = validationUtils.isHashCorrect(transactionHash, transaction);
     transaction.setTransactionHash(transactionHash);
     
     verifyAssessment(isHashCorrect, "Transaction hash is not correct!");
   }
 
   private void verifySignature(TransactionInput input, byte[] outputHash) {
-    boolean isValid =  signer.isSignatureValid(outputHash, 
+    boolean isValid =  validationUtils.isSignatureValid(outputHash,
         input.getPublicKey(), input.getSignature());
     verifyAssessment(isValid, "Transaction signature is invalid for publicKey: " 
         + input.getPublicKey());

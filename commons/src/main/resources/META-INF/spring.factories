@@ -1,2 +1,0 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-com.flockinger.groschn.commons.config.CommonsConfig

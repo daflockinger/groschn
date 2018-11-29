@@ -35,10 +35,9 @@ import com.flockinger.groschn.blockchain.transaction.impl.TransactionManagerImpl
 import com.flockinger.groschn.blockchain.validation.Assessment;
 import com.flockinger.groschn.blockchain.validation.Validator;
 import com.flockinger.groschn.blockchain.wallet.WalletService;
+import com.flockinger.groschn.commons.TransactionUtils;
 import com.flockinger.groschn.commons.compress.Compressor;
 import com.flockinger.groschn.commons.exception.crypto.CantConfigureSigningAlgorithmException;
-import com.flockinger.groschn.commons.hash.HashGenerator;
-import com.flockinger.groschn.commons.sign.Signer;
 import com.google.common.collect.ImmutableList;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
@@ -66,22 +65,20 @@ public class TransactionManagerTest extends BaseDbTest {
 
   @Autowired
   private TransactionManager manager;
-  
+
+  @Autowired
+  private Compressor compressor;
+
   @MockBean
-  private Signer signer;
+  private TransactionUtils transactionUtils;
   @MockBean
   private WalletService walletMock;
-  @MockBean
-  private HashGenerator hasher;
   @MockBean(name = "Transaction_Validator")
   private Validator<Transaction> validator;
-  
   @Autowired
   private BlockchainRepository blockDao;
   @Autowired
   private TransactionPoolRepository poolDao;
-  @Autowired
-  private Compressor compressor;
   
   private List<StoredPoolTransaction> fakePoolTransactions = createFakePooledTransactions();
   
@@ -161,8 +158,8 @@ public class TransactionManagerTest extends BaseDbTest {
   @Test
   public void testCreateSignedTransaction_withValidRequest_shouldCreateSignedTransactionCorrectly() {
     // mock
-    when(hasher.generateHash(any())).thenReturn("some hash");
-    when(signer.sign(any(), any())).thenReturn("x0x0x0");
+    when(transactionUtils.generateHash(any())).thenReturn("some hash");
+    when(transactionUtils.sign(any(), any())).thenReturn("x0x0x0");
     StoredTransactionOutput requestOutput = new StoredTransactionOutput();
     requestOutput.setAmount(new BigDecimal("2000.2"));
     requestOutput.setPublicKey("masterkey");
@@ -245,7 +242,7 @@ public class TransactionManagerTest extends BaseDbTest {
   
   @Test
   public void testCreateSignedTransaction_withValidRequestSentTwiceWithShuffledOutputList_shouldResultEqual() {  
-    when(signer.sign(any(), any())).thenAnswer(new Answer<String>() {
+    when(transactionUtils.sign(any(), any())).thenAnswer(new Answer<String>() {
       @Override
       public String answer(InvocationOnMock invocation) throws Throwable {
         byte[] toSign = (byte[])invocation.getArguments()[0];
@@ -275,10 +272,10 @@ public class TransactionManagerTest extends BaseDbTest {
   
   @Test(expected = CantConfigureSigningAlgorithmException.class)
   public void testCreateSignedTransaction_withSigningFails_shouldThrowException() {
-    when(signer.sign(any(), any())).thenThrow(CantConfigureSigningAlgorithmException.class);
+    when(transactionUtils.sign(any(), any())).thenThrow(CantConfigureSigningAlgorithmException.class);
     // mock
-    when(hasher.generateHash(any())).thenReturn("some hash");
-    when(signer.sign(any(), any())).thenReturn("x0x0x0");
+    when(transactionUtils.generateHash(any())).thenReturn("some hash");
+    when(transactionUtils.sign(any(), any())).thenReturn("x0x0x0");
     StoredTransactionOutput requestOutput = new StoredTransactionOutput();
     requestOutput.setAmount(new BigDecimal("2000.2"));
     requestOutput.setPublicKey("masterkey");
@@ -300,10 +297,10 @@ public class TransactionManagerTest extends BaseDbTest {
   
   @Test(expected = HashingException.class)
   public void testCreateSignedTransaction_withHashingFails_shouldThrowException() {
-    when(hasher.generateHash(any())).thenThrow(HashingException.class);
+    when(transactionUtils.generateHash(any())).thenThrow(HashingException.class);
     // mock
-    when(hasher.generateHash(any())).thenReturn("some hash");
-    when(signer.sign(any(), any())).thenReturn("x0x0x0");
+    when(transactionUtils.generateHash(any())).thenReturn("some hash");
+    when(transactionUtils.sign(any(), any())).thenReturn("x0x0x0");
     StoredTransactionOutput requestOutput = new StoredTransactionOutput();
     requestOutput.setAmount(new BigDecimal("2000.2"));
     requestOutput.setPublicKey("masterkey");

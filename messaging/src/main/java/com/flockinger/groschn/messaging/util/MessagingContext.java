@@ -11,9 +11,6 @@ import java.util.Date;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.Executor;
-import javax.validation.Validation;
-import javax.validation.Validator;
-import javax.validation.ValidatorFactory;
 import org.springframework.stereotype.Component;
 
 
@@ -21,23 +18,17 @@ import org.springframework.stereotype.Component;
 public class MessagingContext {
 
   private final Compressor compressor;
-  private final BlockSerializer serializer;
-  private final Validator validator;
   private final Executor executor;
   private final  ClusterCommunicationService clusterCommunicationService;
   
   public MessagingContext(
       Compressor compressor,
-      BlockSerializer serializer,
       Executor executor,
       ClusterCommunicationService clusterCommunicationService
   ) {
     this.compressor = compressor;
-    this.serializer = serializer;
     this.executor = executor;
     this.clusterCommunicationService = clusterCommunicationService;
-    final ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
-    validator = factory.getValidator();
   }
 
   public <T extends Hashable> Optional<T> extractPayload(Message<MessagePayload> message, Class<T> type) {
@@ -65,7 +56,7 @@ public class MessagingContext {
   }
 
   public BlockSerializer serializer() {
-    return serializer;
+    return compressor.serializer();
   }
 
   public Executor executor() {

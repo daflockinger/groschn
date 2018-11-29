@@ -31,8 +31,10 @@ import com.flockinger.groschn.blockchain.validation.impl.RewardTransactionValida
 import com.flockinger.groschn.blockchain.validation.impl.TransactionValidationHelper;
 import com.flockinger.groschn.blockchain.validation.impl.TransactionValidator;
 import com.flockinger.groschn.blockchain.wallet.impl.WalletServiceImpl;
+import com.flockinger.groschn.commons.ValidationUtils;
 import com.flockinger.groschn.commons.compress.Compressor;
 import com.flockinger.groschn.commons.hash.HashGenerator;
+import com.flockinger.groschn.commons.sign.Signer;
 import com.flockinger.groschn.messaging.members.NetworkStatistics;
 import com.flockinger.groschn.messaging.outbound.Broadcaster;
 import java.math.BigDecimal;
@@ -52,7 +54,7 @@ import org.springframework.test.context.TestPropertySource;
 
 @ContextConfiguration(classes = {BlockValidator.class, BlockchainRepository.class, 
     BlockTransactionsValidator.class, TransactionValidator.class, RewardTransactionValidator.class, 
-    TransactionValidationHelper.class, PowConsensusValidator.class,
+    TransactionValidationHelper.class, PowConsensusValidator.class,ValidationUtils.class,
     // those are all needed to create a somewhat real block to verify:
     BlockMakerImpl.class,
     ConsensusFactory.class, ProofOfWorkAlgorithm.class, ProofOfMajorityAlgorithm.class, RewardGeneratorImpl.class,
@@ -62,10 +64,7 @@ import org.springframework.test.context.TestPropertySource;
 public class BlockValidatorTest extends BaseDbTest {
 
   //TODO make it faster!!
-  
-  @MockBean
-  private Compressor compressor;
-  
+
   @MockBean
   private TransactionPoolListener transactionListener;
   @MockBean
@@ -74,9 +73,14 @@ public class BlockValidatorTest extends BaseDbTest {
   private BlockStorageService storageService;
   @MockBean
   private Broadcaster broadcaster;
+
   @Autowired
-  private HashGenerator hasher;
-  
+ private HashGenerator hasher;
+  @Autowired
+  private Signer signer;
+  @MockBean
+  private Compressor mockPressor;
+
   @Autowired
   @Qualifier("blockValidator")
   private BlockValidator validator;
@@ -101,7 +105,7 @@ public class BlockValidatorTest extends BaseDbTest {
    */
   
   @Before
-  public void setup() {    
+  public void setup() {
     when(storageService.getLatestBlock()).thenReturn(Block.GENESIS_BLOCK());
     when(storageService.getLatestProofOfWorkBlock()).thenReturn(Block.GENESIS_BLOCK());
     
@@ -118,7 +122,7 @@ public class BlockValidatorTest extends BaseDbTest {
   
   @Test
   public void testValidate_withValidBigBlock_shouldValidateSuccess() {
-    when(compressor.compressedByteSize(any())).thenReturn(Block.MAX_TRANSACTION_BYTE_SIZE.intValue() - 1);
+    when(mockPressor.compressedByteSize(any())).thenReturn(Block.MAX_TRANSACTION_BYTE_SIZE.intValue() - 1);
 
     Assessment result = validator.validate(freshBlock);
     
@@ -127,7 +131,7 @@ public class BlockValidatorTest extends BaseDbTest {
   
   @Test
   public void testValidate_withTooLowPosition_shouldValidateFail() {
-    when(compressor.compressedByteSize(any())).thenReturn(Block.MAX_TRANSACTION_BYTE_SIZE.intValue() - 1);
+    when(mockPressor.compressedByteSize(any())).thenReturn(Block.MAX_TRANSACTION_BYTE_SIZE.intValue() - 1);
     freshBlock.setPosition(1l);
     
     Assessment result = validator.validate(freshBlock);
@@ -139,7 +143,7 @@ public class BlockValidatorTest extends BaseDbTest {
   
   @Test
   public void testValidate_withTooHighPosition_shouldValidateFail() {
-    when(compressor.compressedByteSize(any())).thenReturn(Block.MAX_TRANSACTION_BYTE_SIZE.intValue() - 1);
+    when(mockPressor.compressedByteSize(any())).thenReturn(Block.MAX_TRANSACTION_BYTE_SIZE.intValue() - 1);
     freshBlock.setPosition(3l);
     
     Assessment result = validator.validate(freshBlock);
@@ -152,7 +156,7 @@ public class BlockValidatorTest extends BaseDbTest {
   
   @Test
   public void testValidate_withWayTooHighPosition_shouldValidateFail() {
-    when(compressor.compressedByteSize(any())).thenReturn(Block.MAX_TRANSACTION_BYTE_SIZE.intValue() - 1);
+    when(mockPressor.compressedByteSize(any())).thenReturn(Block.MAX_TRANSACTION_BYTE_SIZE.intValue() - 1);
     freshBlock.setPosition(30l);
     
     Assessment result = validator.validate(freshBlock);
@@ -165,7 +169,7 @@ public class BlockValidatorTest extends BaseDbTest {
   
   @Test
   public void testValidate_withWrongLastHash_shouldValidateFail() {
-    when(compressor.compressedByteSize(any())).thenReturn(Block.MAX_TRANSACTION_BYTE_SIZE.intValue() - 1);
+    when(mockPressor.compressedByteSize(any())).thenReturn(Block.MAX_TRANSACTION_BYTE_SIZE.intValue() - 1);
     String lastHash = freshBlock.getLastHash();
     freshBlock.setLastHash("A" + lastHash.substring(1, lastHash.length()));
     
@@ -178,7 +182,7 @@ public class BlockValidatorTest extends BaseDbTest {
   
   @Test
   public void testValidate_withWrongCurrentBlockHash_shouldValidateFail() {
-    when(compressor.compressedByteSize(any())).thenReturn(Block.MAX_TRANSACTION_BYTE_SIZE.intValue() - 1);
+    when(mockPressor.compressedByteSize(any())).thenReturn(Block.MAX_TRANSACTION_BYTE_SIZE.intValue() - 1);
     String blockHash = freshBlock.getHash();
     freshBlock.setHash("A" + blockHash.substring(1, blockHash.length()));
     
@@ -191,7 +195,7 @@ public class BlockValidatorTest extends BaseDbTest {
   
   @Test
   public void testValidate_withWrongMerkleRootHash_shouldValidateFail() {
-    when(compressor.compressedByteSize(any())).thenReturn(Block.MAX_TRANSACTION_BYTE_SIZE.intValue() - 1);
+    when(mockPressor.compressedByteSize(any())).thenReturn(Block.MAX_TRANSACTION_BYTE_SIZE.intValue() - 1);
     String merkleRoot = freshBlock.getTransactionMerkleRoot();
     freshBlock.setTransactionMerkleRoot("A" + merkleRoot.substring(1, merkleRoot.length()));
     
@@ -204,7 +208,7 @@ public class BlockValidatorTest extends BaseDbTest {
   
   @Test
   public void testValidate_withFutureTimestamp_shouldValidateFail() {
-    when(compressor.compressedByteSize(any())).thenReturn(Block.MAX_TRANSACTION_BYTE_SIZE.intValue() - 1);
+    when(mockPressor.compressedByteSize(any())).thenReturn(Block.MAX_TRANSACTION_BYTE_SIZE.intValue() - 1);
     long timeStamp = freshBlock.getTimestamp();
     freshBlock.setTimestamp(new Date().getTime() + 10000);
     
@@ -217,7 +221,7 @@ public class BlockValidatorTest extends BaseDbTest {
   
   @Test
   public void testValidate_withWrongVersion_shouldValidateFail() {
-    when(compressor.compressedByteSize(any())).thenReturn(Block.MAX_TRANSACTION_BYTE_SIZE.intValue() - 1);
+    when(mockPressor.compressedByteSize(any())).thenReturn(Block.MAX_TRANSACTION_BYTE_SIZE.intValue() - 1);
     freshBlock.setVersion(2);
     
     Assessment result = validator.validate(freshBlock);
@@ -229,7 +233,7 @@ public class BlockValidatorTest extends BaseDbTest {
   
   @Test
   public void testValidate_withTooHighTransactionSize_shouldValidateFail() {
-    when(compressor.compressedByteSize(any())).thenReturn(Block.MAX_TRANSACTION_BYTE_SIZE.intValue() + 1);
+    when(mockPressor.compressedByteSize(any())).thenReturn(Block.MAX_TRANSACTION_BYTE_SIZE.intValue() + 1);
     
     Assessment result = validator.validate(freshBlock);
     
@@ -239,7 +243,7 @@ public class BlockValidatorTest extends BaseDbTest {
   
   @Test
   public void testValidate_withFailedConsensusValidation_shouldValidateFail() {
-    when(compressor.compressedByteSize(any())).thenReturn(Block.MAX_TRANSACTION_BYTE_SIZE.intValue() - 1);
+    when(mockPressor.compressedByteSize(any())).thenReturn(Block.MAX_TRANSACTION_BYTE_SIZE.intValue() - 1);
     long realNonce = freshBlock.getConsent().getNonce();
     String oldHash = freshBlock.getHash();
     freshBlock.getConsent().setNonce(realNonce + 1);
@@ -256,7 +260,7 @@ public class BlockValidatorTest extends BaseDbTest {
   
   @Test
   public void testValidate_withFailedTransactionValidation_shouldValidateFail() {
-    when(compressor.compressedByteSize(any())).thenReturn(Block.MAX_TRANSACTION_BYTE_SIZE.intValue() - 1);
+    when(mockPressor.compressedByteSize(any())).thenReturn(Block.MAX_TRANSACTION_BYTE_SIZE.intValue() - 1);
     BigDecimal oldAmount = freshBlock.getTransactions().get(0).getOutputs().get(0).getAmount();
     freshBlock.getTransactions().get(0).getOutputs().get(0).setAmount(new BigDecimal("1000"));
     

@@ -1,6 +1,10 @@
 package com.flockinger.groschn.blockchain.validation;
 
-import static com.flockinger.groschn.blockchain.TestDataFactory.*;
+import static com.flockinger.groschn.blockchain.TestDataFactory.createRandomTransactionInputWith;
+import static com.flockinger.groschn.blockchain.TestDataFactory.createRandomTransactionOutputWith;
+import static com.flockinger.groschn.blockchain.TestDataFactory.createRewardTransaction;
+import static com.flockinger.groschn.blockchain.TestDataFactory.mapToTransactionInput;
+import static com.flockinger.groschn.blockchain.TestDataFactory.mapToTransactionOutput;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -9,6 +13,17 @@ import static org.mockito.ArgumentMatchers.matches;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
+import com.flockinger.groschn.blockchain.exception.HashingException;
+import com.flockinger.groschn.blockchain.model.Block;
+import com.flockinger.groschn.blockchain.model.Transaction;
+import com.flockinger.groschn.blockchain.model.TransactionInput;
+import com.flockinger.groschn.blockchain.transaction.Bookkeeper;
+import com.flockinger.groschn.blockchain.validation.impl.RewardTransactionValidator;
+import com.flockinger.groschn.blockchain.validation.impl.TransactionValidationHelper;
+import com.flockinger.groschn.blockchain.wallet.WalletService;
+import com.flockinger.groschn.commons.ValidationUtils;
+import com.flockinger.groschn.commons.exception.crypto.CantConfigureSigningAlgorithmException;
 import java.math.BigDecimal;
 import java.util.Date;
 import org.apache.commons.lang3.StringUtils;
@@ -19,26 +34,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
-import com.flockinger.groschn.blockchain.exception.HashingException;
-import com.flockinger.groschn.blockchain.model.Block;
-import com.flockinger.groschn.blockchain.model.Transaction;
-import com.flockinger.groschn.blockchain.model.TransactionInput;
-import com.flockinger.groschn.blockchain.transaction.Bookkeeper;
-import com.flockinger.groschn.blockchain.validation.impl.RewardTransactionValidator;
-import com.flockinger.groschn.blockchain.validation.impl.TransactionValidationHelper;
-import com.flockinger.groschn.blockchain.wallet.WalletService;
-import com.flockinger.groschn.commons.exception.crypto.CantConfigureSigningAlgorithmException;
-import com.flockinger.groschn.commons.hash.HashGenerator;
-import com.flockinger.groschn.commons.sign.Signer;
 
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes = {RewardTransactionValidator.class, TransactionValidationHelper.class})
 public class RewardTransactionValidatorTest {
-  
-  @MockBean
-  private HashGenerator hasher;
-  @MockBean
-  private Signer signer;
+
+ @MockBean
+ private ValidationUtils utils;
   @MockBean
   private WalletService wallet;
   @MockBean
@@ -55,42 +57,42 @@ public class RewardTransactionValidatorTest {
   @Test
   public void testValidate_withValidNormalAndRewardTransaction_shouldReturnTrue() {
     Transaction transaction = createRewardTransaction(false);
-    when(hasher.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
-    when(hasher.generateListHash(any())).thenReturn(new byte[0]);
-    when(signer.isSignatureValid(any(), any(), any())).thenReturn(true);
+    when(utils.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
+    when(utils.generateListHash(any())).thenReturn(new byte[0]);
+    when(utils.isSignatureValid(any(), any(), any())).thenReturn(true);
     when(wallet.calculateBalance(matches("minerKey"))).thenReturn(new BigDecimal("400"));
     
     Assessment result = validator.validate(transaction);
     assertNotNull("verify assessment is not null", result);
     assertEquals("verify good transaction validated true", true, result.isValid());
     
-    verify(hasher).isHashCorrect(any(), any());
-    verify(signer, times(2)).isSignatureValid(any(), any(), any());
+    verify(utils).isHashCorrect(any(), any());
+    verify(utils, times(2)).isSignatureValid(any(), any(), any());
     verify(wallet, times(1)).calculateBalance(any());
   }
   
   @Test
   public void testValidate_withValidRewardOnlyTransaction_shouldReturnTrue() {
     Transaction transaction = createRewardTransaction(true);
-    when(hasher.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
-    when(hasher.generateListHash(any())).thenReturn(new byte[0]);
-    when(signer.isSignatureValid(any(), any(), any())).thenReturn(true);
+    when(utils.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
+    when(utils.generateListHash(any())).thenReturn(new byte[0]);
+    when(utils.isSignatureValid(any(), any(), any())).thenReturn(true);
     
     Assessment result = validator.validate(transaction);
     assertNotNull("verify assessment is not null", result);
     assertEquals("verify good transaction validated true", true, result.isValid());
     
-    verify(hasher).isHashCorrect(any(), any());
-    verify(signer, times(1)).isSignatureValid(any(), any(), any());
+    verify(utils).isHashCorrect(any(), any());
+    verify(utils, times(1)).isSignatureValid(any(), any(), any());
   }
   
   
   @Test
   public void testValidate_withWrongInputRewardValue_shouldReturnFalse() {
     Transaction transaction = createRewardTransaction(true);
-    when(hasher.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
-    when(hasher.generateListHash(any())).thenReturn(new byte[0]);
-    when(signer.isSignatureValid(any(), any(), any())).thenReturn(true);
+    when(utils.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
+    when(utils.generateListHash(any())).thenReturn(new byte[0]);
+    when(utils.isSignatureValid(any(), any(), any())).thenReturn(true);
     
     transaction.getInputs().get(0).setAmount(new BigDecimal("99"));
     
@@ -103,9 +105,9 @@ public class RewardTransactionValidatorTest {
   @Test
   public void testValidate_withWrongOutputRewardValue_shouldReturnFalse() {
     Transaction transaction = createRewardTransaction(true);
-    when(hasher.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
-    when(hasher.generateListHash(any())).thenReturn(new byte[0]);
-    when(signer.isSignatureValid(any(), any(), any())).thenReturn(true);
+    when(utils.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
+    when(utils.generateListHash(any())).thenReturn(new byte[0]);
+    when(utils.isSignatureValid(any(), any(), any())).thenReturn(true);
     
     transaction.getOutputs().get(0).setAmount(new BigDecimal("99"));
     
@@ -118,9 +120,9 @@ public class RewardTransactionValidatorTest {
   @Test
   public void testValidate_withWrongOutAndInputRewardValue_shouldReturnFalse() {
     Transaction transaction = createRewardTransaction(true);
-    when(hasher.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
-    when(hasher.generateListHash(any())).thenReturn(new byte[0]);
-    when(signer.isSignatureValid(any(), any(), any())).thenReturn(true);
+    when(utils.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
+    when(utils.generateListHash(any())).thenReturn(new byte[0]);
+    when(utils.isSignatureValid(any(), any(), any())).thenReturn(true);
     
     transaction.getOutputs().get(0).setAmount(new BigDecimal("99"));
     transaction.getInputs().get(0).setAmount(new BigDecimal("99"));
@@ -135,9 +137,9 @@ public class RewardTransactionValidatorTest {
   @Test
   public void testValidate_withHigherMinerInThanOutputSum_shouldReturnfalse() {
     Transaction transaction = createRewardTransaction(false);
-    when(hasher.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
-    when(hasher.generateListHash(any())).thenReturn(new byte[0]);
-    when(signer.isSignatureValid(any(), any(), any())).thenReturn(true);
+    when(utils.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
+    when(utils.generateListHash(any())).thenReturn(new byte[0]);
+    when(utils.isSignatureValid(any(), any(), any())).thenReturn(true);
     when(wallet.calculateBalance(matches("very-secret2"))).thenReturn(new BigDecimal("100"));
     when(wallet.calculateBalance(matches("minerKey"))).thenReturn(new BigDecimal("500"));
     
@@ -153,9 +155,9 @@ public class RewardTransactionValidatorTest {
   @Test
   public void testValidate_withTwoRewards_shouldReturnFalse() {
     Transaction transaction = createDualRewardTx();
-    when(hasher.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
-    when(hasher.generateListHash(any())).thenReturn(new byte[0]);
-    when(signer.isSignatureValid(any(), any(), any())).thenReturn(true);
+    when(utils.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
+    when(utils.generateListHash(any())).thenReturn(new byte[0]);
+    when(utils.isSignatureValid(any(), any(), any())).thenReturn(true);
         
     Assessment result = validator.validate(transaction);
     assertNotNull("verify assessment is not null", result);
@@ -168,9 +170,9 @@ public class RewardTransactionValidatorTest {
   @Test
   public void testValidate_withMultipleRegularMinerInputs_shouldReturnFalse() {
     Transaction transaction = createRewardTransaction(false);
-    when(hasher.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
-    when(hasher.generateListHash(any())).thenReturn(new byte[0]);
-    when(signer.isSignatureValid(any(), any(), any())).thenReturn(true);
+    when(utils.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
+    when(utils.generateListHash(any())).thenReturn(new byte[0]);
+    when(utils.isSignatureValid(any(), any(), any())).thenReturn(true);
     when(wallet.calculateBalance(matches("minerKey"))).thenReturn(new BigDecimal("400"))
       .thenReturn(new BigDecimal("400"));
     
@@ -193,9 +195,9 @@ public class RewardTransactionValidatorTest {
   @Test
   public void testValidate_withWrongAmountRewardOutput_shouldReturnFalse() {
     Transaction transaction = createRewardTransaction(true);
-    when(hasher.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
-    when(hasher.generateListHash(any())).thenReturn(new byte[0]);
-    when(signer.isSignatureValid(any(), any(), any())).thenReturn(true);
+    when(utils.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
+    when(utils.generateListHash(any())).thenReturn(new byte[0]);
+    when(utils.isSignatureValid(any(), any(), any())).thenReturn(true);
     
     transaction.getOutputs().get(0).setAmount(new BigDecimal("94"));
         
@@ -207,9 +209,9 @@ public class RewardTransactionValidatorTest {
   @Test
   public void testValidate_withNoChangeOutput_shouldReturnFalse() {
     Transaction transaction = createRewardTransaction(true);
-    when(hasher.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
-    when(hasher.generateListHash(any())).thenReturn(new byte[0]);
-    when(signer.isSignatureValid(any(), any(), any())).thenReturn(true);
+    when(utils.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
+    when(utils.generateListHash(any())).thenReturn(new byte[0]);
+    when(utils.isSignatureValid(any(), any(), any())).thenReturn(true);
     
     transaction.getOutputs().remove(1);
         
@@ -224,9 +226,9 @@ public class RewardTransactionValidatorTest {
   @Test
   public void testValidate_withNoChangeOutputButNormalAndRewardTransaction_shouldReturnFalse() {
     Transaction transaction = createRewardTransaction(false);
-    when(hasher.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
-    when(hasher.generateListHash(any())).thenReturn(new byte[0]);
-    when(signer.isSignatureValid(any(), any(), any())).thenReturn(true);
+    when(utils.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
+    when(utils.generateListHash(any())).thenReturn(new byte[0]);
+    when(utils.isSignatureValid(any(), any(), any())).thenReturn(true);
     when(wallet.calculateBalance(matches("minerKey"))).thenReturn(new BigDecimal("400"));
     
     transaction.getOutputs().get(1).setAmount(new BigDecimal("411"));
@@ -244,9 +246,9 @@ public class RewardTransactionValidatorTest {
   @Test
   public void testValidate_withNonMinerInAndOutput_shouldReturnfalse() {
     Transaction transaction = createRewardTransaction(false);
-    when(hasher.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
-    when(hasher.generateListHash(any())).thenReturn(new byte[0]);
-    when(signer.isSignatureValid(any(), any(), any())).thenReturn(true);
+    when(utils.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
+    when(utils.generateListHash(any())).thenReturn(new byte[0]);
+    when(utils.isSignatureValid(any(), any(), any())).thenReturn(true);
     when(wallet.calculateBalance(matches("minerKey"))).thenReturn(new BigDecimal("400"));
     when(wallet.calculateBalance(matches("someoneHacker"))).thenReturn(BigDecimal.valueOf(12l));
     
@@ -264,9 +266,9 @@ public class RewardTransactionValidatorTest {
   @Test
   public void testValidate_withWrongTransactionHash_shouldReturnFalse() {
     Transaction transaction = createRewardTransaction(false);
-    when(hasher.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(false);
-    when(hasher.generateListHash(any())).thenReturn(new byte[0]);
-    when(signer.isSignatureValid(any(), any(), any())).thenReturn(true);
+    when(utils.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(false);
+    when(utils.generateListHash(any())).thenReturn(new byte[0]);
+    when(utils.isSignatureValid(any(), any(), any())).thenReturn(true);
     when(wallet.calculateBalance(matches("very-secret2"))).thenReturn(new BigDecimal("100"));
     when(wallet.calculateBalance(matches("minerKey"))).thenReturn(new BigDecimal("300"));
     
@@ -279,9 +281,9 @@ public class RewardTransactionValidatorTest {
   @Test
   public void testValidate_withInvalidTransactionHash_shouldReturnFalse() {
     Transaction transaction = createRewardTransaction(false);
-    when(hasher.isHashCorrect(matches("0FABDD34578"), any())).thenThrow(HashingException.class);
-    when(hasher.generateListHash(any())).thenReturn(new byte[0]);
-    when(signer.isSignatureValid(any(), any(), any())).thenReturn(true);
+    when(utils.isHashCorrect(matches("0FABDD34578"), any())).thenThrow(HashingException.class);
+    when(utils.generateListHash(any())).thenReturn(new byte[0]);
+    when(utils.isSignatureValid(any(), any(), any())).thenReturn(true);
     when(wallet.calculateBalance(matches("very-secret2"))).thenReturn(new BigDecimal("100"));
     when(wallet.calculateBalance(matches("minerKey"))).thenReturn(new BigDecimal("300"));
     
@@ -293,9 +295,9 @@ public class RewardTransactionValidatorTest {
   @Test
   public void testValidate_withInvalidTransactionsOutputHash_shouldReturnFalse() {
     Transaction transaction = createRewardTransaction(false);
-    when(hasher.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
-    when(hasher.generateListHash(any())).thenThrow(HashingException.class);
-    when(signer.isSignatureValid(any(), any(), any())).thenReturn(true);
+    when(utils.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
+    when(utils.generateListHash(any())).thenThrow(HashingException.class);
+    when(utils.isSignatureValid(any(), any(), any())).thenReturn(true);
     when(wallet.calculateBalance(matches("very-secret2"))).thenReturn(new BigDecimal("100"));
     when(wallet.calculateBalance(matches("minerKey"))).thenReturn(new BigDecimal("300"));
     
@@ -307,9 +309,9 @@ public class RewardTransactionValidatorTest {
   @Test
   public void testValidate_withWrongSignature_shouldReturnFalse() {
     Transaction transaction = createRewardTransaction(false);
-    when(hasher.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
-    when(hasher.generateListHash(any())).thenReturn(new byte[0]);
-    when(signer.isSignatureValid(any(), any(), any())).thenReturn(false);
+    when(utils.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
+    when(utils.generateListHash(any())).thenReturn(new byte[0]);
+    when(utils.isSignatureValid(any(), any(), any())).thenReturn(false);
     when(wallet.calculateBalance(matches("very-secret2"))).thenReturn(new BigDecimal("100"));
     when(wallet.calculateBalance(matches("minerKey"))).thenReturn(new BigDecimal("300"));
     
@@ -322,9 +324,9 @@ public class RewardTransactionValidatorTest {
   @Test
   public void testValidate_withInvalidInputPublicKey_shouldReturnFalse() {
     Transaction transaction = createRewardTransaction(false);
-    when(hasher.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
-    when(hasher.generateListHash(any())).thenReturn(new byte[0]);
-    when(signer.isSignatureValid(any(), any(), any())).thenThrow(CantConfigureSigningAlgorithmException.class);
+    when(utils.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
+    when(utils.generateListHash(any())).thenReturn(new byte[0]);
+    when(utils.isSignatureValid(any(), any(), any())).thenThrow(CantConfigureSigningAlgorithmException.class);
     when(wallet.calculateBalance(matches("very-secret2"))).thenReturn(new BigDecimal("100"));
     when(wallet.calculateBalance(matches("minerKey"))).thenReturn(new BigDecimal("300"));
     
@@ -337,9 +339,9 @@ public class RewardTransactionValidatorTest {
   @Test
   public void testValidate_withInputSequenceHavingAGap_shouldReturnFalse() {
     Transaction transaction = createRewardTransaction(false);
-    when(hasher.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
-    when(hasher.generateListHash(any())).thenReturn(new byte[0]);
-    when(signer.isSignatureValid(any(), any(), any())).thenReturn(true);
+    when(utils.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
+    when(utils.generateListHash(any())).thenReturn(new byte[0]);
+    when(utils.isSignatureValid(any(), any(), any())).thenReturn(true);
     when(wallet.calculateBalance(matches("very-secret2"))).thenReturn(new BigDecimal("100"));
     when(wallet.calculateBalance(matches("minerKey"))).thenReturn(new BigDecimal("300"));
     
@@ -354,9 +356,9 @@ public class RewardTransactionValidatorTest {
   @Test
   public void testValidate_withOutputSequenceHavingAGap_shouldReturnFalse() {
     Transaction transaction = createRewardTransaction(false);
-    when(hasher.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
-    when(hasher.generateListHash(any())).thenReturn(new byte[0]);
-    when(signer.isSignatureValid(any(), any(), any())).thenReturn(true);
+    when(utils.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
+    when(utils.generateListHash(any())).thenReturn(new byte[0]);
+    when(utils.isSignatureValid(any(), any(), any())).thenReturn(true);
     when(wallet.calculateBalance(matches("very-secret2"))).thenReturn(new BigDecimal("100"));
     when(wallet.calculateBalance(matches("minerKey"))).thenReturn(new BigDecimal("300"));
     
@@ -371,9 +373,9 @@ public class RewardTransactionValidatorTest {
   @Test
   public void testValidate_withOutputsStartingByZero_shouldReturnFalse() {
     Transaction transaction = createRewardTransaction(false);
-    when(hasher.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
-    when(hasher.generateListHash(any())).thenReturn(new byte[0]);
-    when(signer.isSignatureValid(any(), any(), any())).thenReturn(true);
+    when(utils.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
+    when(utils.generateListHash(any())).thenReturn(new byte[0]);
+    when(utils.isSignatureValid(any(), any(), any())).thenReturn(true);
     when(wallet.calculateBalance(matches("very-secret2"))).thenReturn(new BigDecimal("100"));
     when(wallet.calculateBalance(matches("minerKey"))).thenReturn(new BigDecimal("300"));
     
@@ -390,9 +392,9 @@ public class RewardTransactionValidatorTest {
   @Test
   public void testValidate_withInputsStartingByZero_shouldReturnFalse() {
     Transaction transaction = createRewardTransaction(false);
-    when(hasher.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
-    when(hasher.generateListHash(any())).thenReturn(new byte[0]);
-    when(signer.isSignatureValid(any(), any(), any())).thenReturn(true);
+    when(utils.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
+    when(utils.generateListHash(any())).thenReturn(new byte[0]);
+    when(utils.isSignatureValid(any(), any(), any())).thenReturn(true);
     when(wallet.calculateBalance(matches("very-secret2"))).thenReturn(new BigDecimal("100"));
     when(wallet.calculateBalance(matches("minerKey"))).thenReturn(new BigDecimal("300"));
     
@@ -408,9 +410,9 @@ public class RewardTransactionValidatorTest {
   @Test
   public void testValidate_withOneOutputTimestampInFuture_shouldReturnFalse() {
     Transaction transaction = createRewardTransaction(false);
-    when(hasher.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
-    when(hasher.generateListHash(any())).thenReturn(new byte[0]);
-    when(signer.isSignatureValid(any(), any(), any())).thenReturn(true);
+    when(utils.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
+    when(utils.generateListHash(any())).thenReturn(new byte[0]);
+    when(utils.isSignatureValid(any(), any(), any())).thenReturn(true);
     when(wallet.calculateBalance(matches("very-secret2"))).thenReturn(new BigDecimal("100"));
     when(wallet.calculateBalance(matches("minerKey"))).thenReturn(new BigDecimal("300"));
     
@@ -425,9 +427,9 @@ public class RewardTransactionValidatorTest {
   @Test
   public void testValidate_withOneInputTimestampInFuture_shouldReturnFalse() {
     Transaction transaction = createRewardTransaction(false);
-    when(hasher.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
-    when(hasher.generateListHash(any())).thenReturn(new byte[0]);
-    when(signer.isSignatureValid(any(), any(), any())).thenReturn(true);
+    when(utils.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
+    when(utils.generateListHash(any())).thenReturn(new byte[0]);
+    when(utils.isSignatureValid(any(), any(), any())).thenReturn(true);
     when(wallet.calculateBalance(matches("very-secret2"))).thenReturn(new BigDecimal("100"));
     when(wallet.calculateBalance(matches("minerKey"))).thenReturn(new BigDecimal("300"));
     
@@ -442,9 +444,9 @@ public class RewardTransactionValidatorTest {
   @Test
   public void testValidate_withOneInputAmountZero_shouldReturnFalse() {
     Transaction transaction = createRewardTransaction(false);
-    when(hasher.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
-    when(hasher.generateListHash(any())).thenReturn(new byte[0]);
-    when(signer.isSignatureValid(any(), any(), any())).thenReturn(true);
+    when(utils.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
+    when(utils.generateListHash(any())).thenReturn(new byte[0]);
+    when(utils.isSignatureValid(any(), any(), any())).thenReturn(true);
     when(wallet.calculateBalance(matches("very-secret2"))).thenReturn(new BigDecimal("100"));
     when(wallet.calculateBalance(matches("minerKey"))).thenReturn(new BigDecimal("300"));
     
@@ -459,9 +461,9 @@ public class RewardTransactionValidatorTest {
   @Test
   public void testValidate_withOneOutputAmountZero_shouldReturnFalse() {
     Transaction transaction = createRewardTransaction(false);
-    when(hasher.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
-    when(hasher.generateListHash(any())).thenReturn(new byte[0]);
-    when(signer.isSignatureValid(any(), any(), any())).thenReturn(true);
+    when(utils.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
+    when(utils.generateListHash(any())).thenReturn(new byte[0]);
+    when(utils.isSignatureValid(any(), any(), any())).thenReturn(true);
     when(wallet.calculateBalance(matches("very-secret2"))).thenReturn(new BigDecimal("100"));
     when(wallet.calculateBalance(matches("minerKey"))).thenReturn(new BigDecimal("300"));
     
@@ -476,9 +478,9 @@ public class RewardTransactionValidatorTest {
   @Test
   public void testValidate_withOneInputAmountTooHigh_shouldReturnFalse() {
     Transaction transaction = createRewardTransaction(false);
-    when(hasher.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
-    when(hasher.generateListHash(any())).thenReturn(new byte[0]);
-    when(signer.isSignatureValid(any(), any(), any())).thenReturn(true);
+    when(utils.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
+    when(utils.generateListHash(any())).thenReturn(new byte[0]);
+    when(utils.isSignatureValid(any(), any(), any())).thenReturn(true);
     when(wallet.calculateBalance(matches("very-secret2"))).thenReturn(new BigDecimal("100"));
     when(wallet.calculateBalance(matches("minerKey"))).thenReturn(new BigDecimal("300"));
     
@@ -493,9 +495,9 @@ public class RewardTransactionValidatorTest {
   @Test
   public void testValidate_withOneOutputAmountTooHigh_shouldReturnFalse() {
     Transaction transaction = createRewardTransaction(false);
-    when(hasher.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
-    when(hasher.generateListHash(any())).thenReturn(new byte[0]);
-    when(signer.isSignatureValid(any(), any(), any())).thenReturn(true);
+    when(utils.isHashCorrect(matches("0FABDD34578"), any())).thenReturn(true);
+    when(utils.generateListHash(any())).thenReturn(new byte[0]);
+    when(utils.isSignatureValid(any(), any(), any())).thenReturn(true);
     when(wallet.calculateBalance(matches("very-secret2"))).thenReturn(new BigDecimal("100"));
     when(wallet.calculateBalance(matches("minerKey"))).thenReturn(new BigDecimal("300"));
     

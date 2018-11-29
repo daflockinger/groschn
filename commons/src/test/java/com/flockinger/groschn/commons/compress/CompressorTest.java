@@ -20,7 +20,8 @@ import org.junit.Test;
 
 public class CompressorTest {
 
-  private Compressor compressor = new Compressor(serializer());
+  private BlockSerializer serializer = serializer();
+  private Compressor compressor = new Compressor(serializer);
   
   @Test
   public void testCompressUncompress_withFullBlock_shouldDoCorrectly() {
@@ -155,6 +156,11 @@ public class CompressorTest {
         .decompress(entity.getEntity(), entity.getOriginalSize(), TestTransaction.class);
     
     assertFalse("verify that returned entity of wrong type is empty", decompressedResult.isPresent());
+  }
+
+  @Test
+  public void testSerializer() {
+    assertEquals("verify correct serializer is returned", serializer, compressor.serializer());
   }
 
   public BlockSerializer serializer() {

@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 
 import com.flockinger.groschn.blockchain.TestConfig;
 import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
+import com.flockinger.groschn.blockchain.config.CommonsConfig;
 import com.flockinger.groschn.blockchain.config.CryptoConfig;
 import com.flockinger.groschn.blockchain.consensus.impl.ProofOfWorkAlgorithm;
 import com.flockinger.groschn.blockchain.consensus.model.ConsensusType;
@@ -16,7 +17,6 @@ import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.model.Transaction;
 import com.flockinger.groschn.blockchain.model.TransactionInput;
 import com.flockinger.groschn.blockchain.model.TransactionOutput;
-import com.flockinger.groschn.commons.config.CommonsConfig;
 import com.google.common.collect.ImmutableList;
 import java.math.BigDecimal;
 import java.util.ArrayList;

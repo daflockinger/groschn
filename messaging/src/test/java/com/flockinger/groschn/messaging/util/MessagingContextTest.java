@@ -29,8 +29,8 @@ public class MessagingContextTest {
   private Executor executorMock = mock(Executor.class);
   private ClusterCommunicationService clusterComMock = mock(ClusterCommunicationService.class);
 
-  private MessagingContext utils = new MessagingContext(compressor, serializer, executorMock, clusterComMock);
-  
+  private MessagingContext utils =  new MessagingContext(compressor, executorMock,clusterComMock);
+
   @Test
   public void testExtractPayload_withValidPayload_shouldExtract() {
     TestBlock freshBlock = new TestBlock();
@@ -70,6 +70,7 @@ public class MessagingContextTest {
 
   @Test
   public void testSerializer_shouldReturnSerializer() {
+    when(compressor.serializer()).thenReturn(serializer);
     assertEquals("verify that utils returns the correct serializer", serializer, utils.serializer());
   }
 

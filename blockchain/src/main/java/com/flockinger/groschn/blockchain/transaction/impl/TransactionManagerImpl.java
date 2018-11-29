@@ -25,9 +25,7 @@ import com.flockinger.groschn.blockchain.transaction.TransactionManager;
 import com.flockinger.groschn.blockchain.validation.Assessment;
 import com.flockinger.groschn.blockchain.validation.Validator;
 import com.flockinger.groschn.blockchain.wallet.WalletService;
-import com.flockinger.groschn.commons.compress.Compressor;
-import com.flockinger.groschn.commons.hash.HashGenerator;
-import com.flockinger.groschn.commons.sign.Signer;
+import com.flockinger.groschn.commons.TransactionUtils;
 import com.google.common.collect.ImmutableList;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -65,16 +63,12 @@ public class TransactionManagerImpl implements TransactionManager {
   @Autowired
   private ModelMapper mapper;
   @Autowired
-  private Signer signer;
-  @Autowired
-  private Compressor compressor;
-  @Autowired
   private WalletService wallet;
-  @Autowired
-  private HashGenerator hashGenerator;
   @Autowired
   @Qualifier("Transaction_Validator")
   private Validator<Transaction> validator;
+  @Autowired
+  private TransactionUtils transactionUtils;
 
   @Autowired
   public TransactionManagerImpl(MongoDbFactory factory) {
@@ -91,7 +85,7 @@ public class TransactionManagerImpl implements TransactionManager {
     while (compressedTransactionsSize < maxByteSize && transactionIterator.hasNext()) {
       var freshTransaction = mapToRegularTransaction(transactionIterator.next());
       compressedTransactionsSize +=
-          compressor.compressedByteSize(ImmutableList.of(freshTransaction));
+          transactionUtils.compressedByteSize(ImmutableList.of(freshTransaction));
       if (compressedTransactionsSize < maxByteSize) {
         transactions.add(freshTransaction);
       }
@@ -112,7 +106,7 @@ public class TransactionManagerImpl implements TransactionManager {
     for (TransactionInput input : transaction.getInputs()) {
       signTransactionInput(input, transaction.getOutputs(), walletPrivateKey);
     }
-    transaction.setTransactionHash(hashGenerator.generateHash(transaction));
+    transaction.setTransactionHash(transactionUtils.generateHash(transaction));
     validator.validate(transaction);
     return transaction;
   }
@@ -121,7 +115,7 @@ public class TransactionManagerImpl implements TransactionManager {
       byte[] privateKey) {
     Collections.sort(outputs);
     String outputHashBase = outputs.stream().map(Object::toString).collect(Collectors.joining());
-    String signature = signer.sign(outputHashBase.getBytes(StandardCharsets.UTF_8), privateKey);
+    String signature = transactionUtils.sign(outputHashBase.getBytes(StandardCharsets.UTF_8), privateKey);
     input.setSignature(signature);
   }
 

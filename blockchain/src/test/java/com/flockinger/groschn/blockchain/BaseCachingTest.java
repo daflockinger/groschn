@@ -1,5 +1,7 @@
 package com.flockinger.groschn.blockchain;
 
+import com.flockinger.groschn.blockchain.config.CacheConfig;
+import com.flockinger.groschn.blockchain.config.CommonsConfig;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.ConfigFileApplicationContextInitializer;
 import org.springframework.boot.test.mock.mockito.MockitoTestExecutionListener;
@@ -10,8 +12,6 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
-import com.flockinger.groschn.blockchain.config.CacheConfig;
-import com.flockinger.groschn.commons.config.CommonsConfig;
 
 @ActiveProfiles("test")
 @RunWith(SpringRunner.class)

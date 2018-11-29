@@ -9,7 +9,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.flockinger.groschn.commons.config.CommonsConfig;
 import com.flockinger.groschn.messaging.ExecutorConfig;
 import com.flockinger.groschn.messaging.config.MainTopics;
 import com.flockinger.groschn.messaging.members.NetworkStatistics;
@@ -41,7 +40,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 
 @RunWith(SpringRunner.class)
-@Import({ExecutorConfig.class, CommonsConfig.class})
+@Import({ExecutorConfig.class})
 @ContextConfiguration(classes = {SyncInquirerImpl.class, BeanValidator.class, ConcurrentMessenger.class, SyncRequester.class})
 public class SyncInquirerIntegrationTest {
 

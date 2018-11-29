@@ -1,14 +1,6 @@
 package com.flockinger.groschn.messaging.config;
 
-import java.io.File;
-import java.time.Duration;
-import java.util.List;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import com.flockinger.groschn.commons.compress.Compressor;
 import com.flockinger.groschn.messaging.config.AtomixConfig.AtomixNode;
 import io.atomix.cluster.MemberId;
 import io.atomix.cluster.Node;
@@ -17,13 +9,35 @@ import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.core.Atomix;
 import io.atomix.protocols.backup.partition.PrimaryBackupPartitionGroup;
 import io.atomix.protocols.raft.partition.RaftPartitionGroup;
+import java.io.File;
+import java.time.Duration;
+import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 
-@Configuration
-public class MessagingProtocolConfiguration {
-  
+
+public abstract class MessagingProtocolConfiguration {
+
+  protected  abstract  Compressor messageCompressor();
+  protected  abstract  Executor messageExecutor();
+
   @Autowired
   private AtomixConfig config;
-  
+
+  @Bean
+  public Executor executor() {
+    return messageExecutor();
+  }
+
+  @Bean
+  public Compressor compressor() {
+    return messageCompressor();
+  }
+
   @Bean
   public Atomix createAndStartAtomixInstance() throws Exception {
     Atomix atomix = Atomix.builder()

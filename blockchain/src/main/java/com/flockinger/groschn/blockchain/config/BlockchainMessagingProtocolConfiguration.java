@@ -1,4 +1,4 @@
-package com.flockinger.groschn.blockchain;
+package com.flockinger.groschn.blockchain.config;
 
 import com.flockinger.groschn.blockchain.consensus.model.ConsensusType;
 import com.flockinger.groschn.blockchain.consensus.model.Consent;
@@ -8,45 +8,21 @@ import com.flockinger.groschn.blockchain.model.TransactionInput;
 import com.flockinger.groschn.blockchain.model.TransactionOutput;
 import com.flockinger.groschn.commons.BlockchainUtilsFactory;
 import com.flockinger.groschn.commons.compress.Compressor;
+import com.flockinger.groschn.messaging.config.MessagingProtocolConfiguration;
 import java.util.ArrayList;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
-import org.springframework.retry.annotation.EnableRetry;
-import org.springframework.scheduling.TaskScheduler;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 
 @Configuration
-@EnableRetry
-@EnableMongoRepositories(basePackages = "com.flockinger.groschn.blockchain.repository")
-public class GeneralTestConfig {
+public class BlockchainMessagingProtocolConfiguration extends MessagingProtocolConfiguration {
 
   @Value("${blockchain.messaging.thread-pool.size}")
   private Integer threadPoolSize;
 
-
-  @Bean
-  public ModelMapper mapper() {
-    return new ModelMapper();
-  }
-
-  @Bean
-  public Executor executor() {
-    Executor executorService = Executors.newFixedThreadPool(threadPoolSize);
-    return executorService;
-  }
-
-  @Bean
-  public TaskScheduler taskScheduler() {
-    return new ThreadPoolTaskScheduler();
-  }
-
-  @Bean
-  public Compressor compressor() {
+  @Override
+  protected Compressor messageCompressor() {
     var registered = new ArrayList<Class<?>>();
     registered.add(Block.class);
     registered.add(Transaction.class);
@@ -58,4 +34,9 @@ public class GeneralTestConfig {
     return BlockchainUtilsFactory.createCompressor(registered);
   }
 
+  @Override
+  protected Executor messageExecutor() {
+    Executor executorService = Executors.newFixedThreadPool(threadPoolSize);
+    return executorService;
+  }
 }
