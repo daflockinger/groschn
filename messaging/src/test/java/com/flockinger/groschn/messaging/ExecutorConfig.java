@@ -1,14 +1,12 @@
 package com.flockinger.groschn.messaging;
 
+import com.flockinger.groschn.commons.serialize.BlockSerializer;
+import com.flockinger.groschn.commons.serialize.FstSerializer;
 import java.util.ArrayList;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import com.flockinger.groschn.commons.serialize.BlockSerializer;
-import com.flockinger.groschn.commons.serialize.FstSerializer;
 
-@Configuration
 public class ExecutorConfig {
 
   @Bean

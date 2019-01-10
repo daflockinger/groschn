@@ -8,20 +8,11 @@ import com.flockinger.groschn.commons.crypto.KeyCipher;
 import com.flockinger.groschn.commons.hash.HashGenerator;
 import com.flockinger.groschn.commons.sign.Signer;
 import java.security.Provider;
-import java.security.Security;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class CommonsConfig {
-
-  @Bean
-  public Provider getDefaultProvider() {
-    Provider bouncyCastle = new BouncyCastleProvider();
-    Security.addProvider(bouncyCastle);
-    return bouncyCastle;
-  }
 
   @Bean
   public KeyCipher cipher(Provider provider) {

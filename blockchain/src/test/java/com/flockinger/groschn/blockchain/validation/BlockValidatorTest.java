@@ -31,7 +31,6 @@ import com.flockinger.groschn.blockchain.validation.impl.RewardTransactionValida
 import com.flockinger.groschn.blockchain.validation.impl.TransactionValidationHelper;
 import com.flockinger.groschn.blockchain.validation.impl.TransactionValidator;
 import com.flockinger.groschn.blockchain.wallet.impl.WalletServiceImpl;
-import com.flockinger.groschn.commons.ValidationUtils;
 import com.flockinger.groschn.commons.compress.Compressor;
 import com.flockinger.groschn.commons.hash.HashGenerator;
 import com.flockinger.groschn.commons.sign.Signer;
@@ -54,7 +53,7 @@ import org.springframework.test.context.TestPropertySource;
 
 @ContextConfiguration(classes = {BlockValidator.class, BlockchainRepository.class, 
     BlockTransactionsValidator.class, TransactionValidator.class, RewardTransactionValidator.class, 
-    TransactionValidationHelper.class, PowConsensusValidator.class,ValidationUtils.class,
+    TransactionValidationHelper.class, PowConsensusValidator.class,
     // those are all needed to create a somewhat real block to verify:
     BlockMakerImpl.class,
     ConsensusFactory.class, ProofOfWorkAlgorithm.class, ProofOfMajorityAlgorithm.class, RewardGeneratorImpl.class,

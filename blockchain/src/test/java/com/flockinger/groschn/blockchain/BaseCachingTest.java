@@ -2,6 +2,7 @@ package com.flockinger.groschn.blockchain;
 
 import com.flockinger.groschn.blockchain.config.CacheConfig;
 import com.flockinger.groschn.blockchain.config.CommonsConfig;
+import com.flockinger.groschn.blockchain.config.CryptoConfig;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.ConfigFileApplicationContextInitializer;
 import org.springframework.boot.test.mock.mockito.MockitoTestExecutionListener;
@@ -16,7 +17,7 @@ import org.springframework.test.context.support.DependencyInjectionTestExecution
 @ActiveProfiles("test")
 @RunWith(SpringRunner.class)
 @ContextConfiguration(initializers=ConfigFileApplicationContextInitializer.class)
-@Import({CacheConfig.class, TestConfig.class, CommonsConfig.class})
+@Import({CacheConfig.class, TestConfig.class, CommonsConfig.class, CryptoConfig.class})
 @TestExecutionListeners({DependencyInjectionTestExecutionListener.class, MockitoTestExecutionListener.class, ResetMocksTestExecutionListener.class})
 public abstract class BaseCachingTest {
 
