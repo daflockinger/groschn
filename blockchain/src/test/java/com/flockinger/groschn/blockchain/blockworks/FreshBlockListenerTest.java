@@ -20,7 +20,7 @@ import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.repository.model.StoredBlock;
 import com.flockinger.groschn.blockchain.validation.Assessment;
 import com.flockinger.groschn.blockchain.validation.AssessmentFailure;
-import com.flockinger.groschn.blockchain.validation.impl.BlockValidator;
+import com.flockinger.groschn.blockchain.validation.Validator;
 import com.flockinger.groschn.messaging.config.MainTopics;
 import com.flockinger.groschn.messaging.inbound.MessagePackageHelper;
 import com.flockinger.groschn.messaging.model.Message;
@@ -45,8 +45,8 @@ public class FreshBlockListenerTest extends BaseCachingTest{
 
   @MockBean(reset=MockReset.BEFORE)
   private BlockStorageService blockService;
-  @MockBean(name="blockValidator")
-  private BlockValidator validator;
+  @MockBean(name="lastBlockValidator")
+  private Validator<Block> validator;
   @MockBean
   private BlockMaker blockMaker;
   @MockBean

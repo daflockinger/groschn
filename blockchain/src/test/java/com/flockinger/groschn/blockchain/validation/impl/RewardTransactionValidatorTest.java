@@ -1,4 +1,4 @@
-package com.flockinger.groschn.blockchain.validation;
+package com.flockinger.groschn.blockchain.validation.impl;
 
 import static com.flockinger.groschn.blockchain.TestDataFactory.createRandomTransactionInputWith;
 import static com.flockinger.groschn.blockchain.TestDataFactory.createRandomTransactionOutputWith;
@@ -19,8 +19,7 @@ import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.model.Transaction;
 import com.flockinger.groschn.blockchain.model.TransactionInput;
 import com.flockinger.groschn.blockchain.transaction.Bookkeeper;
-import com.flockinger.groschn.blockchain.validation.impl.RewardTransactionValidator;
-import com.flockinger.groschn.blockchain.validation.impl.TransactionValidationHelper;
+import com.flockinger.groschn.blockchain.validation.Assessment;
 import com.flockinger.groschn.blockchain.wallet.WalletService;
 import com.flockinger.groschn.commons.ValidationUtils;
 import com.flockinger.groschn.commons.exception.crypto.CantConfigureSigningAlgorithmException;

@@ -1,4 +1,4 @@
-package com.flockinger.groschn.blockchain.validation;
+package com.flockinger.groschn.blockchain.validation.impl;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -13,8 +13,7 @@ import com.flockinger.groschn.blockchain.TestDataFactory;
 import com.flockinger.groschn.blockchain.exception.HashingException;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.model.Transaction;
-import com.flockinger.groschn.blockchain.validation.impl.TransactionValidationHelper;
-import com.flockinger.groschn.blockchain.validation.impl.TransactionValidator;
+import com.flockinger.groschn.blockchain.validation.Assessment;
 import com.flockinger.groschn.blockchain.wallet.WalletService;
 import com.flockinger.groschn.commons.ValidationUtils;
 import com.flockinger.groschn.commons.exception.crypto.CantConfigureSigningAlgorithmException;

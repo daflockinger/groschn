@@ -2,9 +2,7 @@ package com.flockinger.groschn.blockchain.validation.impl;
 
 import static com.flockinger.groschn.blockchain.consensus.impl.ProofOfWorkAlgorithm.LEADING_ZERO;
 import static com.flockinger.groschn.blockchain.consensus.impl.ProofOfWorkAlgorithm.MINING_RATE_MILLISECONDS;
-import java.util.Date;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.stereotype.Component;
+
 import com.flockinger.groschn.blockchain.consensus.model.ConsensusType;
 import com.flockinger.groschn.blockchain.consensus.model.Consent;
 import com.flockinger.groschn.blockchain.exception.validation.AssessmentFailedException;
@@ -12,9 +10,12 @@ import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.validation.Assessment;
 import com.flockinger.groschn.blockchain.validation.ConsentValidator;
 import com.flockinger.groschn.commons.exception.BlockchainException;
+import java.util.Date;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.stereotype.Component;
 
 @Component("ProofOfWork_Validator")
-public class PowConsensusValidator implements ConsentValidator {
+class PowConsensusValidator implements ConsentValidator {
     
   @Override
   public Assessment validate(Block value, Block lastBlock) {

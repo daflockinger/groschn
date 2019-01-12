@@ -9,15 +9,15 @@ import org.threeten.bp.OffsetDateTime;
 import org.threeten.bp.ZonedDateTime;
 
 @Configuration
-public class JacksonConfiguration {
+public class JacksonConfig {
 
   @Bean
   @ConditionalOnMissingBean(ThreeTenModule.class)
   ThreeTenModule threeTenModule() {
     ThreeTenModule module = new ThreeTenModule();
-    module.addDeserializer(Instant.class, CustomInstantDeserializer.INSTANT);
-    module.addDeserializer(OffsetDateTime.class, CustomInstantDeserializer.OFFSET_DATE_TIME);
-    module.addDeserializer(ZonedDateTime.class, CustomInstantDeserializer.ZONED_DATE_TIME);
+    module.addDeserializer(Instant.class, CustomInstantDeserializerConfig.INSTANT);
+    module.addDeserializer(OffsetDateTime.class, CustomInstantDeserializerConfig.OFFSET_DATE_TIME);
+    module.addDeserializer(ZonedDateTime.class, CustomInstantDeserializerConfig.ZONED_DATE_TIME);
     return module;
   }
 }

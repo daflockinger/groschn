@@ -1,5 +1,11 @@
 package com.flockinger.groschn.blockchain.validation.impl;
 
+import com.flockinger.groschn.blockchain.model.Transaction;
+import com.flockinger.groschn.blockchain.model.TransactionInput;
+import com.flockinger.groschn.blockchain.model.TransactionOutput;
+import com.flockinger.groschn.blockchain.transaction.Bookkeeper;
+import com.flockinger.groschn.blockchain.validation.Assessment;
+import com.flockinger.groschn.commons.exception.BlockchainException;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
@@ -8,15 +14,9 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import com.flockinger.groschn.blockchain.model.Transaction;
-import com.flockinger.groschn.blockchain.model.TransactionInput;
-import com.flockinger.groschn.blockchain.model.TransactionOutput;
-import com.flockinger.groschn.blockchain.transaction.Bookkeeper;
-import com.flockinger.groschn.blockchain.validation.Assessment;
-import com.flockinger.groschn.commons.exception.BlockchainException;
 
 @Component("RewardTransaction_Validator")
-public class RewardTransactionValidator extends TransactionValidator {
+class RewardTransactionValidator extends TransactionValidator {
   
   @Autowired
   private Bookkeeper bookKeeper;

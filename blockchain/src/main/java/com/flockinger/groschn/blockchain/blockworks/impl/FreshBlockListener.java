@@ -10,7 +10,7 @@ import com.flockinger.groschn.blockchain.blockworks.BlockStorageService;
 import com.flockinger.groschn.blockchain.exception.validation.AssessmentFailedException;
 import com.flockinger.groschn.blockchain.messaging.sync.SmartBlockSynchronizer;
 import com.flockinger.groschn.blockchain.model.Block;
-import com.flockinger.groschn.blockchain.validation.impl.BlockValidator;
+import com.flockinger.groschn.blockchain.validation.Validator;
 import com.flockinger.groschn.messaging.config.MainTopics;
 import com.flockinger.groschn.messaging.inbound.MessageListener;
 import com.flockinger.groschn.messaging.inbound.MessagePackageHelper;
@@ -29,8 +29,8 @@ public class FreshBlockListener implements  MessageListener<MessagePayload> {
   @Autowired
   private BlockStorageService blockService;
   @Autowired
-  @Qualifier("blockValidator")
-  private BlockValidator validator;
+  @Qualifier("lastBlockValidator")
+  private Validator<Block> validator;
   @Autowired
   private BlockMaker blockMaker;
   @Autowired
@@ -49,21 +49,19 @@ public class FreshBlockListener implements  MessageListener<MessagePayload> {
   public void receiveMessage(Message<MessagePayload> message) {
     var receivedBlock = helper.verifyAndUnpackMessage(message, blockIdCache, Block.class);
 
-    if(receivedBlock.isPresent()) {
-      handleMessage(receivedBlock.get());
-    }
+    receivedBlock.ifPresent(this::handleMessage);
   }
 
-  private void handleMessage(Block block) {
+  private synchronized void handleMessage(Block block) {
     try {
-      var assessMent = validator.validate(block);
-      if(assessMent.isValid()) {
+      var assessment = validator.validate(block);
+      if(assessment.isValid()) {
         blockMaker.generation(STOP);
         blockService.saveUnchecked(block);
         blockMaker.generation(RESTART);
       } else {
-        throw new AssessmentFailedException(assessMent.getReasonOfFailure(), 
-            assessMent.getFailure());
+        throw new AssessmentFailedException(assessment.getReasonOfFailure(),
+            assessment.getFailure());
       }
     } catch (AssessmentFailedException e) {
       LOG.error("Invalid Block-Message received maybe recoverable: " + e.getMessage(), e);

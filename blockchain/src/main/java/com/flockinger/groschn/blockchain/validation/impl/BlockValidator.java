@@ -13,12 +13,12 @@ import com.flockinger.groschn.commons.ValidationUtils;
 import com.flockinger.groschn.commons.exception.BlockchainException;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.stereotype.Component;
 
-@Component
-public class BlockValidator implements Validator<Block> {
+
+abstract class BlockValidator implements Validator<Block> {
 
   @Autowired
   @Qualifier("BlockTransaction_Validator")
@@ -31,16 +31,21 @@ public class BlockValidator implements Validator<Block> {
   @Autowired
   private ValidationUtils validationUtils;
 
+  protected abstract Block getLastBlock(long newBlockPosition);
+  protected abstract void verifyBlockIsUsedByMajorityOfNodes(Block block);
+
   @Override
   public Assessment validate(Block value) {
     Assessment isBlockValid = new Assessment();
     // Validations for a new Block:
     try {
       Block lastBlock = getLastBlock(value.getPosition());
-      
-      // 1. check if position is exactly one higher than existing one
+
+      // 1. check if most of other nodes also use/have that Block in their Blockchain.
+      verifyBlockIsUsedByMajorityOfNodes(value);
+      // 2. check if position is exactly one higher than existing one
       isPositionExactlyOneHigher(value.getPosition(), lastBlock);
-      // 2. check if lastHash is correct 
+      // 3. check if lastHash is correct
       verifyLastHash(value.getLastHash(), lastBlock);
       // 4. check if transaction merkleRoot-Hash is correct
       verifyTransactionsMerkleRoot(value);
@@ -54,7 +59,7 @@ public class BlockValidator implements Validator<Block> {
       validateConsensus(value, lastBlock);
       // 9. call transaction validations
       validateTransactions(value.getTransactions());
-      // 3. verify if current hash is correctly calculated
+      // 10. verify if current hash is correctly calculated
       verifyCurrentHash(value);
       isBlockValid.setValid(true);
     } catch (AssessmentFailedException e) {
@@ -67,11 +72,7 @@ public class BlockValidator implements Validator<Block> {
     }   
     return isBlockValid;
   }
-  
-  protected Block getLastBlock(long newBlockPosition) {
-    return blockService.getLatestBlock();
-  }
-  
+
   private void isPositionExactlyOneHigher(Long position, Block lastBlock) {
     verifyAssessment(position != null && position > lastBlock.getPosition(), 
         "Incomming block must have a higher position than the latest one!");
@@ -111,7 +112,7 @@ public class BlockValidator implements Validator<Block> {
   }
   
   private void verifyVersion(Integer version) {
-    verifyAssessment(version != null && BlockMaker.CURRENT_BLOCK_VERSION == version, 
+    verifyAssessment(version != null && Objects.equals(BlockMaker.CURRENT_BLOCK_VERSION, version),
         "Version is not valid for this client: " + version);
   }
   
@@ -135,7 +136,7 @@ public class BlockValidator implements Validator<Block> {
     verifyAssessment(assessment.isValid(), assessment.getReasonOfFailure());
   }
   
-  private void verifyAssessment(boolean isValid, String errorMessage) {
+  void verifyAssessment(boolean isValid, String errorMessage) {
     verifyAssessment(isValid, errorMessage, AssessmentFailure.NONE);
   }
   private void verifyAssessment(boolean isValid, String errorMessage, AssessmentFailure failure) {

@@ -1,4 +1,4 @@
-package com.flockinger.groschn.blockchain.validation;
+package com.flockinger.groschn.blockchain.validation.impl;
 
 import static com.flockinger.groschn.blockchain.TestDataFactory.createBlockTransactions;
 import static org.junit.Assert.assertEquals;
@@ -8,6 +8,13 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
+import com.flockinger.groschn.blockchain.TestDataFactory;
+import com.flockinger.groschn.blockchain.exception.validation.AssessmentFailedException;
+import com.flockinger.groschn.blockchain.model.Transaction;
+import com.flockinger.groschn.blockchain.model.TransactionInput;
+import com.flockinger.groschn.blockchain.validation.Assessment;
+import com.flockinger.groschn.blockchain.validation.Validator;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
@@ -19,12 +26,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
-import com.flockinger.groschn.blockchain.TestDataFactory;
-import com.flockinger.groschn.blockchain.exception.validation.AssessmentFailedException;
-import com.flockinger.groschn.blockchain.model.Transaction;
-import com.flockinger.groschn.blockchain.model.TransactionInput;
-import com.flockinger.groschn.blockchain.validation.impl.BlockTransactionsValidator;
-import com.flockinger.groschn.blockchain.validation.impl.TransactionValidationHelper;
 
 
 @RunWith(SpringRunner.class)
