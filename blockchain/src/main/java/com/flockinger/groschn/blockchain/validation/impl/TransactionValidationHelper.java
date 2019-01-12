@@ -1,24 +1,22 @@
 package com.flockinger.groschn.blockchain.validation.impl;
 
-import java.math.BigDecimal;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-import org.springframework.stereotype.Component;
 import com.flockinger.groschn.blockchain.model.Transaction;
 import com.flockinger.groschn.blockchain.model.TransactionInput;
 import com.flockinger.groschn.blockchain.model.TransactionOutput;
 import com.google.common.collect.ImmutableList;
+import java.math.BigDecimal;
+import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import org.springframework.stereotype.Component;
 
 @Component
-public class TransactionValidationHelper {
-  
-  
-  public int calcualteTransactionBalance(List<Transaction> transactions, Predicate<TransactionOutput> filter) {
+class TransactionValidationHelper {
+
+  int calcualteTransactionBalance(List<Transaction> transactions,
+      Predicate<TransactionOutput> filter) {
     var inputAmount = transactions.stream().map(Transaction::getInputs).flatMap(Collection::stream)
        .filter(filter).map(TransactionInput::getAmount)
        .filter(Objects::nonNull).reduce(BigDecimal::add).orElse(BigDecimal.ZERO);
@@ -28,15 +26,16 @@ public class TransactionValidationHelper {
     return inputAmount.compareTo(outputAmount);
   }
   
-  public int calcualteTransactionBalance(Transaction transaction, Predicate<TransactionOutput> filter) {
+  private int calcualteTransactionBalance(Transaction transaction,
+      Predicate<TransactionOutput> filter) {
     return calcualteTransactionBalance(ImmutableList.of(transaction), filter);
   }
   
-  public int calcualteTransactionBalance(Transaction transaction) {
+  int calcualteTransactionBalance(Transaction transaction) {
     return calcualteTransactionBalance(transaction, statement -> true);
   }
   
-  public List<String> findMinerPublicKeys(Transaction transaction, BigDecimal reward) {
+  List<String> findMinerPublicKeys(Transaction transaction, BigDecimal reward) {
     List<String> inputMiners = getPossibleMinersFrom(transaction.getInputs(), reward);
     List<String> outputMiners = getPossibleMinersFrom(transaction.getOutputs(), reward);
     inputMiners.retainAll(outputMiners);

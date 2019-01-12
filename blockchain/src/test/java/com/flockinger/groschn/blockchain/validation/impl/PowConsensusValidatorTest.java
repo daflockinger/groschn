@@ -1,9 +1,14 @@
-package com.flockinger.groschn.blockchain.validation;
+package com.flockinger.groschn.blockchain.validation.impl;
 
 import static com.flockinger.groschn.blockchain.consensus.impl.ProofOfWorkAlgorithm.MINING_RATE_MILLISECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+
+import com.flockinger.groschn.blockchain.consensus.model.ConsensusType;
+import com.flockinger.groschn.blockchain.consensus.model.Consent;
+import com.flockinger.groschn.blockchain.model.Block;
+import com.flockinger.groschn.blockchain.validation.Assessment;
 import java.util.Date;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
@@ -11,10 +16,6 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
-import com.flockinger.groschn.blockchain.consensus.model.ConsensusType;
-import com.flockinger.groschn.blockchain.consensus.model.Consent;
-import com.flockinger.groschn.blockchain.model.Block;
-import com.flockinger.groschn.blockchain.validation.impl.PowConsensusValidator;
 
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes = {PowConsensusValidator.class})

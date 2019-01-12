@@ -12,6 +12,7 @@ import com.flockinger.groschn.blockchain.transaction.TransactionManager;
 import com.flockinger.groschn.blockchain.validation.Assessment;
 import com.flockinger.groschn.blockchain.validation.impl.InnerBlockValidator;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 import org.modelmapper.ModelMapper;
@@ -79,7 +80,7 @@ public class BlockStorageServiceImpl implements BlockStorageService {
   }
 
   private boolean isGenesisBlock(Block block) {
-    return block.getPosition() == Block.GENESIS_BLOCK().getPosition();
+    return Objects.equals(block.getPosition(), Block.GENESIS_BLOCK().getPosition());
   }
 
   private StoredBlock mapToStoredBlock(Block block) {

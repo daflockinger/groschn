@@ -1,4 +1,4 @@
-package com.flockinger.groschn.blockchain.validation;
+package com.flockinger.groschn.blockchain.validation.impl;
 
 import static com.flockinger.groschn.blockchain.TestDataFactory.fifthBlock;
 import static com.flockinger.groschn.blockchain.TestDataFactory.fourthBlock;
@@ -14,13 +14,7 @@ import com.flockinger.groschn.blockchain.repository.BlockchainRepository;
 import com.flockinger.groschn.blockchain.repository.model.StoredBlock;
 import com.flockinger.groschn.blockchain.transaction.TransactionManager;
 import com.flockinger.groschn.blockchain.transaction.impl.BookkeeperImpl;
-import com.flockinger.groschn.blockchain.validation.impl.BlockTransactionsValidator;
-import com.flockinger.groschn.blockchain.validation.impl.BlockValidator;
-import com.flockinger.groschn.blockchain.validation.impl.InnerBlockValidator;
-import com.flockinger.groschn.blockchain.validation.impl.PowConsensusValidator;
-import com.flockinger.groschn.blockchain.validation.impl.RewardTransactionValidator;
-import com.flockinger.groschn.blockchain.validation.impl.TransactionValidationHelper;
-import com.flockinger.groschn.blockchain.validation.impl.TransactionValidator;
+import com.flockinger.groschn.blockchain.validation.Validator;
 import com.flockinger.groschn.blockchain.wallet.impl.WalletServiceImpl;
 import com.flockinger.groschn.commons.hash.MerkleRootCalculator;
 import com.flockinger.groschn.commons.hash.MultiHashGenerator;
@@ -47,7 +41,7 @@ public class InnerBlockValidatorTest extends BaseDbTest {
   private TransactionManager managerMock;
 
   @MockBean(name = "blockValidator")
-  private BlockValidator storageUsedValidatorMock;
+  private Validator<Block> storageUsedValidatorMock;
   
   @Autowired
   private BlockchainRepository dao;

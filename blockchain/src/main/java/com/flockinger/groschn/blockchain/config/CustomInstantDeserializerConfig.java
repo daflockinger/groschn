@@ -10,6 +10,8 @@ import com.fasterxml.jackson.datatype.threetenbp.DecimalUtils;
 import com.fasterxml.jackson.datatype.threetenbp.deser.ThreeTenDateTimeDeserializerBase;
 import com.fasterxml.jackson.datatype.threetenbp.function.BiFunction;
 import com.fasterxml.jackson.datatype.threetenbp.function.Function;
+import java.io.IOException;
+import java.math.BigDecimal;
 import org.threeten.bp.DateTimeException;
 import org.threeten.bp.Instant;
 import org.threeten.bp.OffsetDateTime;
@@ -19,20 +21,17 @@ import org.threeten.bp.format.DateTimeFormatter;
 import org.threeten.bp.temporal.Temporal;
 import org.threeten.bp.temporal.TemporalAccessor;
 
-import java.io.IOException;
-import java.math.BigDecimal;
-
 /**
  * Deserializer for ThreeTen temporal {@link Instant}s, {@link OffsetDateTime}, and {@link ZonedDateTime}s.
  * Adapted from the jackson threetenbp InstantDeserializer to add support for deserializing rfc822 format.
  *
  * @author Nick Williams
  */
-public class CustomInstantDeserializer<T extends Temporal>
+public class CustomInstantDeserializerConfig<T extends Temporal>
     extends ThreeTenDateTimeDeserializerBase<T> {
   private static final long serialVersionUID = 1L;
 
-  public static final CustomInstantDeserializer<Instant> INSTANT = new CustomInstantDeserializer<Instant>(
+  public static final CustomInstantDeserializerConfig<Instant> INSTANT = new CustomInstantDeserializerConfig<Instant>(
       Instant.class, DateTimeFormatter.ISO_INSTANT,
       new Function<TemporalAccessor, Instant>() {
         @Override
@@ -55,7 +54,7 @@ public class CustomInstantDeserializer<T extends Temporal>
       null
   );
 
-  public static final CustomInstantDeserializer<OffsetDateTime> OFFSET_DATE_TIME = new CustomInstantDeserializer<OffsetDateTime>(
+  public static final CustomInstantDeserializerConfig<OffsetDateTime> OFFSET_DATE_TIME = new CustomInstantDeserializerConfig<OffsetDateTime>(
       OffsetDateTime.class, DateTimeFormatter.ISO_OFFSET_DATE_TIME,
       new Function<TemporalAccessor, OffsetDateTime>() {
         @Override
@@ -83,7 +82,7 @@ public class CustomInstantDeserializer<T extends Temporal>
       }
   );
 
-  public static final CustomInstantDeserializer<ZonedDateTime> ZONED_DATE_TIME = new CustomInstantDeserializer<ZonedDateTime>(
+  public static final CustomInstantDeserializerConfig<ZonedDateTime> ZONED_DATE_TIME = new CustomInstantDeserializerConfig<ZonedDateTime>(
       ZonedDateTime.class, DateTimeFormatter.ISO_ZONED_DATE_TIME,
       new Function<TemporalAccessor, ZonedDateTime>() {
         @Override
@@ -119,7 +118,7 @@ public class CustomInstantDeserializer<T extends Temporal>
 
   protected final BiFunction<T, ZoneId, T> adjust;
 
-  protected CustomInstantDeserializer(Class<T> supportedType,
+  protected CustomInstantDeserializerConfig(Class<T> supportedType,
                     DateTimeFormatter parser,
                     Function<TemporalAccessor, T> parsedToValue,
                     Function<FromIntegerArguments, T> fromMilliseconds,
@@ -138,7 +137,7 @@ public class CustomInstantDeserializer<T extends Temporal>
   }
 
   @SuppressWarnings("unchecked")
-  protected CustomInstantDeserializer(CustomInstantDeserializer<T> base, DateTimeFormatter f) {
+  protected CustomInstantDeserializerConfig(CustomInstantDeserializerConfig<T> base, DateTimeFormatter f) {
     super((Class<T>) base.handledType(), f);
     parsedToValue = base.parsedToValue;
     fromMilliseconds = base.fromMilliseconds;
@@ -151,7 +150,7 @@ public class CustomInstantDeserializer<T extends Temporal>
     if (dtf == _formatter) {
       return this;
     }
-    return new CustomInstantDeserializer<T>(this, dtf);
+    return new CustomInstantDeserializerConfig<T>(this, dtf);
   }
 
   @Override

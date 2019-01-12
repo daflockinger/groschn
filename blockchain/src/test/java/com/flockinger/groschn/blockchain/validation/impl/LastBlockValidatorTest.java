@@ -1,4 +1,4 @@
-package com.flockinger.groschn.blockchain.validation;
+package com.flockinger.groschn.blockchain.validation.impl;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -16,6 +16,7 @@ import com.flockinger.groschn.blockchain.blockworks.impl.RewardGeneratorImpl;
 import com.flockinger.groschn.blockchain.consensus.impl.ConsensusFactory;
 import com.flockinger.groschn.blockchain.consensus.impl.ProofOfMajorityAlgorithm;
 import com.flockinger.groschn.blockchain.consensus.impl.ProofOfWorkAlgorithm;
+import com.flockinger.groschn.blockchain.messaging.sync.GlobalBlockchainStatistics;
 import com.flockinger.groschn.blockchain.model.Block;
 import com.flockinger.groschn.blockchain.repository.BlockProcessRepository;
 import com.flockinger.groschn.blockchain.repository.BlockchainRepository;
@@ -24,23 +25,22 @@ import com.flockinger.groschn.blockchain.repository.WalletRepository;
 import com.flockinger.groschn.blockchain.transaction.impl.BookkeeperImpl;
 import com.flockinger.groschn.blockchain.transaction.impl.TransactionManagerImpl;
 import com.flockinger.groschn.blockchain.transaction.impl.TransactionPoolListener;
-import com.flockinger.groschn.blockchain.validation.impl.BlockTransactionsValidator;
-import com.flockinger.groschn.blockchain.validation.impl.BlockValidator;
-import com.flockinger.groschn.blockchain.validation.impl.PowConsensusValidator;
-import com.flockinger.groschn.blockchain.validation.impl.RewardTransactionValidator;
-import com.flockinger.groschn.blockchain.validation.impl.TransactionValidationHelper;
-import com.flockinger.groschn.blockchain.validation.impl.TransactionValidator;
+import com.flockinger.groschn.blockchain.validation.Assessment;
+import com.flockinger.groschn.blockchain.validation.AssessmentFailure;
 import com.flockinger.groschn.blockchain.wallet.impl.WalletServiceImpl;
 import com.flockinger.groschn.commons.compress.Compressor;
 import com.flockinger.groschn.commons.hash.HashGenerator;
 import com.flockinger.groschn.commons.sign.Signer;
 import com.flockinger.groschn.messaging.members.NetworkStatistics;
 import com.flockinger.groschn.messaging.outbound.Broadcaster;
+import com.google.common.collect.ImmutableList;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Date;
 import org.apache.commons.lang3.StringUtils;
 import org.awaitility.Awaitility;
 import org.awaitility.Duration;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -51,7 +51,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 
-@ContextConfiguration(classes = {BlockValidator.class, BlockchainRepository.class, 
+@ContextConfiguration(classes = {LastBlockValidator.class, BlockchainRepository.class,
     BlockTransactionsValidator.class, TransactionValidator.class, RewardTransactionValidator.class, 
     TransactionValidationHelper.class, PowConsensusValidator.class,
     // those are all needed to create a somewhat real block to verify:
@@ -60,7 +60,7 @@ import org.springframework.test.context.TestPropertySource;
     TransactionManagerImpl.class, TransactionPoolRepository.class, BlockProcessRepository.class, 
     BookkeeperImpl.class, WalletServiceImpl.class, WalletRepository.class}, initializers = ConfigFileApplicationContextInitializer.class)
 @TestPropertySource(locations="classpath:application.yml")
-public class BlockValidatorTest extends BaseDbTest {
+public class LastBlockValidatorTest extends BaseDbTest {
 
   //TODO make it faster!!
 
@@ -72,6 +72,8 @@ public class BlockValidatorTest extends BaseDbTest {
   private BlockStorageService storageService;
   @MockBean
   private Broadcaster broadcaster;
+  @MockBean
+  private GlobalBlockchainStatistics blockchainStatistics;
 
   @Autowired
  private HashGenerator hasher;
@@ -81,8 +83,8 @@ public class BlockValidatorTest extends BaseDbTest {
   private Compressor mockPressor;
 
   @Autowired
-  @Qualifier("blockValidator")
-  private BlockValidator validator;
+  @Qualifier("lastBlockValidator")
+  private LastBlockValidator validator;
   
   @Autowired
   private BlockMaker maker;
@@ -107,7 +109,7 @@ public class BlockValidatorTest extends BaseDbTest {
   public void setup() {
     when(storageService.getLatestBlock()).thenReturn(Block.GENESIS_BLOCK());
     when(storageService.getLatestProofOfWorkBlock()).thenReturn(Block.GENESIS_BLOCK());
-    
+
     if(freshBlock == null) {
       maker.generation(BlockMakerCommand.RESTART);
       ArgumentCaptor<Block> blockCaptor = ArgumentCaptor.forClass(Block.class);
@@ -117,6 +119,8 @@ public class BlockValidatorTest extends BaseDbTest {
       verify(storageService).saveInBlockchain(blockCaptor.capture());
       freshBlock = blockCaptor.getValue();
     }
+    when(blockchainStatistics.overallBlockHashes(any()))
+        .thenReturn(ImmutableList.of(freshBlock.getHash()));
   }
   
   @Test
@@ -150,7 +154,7 @@ public class BlockValidatorTest extends BaseDbTest {
     freshBlock.setPosition(2l);
     assertEquals("verify that block with too high position is NOT valid", false, result.isValid());
     assertTrue("verify that error message is correct", StringUtils.containsIgnoreCase(result.getReasonOfFailure(),"position"));
-    assertEquals("verify correct AssessmentFailure", AssessmentFailure.BLOCK_POSITION_TOO_HIGH, result.getFailure());
+    Assert.assertEquals("verify correct AssessmentFailure", AssessmentFailure.BLOCK_POSITION_TOO_HIGH, result.getFailure());
   }
   
   @Test
@@ -248,6 +252,8 @@ public class BlockValidatorTest extends BaseDbTest {
     freshBlock.getConsent().setNonce(realNonce + 1);
     freshBlock.setHash(null);
     freshBlock.setHash(hasher.generateHash(freshBlock));
+    when(blockchainStatistics.overallBlockHashes(any()))
+        .thenReturn(ImmutableList.of(freshBlock.getHash()));
     
     Assessment result = validator.validate(freshBlock);
     
@@ -268,5 +274,44 @@ public class BlockValidatorTest extends BaseDbTest {
     freshBlock.getTransactions().get(0).getOutputs().get(0).setAmount(oldAmount);
     assertEquals("verify that block with transaction validation failed is NOT valid", false, result.isValid());
     assertTrue("verify that error message is correct", StringUtils.containsIgnoreCase(result.getReasonOfFailure(),"MerkleRoot-Hash of all transactions is wrong!"));
+  }
+
+  @Test
+  public void testValidate_withMajorityIsCorrectHash_shouldValidateTrue() {
+    when(mockPressor.compressedByteSize(any())).thenReturn(Block.MAX_TRANSACTION_BYTE_SIZE.intValue() - 1);
+    when(blockchainStatistics.overallBlockHashes(any()))
+        .thenReturn(ImmutableList.of(freshBlock.getHash(), freshBlock.getHash(), freshBlock.getHash(),
+            freshBlock.getHash() + "1", freshBlock.getHash() + "1"));
+
+    Assessment result = validator.validate(freshBlock);
+
+    assertEquals("verify that block with statistics validation failed is NOT valid", true, result.isValid());
+  }
+
+  @Test
+  public void testValidate_withMajorityIsOtherHash_shouldValidateFalse() {
+    when(mockPressor.compressedByteSize(any())).thenReturn(Block.MAX_TRANSACTION_BYTE_SIZE.intValue() - 1);
+    when(blockchainStatistics.overallBlockHashes(any()))
+        .thenReturn(ImmutableList.of(freshBlock.getHash(),
+            freshBlock.getHash() + "1", freshBlock.getHash() + "1"));
+
+    Assessment result = validator.validate(freshBlock);
+
+    assertEquals("verify that block with statistics validation failed is NOT valid", false, result.isValid());
+    assertTrue("verify that error message is correct", StringUtils.containsIgnoreCase(result.getReasonOfFailure(),
+        "Block hash is not used by the majority of nodes in the Blockchain!"));
+
+  }
+
+  @Test
+  public void testValidate_withNoMajorityResults_shouldValidateFalse() {
+    when(mockPressor.compressedByteSize(any())).thenReturn(Block.MAX_TRANSACTION_BYTE_SIZE.intValue() - 1);
+    when(blockchainStatistics.overallBlockHashes(any())).thenReturn(new ArrayList<>());
+
+    Assessment result = validator.validate(freshBlock);
+
+    assertEquals("verify that block with statistics validation failed is NOT valid", false, result.isValid());
+    assertTrue("verify that error message is correct", StringUtils.containsIgnoreCase(result.getReasonOfFailure(),
+        "Block hash is not used by the majority of nodes in the Blockchain!"));
   }
 }
